@@ -1,0 +1,7 @@
+---
+	sudo: false
+	install: true
+	
+	script:
+		- cd scripts
+		- make
