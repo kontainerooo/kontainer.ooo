@@ -79,7 +79,7 @@ void log_fmt(char *fmt, ...)
     _log(buf);
 }
 
-int main(int argc, char *argv[])
+int main()
 {
 	struct passwd *pw;
 	uid_t uid;
