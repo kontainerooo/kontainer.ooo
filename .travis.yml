@@ -1,0 +1,9 @@
+language: go
+# TODO: make docker independent of root
+sudo: true
+install: true
+
+script:
+    # Make all scripts
+    - cd scripts
+    - make
