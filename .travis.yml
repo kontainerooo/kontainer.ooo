@@ -1,7 +1,7 @@
----
-	sudo: false
-	install: true
-	
-	script:
-		- cd scripts
-		- make
+language: go
+sudo: true
+install: true
+
+script:
+    - cd scripts
+    - make
