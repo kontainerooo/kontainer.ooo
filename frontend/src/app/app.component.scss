@@ -1,9 +1,0 @@
-@import '~@angular/material/core/theming/palette';
-
-/deep/ .centerize-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    background-color: map-get($mat-red, 500);
-}

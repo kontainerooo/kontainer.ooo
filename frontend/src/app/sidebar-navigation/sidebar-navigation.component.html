@@ -1,0 +1,24 @@
+<md-sidenav-container>
+  <md-sidenav mode="side" opened="true">
+    <kmi-account>
+      <kmi-avatar></kmi-avatar>
+    </kmi-account>
+
+    <md-list>
+      <md-list-item>
+        <md-icon md-list-avatar>home</md-icon>
+        Home
+      </md-list-item>
+      <md-list-item routerLink="/signup" routerLinkActive="active">
+        <md-icon md-list-avatar>person</md-icon>
+        Sign Up
+      </md-list-item>
+      <md-list-item routerLink="/standings" routerLinkActive="active">
+        <md-icon md-list-avatar>insert_chart</md-icon>
+        Standings
+      </md-list-item>
+    </md-list>
+  </md-sidenav>
+
+  <ng-content></ng-content>
+</md-sidenav-container>
