@@ -4,28 +4,25 @@
 :host {
     background-color: mat-color($background, status-bar);
     display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
     height: $mat-toolbar-height-desktop * 2.5 - 30px;
-    padding: 15px 15px;
-    background-image: url('https://www.whatswithtech.com/wp-content/uploads/2015/09/paper-color-material-design-wallpaper.png');
+    padding: 10px 15px;
+    background-image: url('');
     background-size: cover;
     background-repeat: no-repeat;
     color: white;
 }
 
-.realname {
-    font-size: rem(1.8);
-    margin: 4px 0 2px;
-}
-
-.username-line {
+.left-pane {
     display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding-bottom: 8px;
 
-    md-icon {
-        
+    .realname {
+        font-size: rem(1.8);
+        margin: 4px 0 2px;
     }
 }

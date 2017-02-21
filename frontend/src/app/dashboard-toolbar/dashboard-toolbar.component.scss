@@ -2,21 +2,4 @@ md-toolbar {
     .spacer {
         flex: 1 1 auto;
     }
-
-    .toolbar-button {
-        min-width: 36px;
-        margin: 0 16px;
-        padding: 0;
-
-        &:hover {
-            .mat-button-focus-overlay {
-                opacity: 0;
-            }
-        }
-    }
-
-    .username {
-        margin: 0 6px;
-    }
-
 }

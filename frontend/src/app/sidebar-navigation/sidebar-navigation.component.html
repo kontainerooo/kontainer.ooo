@@ -1,13 +1,13 @@
 <md-sidenav-container>
   <md-sidenav mode="side" opened="true">
-    <kmi-account>
-      <kmi-avatar></kmi-avatar>
+    <kmi-account username="m.smith" realname="Morty Smith" bg="https://www.whatswithtech.com/wp-content/uploads/2015/09/paper-color-material-design-wallpaper.png">
+      <kmi-avatar src="http://static.giantbomb.com/uploads/scale_small/0/9517/2816097-tumblr_n45cr8dmj61ty0km0o7_1280.png"></kmi-avatar>
     </kmi-account>
 
     <md-list>
-      <md-list-item>
-        <md-icon md-list-avatar>home</md-icon>
-        Home
+      <md-list-item routerLink="/dashboard" routerLinkActive="active">
+        <md-icon md-list-avatar>dashboard</md-icon>
+        Dashboard
       </md-list-item>
       <md-list-item routerLink="/signup" routerLinkActive="active">
         <md-icon md-list-avatar>person</md-icon>
