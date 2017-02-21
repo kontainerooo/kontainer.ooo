@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 
 @Component({
-  selector: 'kmi-root',
+  selector: 'kio-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })

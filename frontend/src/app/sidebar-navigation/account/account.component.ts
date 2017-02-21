@@ -1,7 +1,7 @@
 import { Component, Input, OnChanges, ElementRef, Renderer } from '@angular/core';
 
 @Component({
-  selector: 'kmi-account',
+  selector: 'kio-account',
   templateUrl: './account.component.html',
   styleUrls: ['./account.component.scss']
 })

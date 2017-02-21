@@ -17,7 +17,7 @@
       "polyfills": "polyfills.ts",
       "test": "test.ts",
       "tsconfig": "tsconfig.json",
-      "prefix": "kmi",
+      "prefix": "kio",
       "styles": [
         "styles.scss"
       ],

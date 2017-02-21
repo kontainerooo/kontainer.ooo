@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'kmi-sidebar-navigation',
+  selector: 'kio-sidebar-navigation',
   templateUrl: './sidebar-navigation.component.html',
   styleUrls: ['./sidebar-navigation.component.scss']
 })

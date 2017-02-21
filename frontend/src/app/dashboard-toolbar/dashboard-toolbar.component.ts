@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'kmi-dashboard-toolbar',
+  selector: 'kio-dashboard-toolbar',
   templateUrl: './dashboard-toolbar.component.html',
   styleUrls: ['./dashboard-toolbar.component.scss']
 })

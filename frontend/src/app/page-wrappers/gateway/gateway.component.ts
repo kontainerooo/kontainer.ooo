@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'kmi-gateway',
+  selector: 'kio-gateway',
   templateUrl: './gateway.component.html',
   styleUrls: ['./gateway.component.scss']
 })
