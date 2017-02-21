@@ -4,6 +4,8 @@ import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 
 import { SignInComponent } from './sign-in.component';
+import { GatewayComponent } from '../page-wrappers/gateway/gateway.component';
+import { MaterialModule } from '@angular/material';
 
 describe('SignInComponent', () => {
   let component: SignInComponent;
@@ -11,7 +13,13 @@ describe('SignInComponent', () => {
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ SignInComponent ]
+      declarations: [
+          SignInComponent,
+          GatewayComponent
+      ],
+      imports: [
+          MaterialModule.forRoot()
+      ]
     })
     .compileComponents();
   }));

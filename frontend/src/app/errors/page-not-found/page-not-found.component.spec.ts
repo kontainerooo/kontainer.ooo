@@ -4,6 +4,7 @@ import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 
 import { PageNotFoundComponent } from './page-not-found.component';
+import { GatewayComponent } from '../../page-wrappers/gateway/gateway.component';
 
 describe('PageNotFoundComponent', () => {
   let component: PageNotFoundComponent;
@@ -11,7 +12,10 @@ describe('PageNotFoundComponent', () => {
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ PageNotFoundComponent ]
+      declarations: [
+          PageNotFoundComponent,
+          GatewayComponent
+      ]
     })
     .compileComponents();
   }));
