@@ -1,18 +1,10 @@
 language: go
-
+dist: trusty
 # Need to be root because of docker and setuid
 sudo: true
 
 env:
     - TRAVIS_NODE_VERSION="stable"
-
-addons:
-    apt:
-        sources:
-            - google-chrome
-        packages:
-            - google-chrome-stable
-            - google-chrome-beta
 
 before_install:
     - export CHROME_BIN=chromium-browser
@@ -20,6 +12,10 @@ before_install:
     - sh -e /etc/init.d/xvfb start
 
 install:
+     - sudo apt-get update
+     - sudo apt-get install -y libappindicator1 fonts-liberation
+    - wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+    - sudo dpkg -i google-chrome*.deb
     - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install $TRAVIS_NODE_VERSION
     - npm install -g angular-cli
     - npm install -g karma
