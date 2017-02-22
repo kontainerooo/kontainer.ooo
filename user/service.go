@@ -1,7 +1,7 @@
 // Package user provides functionalities to handle Users in the context of kontainer.io
 package user
 
-import pg "gopkg.in/pg.v5"
+import "github.com/jinzhu/gorm"
 
 // The Service interface describes the function necessary for kontainer.io user handling
 type Service interface {
@@ -24,8 +24,17 @@ type Service interface {
 	GetUser(id int, user *User) error
 }
 
+type dbAdapter interface {
+	AutoMigrate(values ...interface{}) *gorm.DB
+}
+
 type service struct {
-	db *pg.DB
+	db dbAdapter
+}
+
+func (s *service) InitializeDatabases() error {
+	s.db.AutoMigrate(&Address{}, &User{}, &Customer{})
+	return nil
 }
 
 func (s *service) CreateUser(username string, cfg *Config, adr *Address) (int, error) {
@@ -59,8 +68,15 @@ func (s *service) GetUser(id int, user *User) error {
 }
 
 // NewService creates a UserService with necessary dependencies.
-func NewService(db *pg.DB) Service {
-	return &service{
+func NewService(db dbAdapter) (Service, error) {
+	s := &service{
 		db: db,
 	}
+
+	err := s.InitializeDatabases()
+	if err != nil {
+		return nil, err
+	}
+
+	return s, nil
 }
