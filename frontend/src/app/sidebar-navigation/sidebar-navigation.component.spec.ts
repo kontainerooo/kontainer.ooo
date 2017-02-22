@@ -4,6 +4,7 @@ import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 
 import { MaterialModule } from '@angular/material';
+import 'hammerjs';
 
 import { SidebarNavigationComponent } from './sidebar-navigation.component';
 import { AccountComponent } from './account/account.component';
