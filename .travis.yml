@@ -24,7 +24,9 @@ install:
     - cd ..
 
 before_script:
+    - cd frontend
     - ng build
+    - cd ..
 
 script:
     # Make all scripts
