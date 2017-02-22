@@ -1,0 +1,16 @@
+@import '../../../kontainer-io-material';
+
+.bold-error {
+    font-family: $mat-font-family;
+    color: white;
+    text-align: center;
+
+    .title {
+        font-size: rem(10);
+        font-weight: bold;
+    }
+
+    .subtitle {
+        font-size: rem(2.2);
+    }
+}

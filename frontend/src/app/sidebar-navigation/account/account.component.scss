@@ -1,0 +1,28 @@
+@import '../../../kontainer-io-material';
+@import '~@angular/material/toolbar/toolbar';
+
+:host {
+    background-color: mat-color($background, status-bar);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+    height: $mat-toolbar-height-desktop * 2.5 - 30px;
+    padding: 10px 15px;
+    background-image: url('');
+    background-size: cover;
+    background-repeat: no-repeat;
+    color: white;
+}
+
+.left-pane {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding-bottom: 8px;
+
+    .realname {
+        font-size: rem(1.8);
+        margin: 4px 0 2px;
+    }
+}
