@@ -29,10 +29,4 @@ describe('AppComponent', () => {
   it('should create the app', async(() => {
     expect(component).toBeTruthy();
   }));
-
-  it('should contain one router-outlet', async(() => {
-    let de: DebugElement[] = fixture.debugElement.queryAll(By.css('router-outlet'));
-    
-    expect(de.length).toEqual(1);
-  }));
 });
