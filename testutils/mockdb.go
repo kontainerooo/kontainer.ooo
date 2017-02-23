@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 )
@@ -30,6 +31,14 @@ func (m *MockDB) produceError() bool {
 		m.err--
 	}
 	return false
+}
+
+// PrintTables prints every table in the database with its current rows
+func (m *MockDB) PrintTables() {
+	fmt.Print("MockDB\n")
+	for _, t := range m.tables {
+		fmt.Printf("%v\n", t)
+	}
 }
 
 // GetValue returns mockDB's value property

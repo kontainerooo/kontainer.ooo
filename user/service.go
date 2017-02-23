@@ -53,6 +53,7 @@ func (s *service) CreateUser(username string, cfg *Config, adr *Address) (uint, 
 		user.setConfig(cfg)
 		err = s.db.Create(user)
 		if err != nil {
+			//TODO: Delete Address/ Transactions?
 			return 0, err
 		}
 		return user.ID, nil
