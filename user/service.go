@@ -1,6 +1,8 @@
 // Package user provides functionalities to handle Users in the context of kontainer.io
 package user
 
+import "errors"
+
 // The Service interface describes the function necessary for kontainer.io user handling
 type Service interface {
 	// CreateUser creates a new User and returns its id
@@ -39,8 +41,23 @@ func (s *service) InitializeDatabases() error {
 }
 
 func (s *service) CreateUser(username string, cfg *Config, adr *Address) (uint, error) {
-	// TODO: implement functionality
-	return 0, nil
+	s.db.Where("username = ?", username)
+	if s.db.GetValue() == nil {
+		err := s.db.Create(adr)
+		if err != nil {
+			return 0, err
+		}
+
+		cfg.AddressID = adr.ID
+		user := &User{Username: username}
+		user.setConfig(cfg)
+		err = s.db.Create(user)
+		if err != nil {
+			return 0, err
+		}
+		return user.ID, nil
+	}
+	return 0, errors.New("username already used")
 }
 
 func (s *service) EditUser(id int, cfg *Config) error {
