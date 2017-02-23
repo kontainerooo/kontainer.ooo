@@ -4,7 +4,7 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
-	"github.com/ttdennis/kontainer.io/dbwrap"
+	"github.com/ttdennis/kontainer.io/abstraction"
 	"github.com/ttdennis/kontainer.io/user"
 )
 
@@ -15,7 +15,7 @@ func main() {
 	}
 	defer db.Close()
 
-	dbWrapper := dbwrap.NewWrapper(db)
+	dbWrapper := abstraction.NewDB(db)
 
 	_, err = user.NewService(dbWrapper)
 	if err != nil {

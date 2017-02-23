@@ -4,14 +4,14 @@
  * Furthermore it makes unit testing far easier, because db abstractions don't have to depend on gorm either
  */
 
-package dbwrap
+package abstraction
 
 import (
 	"github.com/jinzhu/gorm"
 )
 
-// Wrapper is an Interface to abstract gorm Database Functions
-type Wrapper interface {
+// DB is an Interface to abstract gorm Database Functions
+type DB interface {
 	// GetAffectedRows returns gorm.DB's RowsAffected property
 	GetAffectedRows() int64
 
@@ -23,43 +23,49 @@ type Wrapper interface {
 	Where(query interface{}, args ...interface{}) error
 	First(out interface{}, where ...interface{}) error
 	Create(value interface{}) error
+	Delete(value interface{}, where ...interface{}) error
 }
 
-type wrapper struct {
+type dbWrapper struct {
 	db *gorm.DB
 }
 
-func (w *wrapper) GetAffectedRows() int64 {
+func (w *dbWrapper) GetAffectedRows() int64 {
 	return w.db.RowsAffected
 }
 
-func (w *wrapper) GetValue() interface{} {
+func (w *dbWrapper) GetValue() interface{} {
 	return w.db.Value
 }
 
-func (w *wrapper) AutoMigrate(values ...interface{}) error {
+func (w *dbWrapper) AutoMigrate(values ...interface{}) error {
 	w.db = w.db.AutoMigrate(values...)
 	return w.db.Error
 }
 
-func (w *wrapper) Where(query interface{}, args ...interface{}) error {
+func (w *dbWrapper) Where(query interface{}, args ...interface{}) error {
 	w.db = w.db.Where(query, args...)
 	return w.db.Error
 }
 
-func (w *wrapper) First(out interface{}, where ...interface{}) error {
+func (w *dbWrapper) First(out interface{}, where ...interface{}) error {
 	w.db = w.db.First(out, where...)
 	return w.db.Error
 }
 
-func (w *wrapper) Create(value interface{}) error {
+func (w *dbWrapper) Create(value interface{}) error {
 	w.db = w.db.Create(value)
 	return w.db.Error
 }
 
-// NewWrapper returns an new Wrapper instance
-func NewWrapper(db *gorm.DB) Wrapper {
-	return &wrapper{
+func (w *dbWrapper) Delete(value interface{}, where ...interface{}) error {
+	w.db = w.db.Delete(value, where...)
+	return w.db.Error
+}
+
+// NewDB returns an new Wrapper instance
+func NewDB(db *gorm.DB) DB {
+	return &dbWrapper{
 		db: db,
 	}
 }
