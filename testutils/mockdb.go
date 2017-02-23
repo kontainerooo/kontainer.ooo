@@ -10,6 +10,9 @@ import (
 // ErrDBFailure is returned, when the database should return an error
 var ErrDBFailure = errors.New("database failure")
 
+// ErrNotFound is returned, when the database couldn't find the requested entity in functions which rely on finding it
+var ErrNotFound = errors.New("entity not found")
+
 // MockDB simulates a database for testing purposes
 type MockDB struct {
 	Error  error
@@ -93,6 +96,20 @@ func (m *MockDB) Create(value interface{}) error {
 	ref := reflect.TypeOf(value).Elem()
 	name := ref.String()
 	return m.tables[name].insert(value)
+}
+
+// Delete is
+func (m *MockDB) Delete(value interface{}, where ...interface{}) error {
+	if m.produceError() {
+		return ErrDBFailure
+	}
+	id := reflect.ValueOf(value).Elem().FieldByName("ID").Uint()
+	if id != 0 {
+		ref := reflect.TypeOf(value).Elem()
+		name := ref.String()
+		return m.tables[name].delete(id)
+	}
+	return ErrDBFailure
 }
 
 // NewMockDB returns new MockDB
