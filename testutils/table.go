@@ -71,6 +71,17 @@ func (t *table) find(field string, value interface{}) (interface{}, error) {
 	return result, nil
 }
 
+func (t *table) delete(id uint64) error {
+	for i, row := range t.rows {
+		v := reflect.ValueOf(row).Elem().FieldByName("ID").Uint()
+		if v == id {
+			t.rows = append(t.rows[:i], t.rows[i+1:]...)
+			return nil
+		}
+	}
+	return ErrNotFound
+}
+
 func newTable(ref reflect.Type, name string) *table {
 	_, found := ref.FieldByName("ID")
 	return &table{

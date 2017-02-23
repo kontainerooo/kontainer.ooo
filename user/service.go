@@ -9,19 +9,19 @@ type Service interface {
 	CreateUser(username string, cfg *Config, adr *Address) (uint, error)
 
 	// EditUser is used to alter user information by id
-	EditUser(id int, cfg *Config) error
+	EditUser(id uint, cfg *Config) error
 
 	// ChangeUsername is used to change a users username by id
-	ChangeUsername(id int, username string) error
+	ChangeUsername(id uint, username string) error
 
 	// DeleteUser is used to remove a user by id
-	DeleteUser(id int) error
+	DeleteUser(id uint) error
 
 	// ResetPassword is used to reset a users password and issue a reset Mail
 	ResetPassword(email string) error
 
 	// GetUser is used to gather a users data set by id
-	GetUser(id int, user *User) error
+	GetUser(id uint, user *User) error
 }
 
 type dbAdapter interface {
@@ -30,6 +30,7 @@ type dbAdapter interface {
 	Where(query interface{}, args ...interface{}) error
 	First(out interface{}, where ...interface{}) error
 	Create(value interface{}) error
+	Delete(value interface{}, where ...interface{}) error
 }
 
 type service struct {
@@ -61,19 +62,21 @@ func (s *service) CreateUser(username string, cfg *Config, adr *Address) (uint, 
 	return 0, errors.New("username already used")
 }
 
-func (s *service) EditUser(id int, cfg *Config) error {
+func (s *service) EditUser(id uint, cfg *Config) error {
 	// TODO: implement functionality
 	return nil
 }
 
-func (s *service) ChangeUsername(id int, username string) error {
+func (s *service) ChangeUsername(id uint, username string) error {
 	// TODO: implement functionality
 	return nil
 }
 
-func (s *service) DeleteUser(id int) error {
-	// TODO: implement functionality
-	return nil
+func (s *service) DeleteUser(id uint) error {
+	err := s.db.Delete(&User{
+		ID: id,
+	})
+	return err
 }
 
 func (s *service) ResetPassword(email string) error {
@@ -81,7 +84,7 @@ func (s *service) ResetPassword(email string) error {
 	return nil
 }
 
-func (s *service) GetUser(id int, user *User) error {
+func (s *service) GetUser(id uint, user *User) error {
 	// TODO: implement functionality
 	return nil
 }

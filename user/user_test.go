@@ -41,12 +41,32 @@ var _ = Describe("User", func() {
 		It("Should return error on db failure", func() {
 			db.SetError(2)
 			_, err := userService.CreateUser("username2", &user.Config{}, &user.Address{})
-			db.PrintTables()
 			Ω(err).Should(HaveOccurred())
 		})
 
-		// TODO
-		// It("Should not add address if user can't be created", func() {
-		// })
+		PIt("Should not add address if user can't be created")
 	})
+
+	Describe("Delete User", func() {
+		db := testutils.NewMockDB()
+		userService, _ := user.NewService(db)
+		It("Should remove User from DB", func() {
+			id, _ := userService.CreateUser("username", &user.Config{}, &user.Address{})
+			err := userService.DeleteUser(id)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should return error on db failure", func() {
+			id, _ := userService.CreateUser("username", &user.Config{}, &user.Address{})
+			db.SetError(1)
+			err := userService.DeleteUser(id)
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Should return error if ID does not exist", func() {
+			err := userService.DeleteUser(24)
+			Ω(err).Should(BeEquivalentTo(testutils.ErrNotFound))
+		})
+	})
+
 })
