@@ -1,0 +1,10 @@
+#! /bin/sh
+
+# This is a dummy file needed to bring up the docker infrastructure
+# when there is no binary yet
+echo "This is just a dummy file"
+while :
+    do
+        echo 'Hit CTRL+C'
+        sleep 1
+    done
