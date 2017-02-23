@@ -4,6 +4,7 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
+	"github.com/ttdennis/kontainer.io/dbwrap"
 	"github.com/ttdennis/kontainer.io/user"
 )
 
@@ -14,7 +15,9 @@ func main() {
 	}
 	defer db.Close()
 
-	_, err = user.NewService(db)
+	dbWrapper := dbwrap.NewWrapper(db)
+
+	_, err = user.NewService(dbWrapper)
 	if err != nil {
 		panic(err)
 	}
