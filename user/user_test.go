@@ -41,10 +41,12 @@ var _ = Describe("User", func() {
 		It("Should return error on db failure", func() {
 			db.SetError(2)
 			_, err := userService.CreateUser("username2", &user.Config{}, &user.Address{})
-			Ω(err).Should(HaveOccurred())
-			db.SetError(3)
-			_, err = userService.CreateUser("username2", &user.Config{}, &user.Address{})
+			db.PrintTables()
 			Ω(err).Should(HaveOccurred())
 		})
+
+		// TODO
+		// It("Should not add address if user can't be created", func() {
+		// })
 	})
 })

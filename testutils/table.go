@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 )
 
@@ -12,6 +13,14 @@ type table struct {
 	ref   reflect.Type
 	idx   bool
 	count uint
+}
+
+func (t *table) String() string {
+	s := fmt.Sprintf("Table: %s\n", t.Name)
+	for i, r := range t.rows {
+		s += fmt.Sprintf("ID: %d - %v\n", i, r)
+	}
+	return s
 }
 
 func (t *table) checkForField(f string) bool {
