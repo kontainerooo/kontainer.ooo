@@ -1,15 +1,13 @@
 // Package user provides functionalities to handle Users in the context of kontainer.io
 package user
 
-import "github.com/jinzhu/gorm"
-
 // The Service interface describes the function necessary for kontainer.io user handling
 type Service interface {
 	// CreateUser creates a new User and returns its id
-	CreateUser(username string, cfg *Config, adr *Address) (int, error)
+	CreateUser(username string, cfg *Config, adr *Address) (uint, error)
 
 	// EditUser is used to alter user information by id
-	EditUser(id int, cfg *Config, adr *Address) error
+	EditUser(id int, cfg *Config) error
 
 	// ChangeUsername is used to change a users username by id
 	ChangeUsername(id int, username string) error
@@ -25,7 +23,11 @@ type Service interface {
 }
 
 type dbAdapter interface {
-	AutoMigrate(values ...interface{}) *gorm.DB
+	GetValue() interface{}
+	AutoMigrate(values ...interface{}) error
+	Where(query interface{}, args ...interface{}) error
+	First(out interface{}, where ...interface{}) error
+	Create(value interface{}) error
 }
 
 type service struct {
@@ -33,16 +35,15 @@ type service struct {
 }
 
 func (s *service) InitializeDatabases() error {
-	s.db.AutoMigrate(&Address{}, &User{}, &Customer{})
-	return nil
+	return s.db.AutoMigrate(&Address{}, &User{}, &Customer{})
 }
 
-func (s *service) CreateUser(username string, cfg *Config, adr *Address) (int, error) {
+func (s *service) CreateUser(username string, cfg *Config, adr *Address) (uint, error) {
 	// TODO: implement functionality
 	return 0, nil
 }
 
-func (s *service) EditUser(id int, cfg *Config, adr *Address) error {
+func (s *service) EditUser(id int, cfg *Config) error {
 	// TODO: implement functionality
 	return nil
 }
