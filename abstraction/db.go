@@ -24,10 +24,12 @@ type DB interface {
 	First(out interface{}, where ...interface{}) error
 	Create(value interface{}) error
 	Delete(value interface{}, where ...interface{}) error
+	Update(attrs ...interface{}) error
 }
 
 type dbWrapper struct {
-	db *gorm.DB
+	db    *gorm.DB
+	scope *gorm.DB
 }
 
 func (w *dbWrapper) GetAffectedRows() int64 {
@@ -39,18 +41,18 @@ func (w *dbWrapper) GetValue() interface{} {
 }
 
 func (w *dbWrapper) AutoMigrate(values ...interface{}) error {
-	w.db = w.db.AutoMigrate(values...)
-	return w.db.Error
+	w.scope = w.db.AutoMigrate(values...)
+	return w.scope.Error
 }
 
 func (w *dbWrapper) Where(query interface{}, args ...interface{}) error {
-	w.db = w.db.Where(query, args...)
-	return w.db.Error
+	w.scope = w.db.Where(query, args...)
+	return w.scope.Error
 }
 
 func (w *dbWrapper) First(out interface{}, where ...interface{}) error {
-	w.db = w.db.First(out, where...)
-	return w.db.Error
+	w.scope = w.scope.First(out, where...)
+	return w.scope.Error
 }
 
 func (w *dbWrapper) Create(value interface{}) error {
@@ -59,7 +61,12 @@ func (w *dbWrapper) Create(value interface{}) error {
 }
 
 func (w *dbWrapper) Delete(value interface{}, where ...interface{}) error {
-	w.db = w.db.Delete(value, where...)
+	w.scope = w.db.Delete(value, where...)
+	return w.scope.Error
+}
+
+func (w *dbWrapper) Update(attrs ...interface{}) error {
+	w.scope = w.db.Update(attrs...)
 	return w.db.Error
 }
 
