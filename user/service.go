@@ -31,6 +31,7 @@ type dbAdapter interface {
 	First(out interface{}, where ...interface{}) error
 	Create(value interface{}) error
 	Delete(value interface{}, where ...interface{}) error
+	Update(attrs ...interface{}) error
 }
 
 type service struct {
@@ -43,23 +44,25 @@ func (s *service) InitializeDatabases() error {
 
 func (s *service) CreateUser(username string, cfg *Config, adr *Address) (uint, error) {
 	s.db.Where("username = ?", username)
-	if s.db.GetValue() == nil {
-		err := s.db.Create(adr)
-		if err != nil {
-			return 0, err
-		}
-
-		cfg.AddressID = adr.ID
-		user := &User{Username: username}
-		user.setConfig(cfg)
-		err = s.db.Create(user)
-		if err != nil {
-			//TODO: Delete Address/ Transactions?
-			return 0, err
-		}
-		return user.ID, nil
+	res := s.db.GetValue()
+	if res != nil && res != (&User{}) {
+		return 0, errors.New("username already used")
 	}
-	return 0, errors.New("username already used")
+
+	err := s.db.Create(adr)
+	if err != nil {
+		return 0, err
+	}
+
+	cfg.AddressID = adr.ID
+	user := &User{Username: username}
+	user.setConfig(cfg)
+	err = s.db.Create(user)
+	if err != nil {
+		//TODO: Delete Address/ Transactions?
+		return 0, err
+	}
+	return user.ID, nil
 }
 
 func (s *service) EditUser(id uint, cfg *Config) error {
@@ -68,7 +71,15 @@ func (s *service) EditUser(id uint, cfg *Config) error {
 }
 
 func (s *service) ChangeUsername(id uint, username string) error {
-	// TODO: implement functionality
+	err := s.db.Where("ID = ?", id)
+	if err != nil {
+		return err
+	}
+
+	err = s.db.Update(&User{Username: username})
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -85,7 +96,15 @@ func (s *service) ResetPassword(email string) error {
 }
 
 func (s *service) GetUser(id uint, user *User) error {
-	// TODO: implement functionality
+	err := s.db.Where("ID = ?", id)
+	if err != nil {
+		return err
+	}
+
+	err = s.db.First(user)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

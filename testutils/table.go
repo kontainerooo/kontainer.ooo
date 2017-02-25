@@ -31,7 +31,7 @@ func (t *table) checkForField(f string) bool {
 func (t *table) typeCheck(i interface{}) error {
 	typ := reflect.TypeOf(i)
 	if typ != reflect.PtrTo(t.ref) && typ != t.ref {
-		return errors.New("type missmatch")
+		return ErrTypeMismatch
 	}
 	return nil
 }
@@ -53,20 +53,28 @@ func (t *table) insert(row interface{}) error {
 	return nil
 }
 
-func (t *table) find(field string, value interface{}) (interface{}, error) {
+func (t *table) find(field string, value interface{}) (reflect.Value, error) {
 	_, found := t.ref.FieldByName(field)
 	if !found {
-		return nil, errors.New("field name not in struct")
+		return reflect.ValueOf(nil), errors.New("field name not in struct")
 	}
 	result := reflect.MakeSlice(reflect.SliceOf(reflect.PtrTo(t.ref)), 0, 0)
 	for _, row := range t.rows {
-		v := reflect.ValueOf(row).Elem().FieldByName(field).String()
-		if v == value {
-			result = reflect.Append(result, reflect.ValueOf(row))
+		if reflect.TypeOf(value).Kind() == reflect.Uint {
+			v := reflect.ValueOf(row).Elem().FieldByName(field).Uint()
+			if uint(v) == value {
+				result = reflect.Append(result, reflect.ValueOf(row))
+			}
+		} else {
+			v := reflect.ValueOf(row).Elem().FieldByName(field).String()
+			if v == value {
+				result = reflect.Append(result, reflect.ValueOf(row))
+			}
 		}
 	}
+
 	if result.Len() == 0 {
-		return nil, nil
+		return reflect.ValueOf(nil), nil
 	}
 	return result, nil
 }

@@ -47,6 +47,31 @@ var _ = Describe("User", func() {
 		PIt("Should not add address if user can't be created")
 	})
 
+	Describe("Change Username", func() {
+		db := testutils.NewMockDB()
+		userService, _ := user.NewService(db)
+		It("Should rename User", func() {
+			id, _ := userService.CreateUser("foo", &user.Config{}, &user.Address{})
+			username := "bar"
+			err := userService.ChangeUsername(id, username)
+			Ω(err).ShouldNot(HaveOccurred())
+			user := &user.User{}
+			userService.GetUser(id, user)
+			Expect(user.Username).To(BeEquivalentTo(username))
+		})
+
+		It("Should return error on db failure", func() {
+			id, _ := userService.CreateUser("foo", &user.Config{}, &user.Address{})
+			db.SetError(1)
+			err := userService.ChangeUsername(id, "bar")
+			Ω(err).Should(HaveOccurred())
+
+			db.SetError(2)
+			err = userService.ChangeUsername(id, "bar")
+			Ω(err).Should(HaveOccurred())
+		})
+	})
+
 	Describe("Delete User", func() {
 		db := testutils.NewMockDB()
 		userService, _ := user.NewService(db)
@@ -66,6 +91,32 @@ var _ = Describe("User", func() {
 		It("Should return error if ID does not exist", func() {
 			err := userService.DeleteUser(24)
 			Ω(err).Should(BeEquivalentTo(testutils.ErrNotFound))
+		})
+	})
+
+	Describe("GetUser", func() {
+		db := testutils.NewMockDB()
+		userService, _ := user.NewService(db)
+		It("Should fill user struct", func() {
+			username := "username"
+			id, _ := userService.CreateUser(username, &user.Config{}, &user.Address{})
+			user := &user.User{}
+			err := userService.GetUser(id, user)
+			Ω(err).ShouldNot(HaveOccurred())
+			Expect(user.Username).To(BeEquivalentTo(username))
+		})
+
+		It("Should return error if ID does not exist", func() {
+			user := &user.User{}
+			err := userService.GetUser(28, user)
+			Ω(err).Should(BeEquivalentTo(testutils.ErrNotFound))
+		})
+
+		It("Should return error on db failure", func() {
+			user := &user.User{}
+			db.SetError(1)
+			err := userService.GetUser(1, user)
+			Ω(err).Should(HaveOccurred())
 		})
 	})
 
