@@ -6,9 +6,16 @@
 
 package abstraction
 
-import (
-	"github.com/jinzhu/gorm"
-)
+import "github.com/jinzhu/gorm"
+
+// DBAdapter includes functions used for Transactions and Getters
+type DBAdapter interface {
+	Begin()
+	Rollback()
+	Commit()
+	GetValue() interface{}
+	GetAffectedRows() int64
+}
 
 // DB is an Interface to abstract gorm Database Functions
 type DB interface {
@@ -19,17 +26,20 @@ type DB interface {
 	GetValue() interface{}
 
 	// Every function below invokes gorm.DB's function and returns gorm.DB's Error property
+	Begin()
+	Rollback()
+	Commit()
 	AutoMigrate(values ...interface{}) error
 	Where(query interface{}, args ...interface{}) error
 	First(out interface{}, where ...interface{}) error
 	Create(value interface{}) error
 	Delete(value interface{}, where ...interface{}) error
-	Update(attrs ...interface{}) error
+	Update(model interface{}, attrs ...interface{}) error
 }
 
 type dbWrapper struct {
-	db    *gorm.DB
-	scope *gorm.DB
+	db *gorm.DB
+	tx *gorm.DB
 }
 
 func (w *dbWrapper) GetAffectedRows() int64 {
@@ -40,34 +50,65 @@ func (w *dbWrapper) GetValue() interface{} {
 	return w.db.Value
 }
 
+func (w *dbWrapper) Begin() {
+	w.tx = w.db.Begin()
+}
+
+func (w *dbWrapper) resetTransaction() {
+	w.tx = nil
+}
+
+func (w *dbWrapper) Rollback() {
+	defer w.resetTransaction()
+	w.tx.Rollback()
+}
+
+func (w *dbWrapper) Commit() {
+	defer w.resetTransaction()
+	w.tx.Commit()
+}
+
 func (w *dbWrapper) AutoMigrate(values ...interface{}) error {
-	w.scope = w.db.AutoMigrate(values...)
-	return w.scope.Error
+	if w.tx != nil {
+		return w.tx.AutoMigrate(values...).Error
+	}
+	return w.db.AutoMigrate(values...).Error
 }
 
 func (w *dbWrapper) Where(query interface{}, args ...interface{}) error {
-	w.scope = w.db.Where(query, args...)
-	return w.scope.Error
+	if w.tx != nil {
+		w.tx = w.tx.Where(query, args...)
+		return w.tx.Error
+	}
+	return w.db.Where(query, args...).Error
 }
 
 func (w *dbWrapper) First(out interface{}, where ...interface{}) error {
-	w.scope = w.scope.First(out, where...)
-	return w.scope.Error
+	if w.tx != nil {
+		return w.tx.First(out, where...).Error
+	}
+	return w.db.First(out, where...).Error
 }
 
 func (w *dbWrapper) Create(value interface{}) error {
-	w.db = w.db.Create(value)
-	return w.db.Error
+	if w.tx != nil {
+		return w.tx.Create(value).Error
+	}
+	return w.db.Create(value).Error
 }
 
 func (w *dbWrapper) Delete(value interface{}, where ...interface{}) error {
-	w.scope = w.db.Delete(value, where...)
-	return w.scope.Error
+	if w.tx != nil {
+		return w.tx.Delete(value, where...).Error
+	}
+	return w.db.Delete(value, where...).Error
 }
 
-func (w *dbWrapper) Update(attrs ...interface{}) error {
-	w.scope = w.db.Update(attrs...)
-	return w.db.Error
+func (w *dbWrapper) Update(model interface{}, attrs ...interface{}) error {
+	if w.tx != nil {
+		return w.tx.Model(model).Update(attrs...).Error
+	}
+	return w.db.Model(model).Update(attrs...).Error
 }
 
 // NewDB returns an new Wrapper instance

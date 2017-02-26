@@ -1,7 +1,11 @@
 // Package user provides functionalities to handle Users in the context of kontainer.io
 package user
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/ttdennis/kontainer.io/pkg/abstraction"
+)
 
 // The Service interface describes the function necessary for kontainer.io user handling
 type Service interface {
@@ -22,16 +26,18 @@ type Service interface {
 
 	// GetUser is used to gather a users data set by id
 	GetUser(id uint, user *User) error
+
+	getDB() abstraction.DBAdapter
 }
 
 type dbAdapter interface {
-	GetValue() interface{}
-	AutoMigrate(values ...interface{}) error
-	Where(query interface{}, args ...interface{}) error
-	First(out interface{}, where ...interface{}) error
-	Create(value interface{}) error
-	Delete(value interface{}, where ...interface{}) error
-	Update(attrs ...interface{}) error
+	abstraction.DBAdapter
+	AutoMigrate(...interface{}) error
+	Where(interface{}, ...interface{}) error
+	First(interface{}, ...interface{}) error
+	Create(interface{}) error
+	Delete(interface{}, ...interface{}) error
+	Update(interface{}, ...interface{}) error
 }
 
 type service struct {
@@ -40,6 +46,10 @@ type service struct {
 
 func (s *service) InitializeDatabases() error {
 	return s.db.AutoMigrate(&Address{}, &User{}, &Customer{})
+}
+
+func (s *service) getDB() abstraction.DBAdapter {
+	return s.db
 }
 
 func (s *service) CreateUser(username string, cfg *Config, adr *Address) (uint, error) {
@@ -59,7 +69,6 @@ func (s *service) CreateUser(username string, cfg *Config, adr *Address) (uint, 
 	user.setConfig(cfg)
 	err = s.db.Create(user)
 	if err != nil {
-		//TODO: Delete Address/ Transactions?
 		return 0, err
 	}
 	return user.ID, nil
@@ -71,7 +80,7 @@ func (s *service) EditUser(id uint, cfg *Config) error {
 		return err
 	}
 
-	err = s.db.Update((&User{}).setConfig(cfg))
+	err = s.db.Update(&User{}, (&User{}).setConfig(cfg))
 	if err != nil {
 		return err
 	}
@@ -84,7 +93,7 @@ func (s *service) ChangeUsername(id uint, username string) error {
 		return err
 	}
 
-	err = s.db.Update(&User{Username: username})
+	err = s.db.Update(&User{}, &User{Username: username})
 	if err != nil {
 		return err
 	}

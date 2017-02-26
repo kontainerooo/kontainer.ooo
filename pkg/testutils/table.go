@@ -23,6 +23,21 @@ func (t *table) String() string {
 	return s
 }
 
+func (t *table) copy() *table {
+	nt := &table{
+		Name:  t.Name,
+		ref:   t.ref,
+		idx:   t.idx,
+		count: t.count,
+	}
+
+	for _, r := range t.rows {
+		nt.rows = append(nt.rows, *(&r))
+	}
+
+	return nt
+}
+
 func (t *table) checkForField(f string) bool {
 	_, found := t.ref.FieldByName(f)
 	return found
