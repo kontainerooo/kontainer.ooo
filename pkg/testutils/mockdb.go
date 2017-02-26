@@ -30,6 +30,7 @@ type result struct {
 type MockDB struct {
 	Error      error
 	tables     map[string]*table
+	rollback   map[string]*table
 	err        int
 	value      reflect.Value
 	multiValue []*result
@@ -58,12 +59,36 @@ func (m *MockDB) PrintTables() {
 	}
 }
 
+// Begin begin transaction
+func (m *MockDB) Begin() {
+	m.rollback = make(map[string]*table)
+	for name, t := range m.tables {
+		m.rollback[name] = t.copy()
+	}
+}
+
+// Rollback rollback transaction
+func (m *MockDB) Rollback() {
+	m.tables = m.rollback
+	m.rollback = nil
+}
+
+// Commit commit transaction
+func (m *MockDB) Commit() {
+	m.rollback = nil
+}
+
 // GetValue returns mockDB's value property
 func (m *MockDB) GetValue() interface{} {
 	if m.value == RNil {
 		return nil
 	}
 	return m.value
+}
+
+// GetAffectedRows returns 0
+func (m *MockDB) GetAffectedRows() int64 {
+	return 0
 }
 
 // AutoMigrate creates new Tables in the database based on the values array
@@ -79,7 +104,7 @@ func (m *MockDB) AutoMigrate(values ...interface{}) error {
 	return nil
 }
 
-// Where is
+// Where mocks gorm.DBs Where function
 func (m *MockDB) Where(query interface{}, args ...interface{}) error {
 	if m.produceError() {
 		return ErrDBFailure
@@ -111,7 +136,7 @@ func (m *MockDB) Where(query interface{}, args ...interface{}) error {
 	return nil
 }
 
-// First is
+// First mocks gorm.DBs First function
 func (m *MockDB) First(out interface{}, where ...interface{}) error {
 	if m.produceError() {
 		return ErrDBFailure
@@ -140,7 +165,7 @@ func (m *MockDB) First(out interface{}, where ...interface{}) error {
 	return nil
 }
 
-// Create is
+// Create mocks gorm.DBs Create function
 func (m *MockDB) Create(value interface{}) error {
 	if m.produceError() {
 		return ErrDBFailure
@@ -150,7 +175,7 @@ func (m *MockDB) Create(value interface{}) error {
 	return m.tables[name].insert(value)
 }
 
-// Delete is
+// Delete mocks gorm.DBs Delete function
 func (m *MockDB) Delete(value interface{}, where ...interface{}) error {
 	if m.produceError() {
 		return ErrDBFailure
@@ -164,14 +189,14 @@ func (m *MockDB) Delete(value interface{}, where ...interface{}) error {
 	return ErrDBFailure
 }
 
-// Update is
-func (m *MockDB) Update(attrs ...interface{}) error {
+// Update mocks gorm.DBs Update function
+func (m *MockDB) Update(model interface{}, attrs ...interface{}) error {
 	if m.produceError() {
 		return ErrDBFailure
 	}
 
 	if m.value == RNil && m.multiValue != nil {
-		ref := reflect.TypeOf(attrs[0]).Elem()
+		ref := reflect.TypeOf(model).Elem()
 		name := ref.String()
 		for _, res := range m.multiValue {
 			if res.table == name {

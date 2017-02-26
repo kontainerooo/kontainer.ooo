@@ -17,8 +17,9 @@ func main() {
 
 	dbWrapper := abstraction.NewDB(db)
 
-	_, err = user.NewService(dbWrapper)
+	userService, err := user.NewService(dbWrapper)
 	if err != nil {
 		panic(err)
 	}
+	_ = user.NewTransactionBasedService(userService)
 }

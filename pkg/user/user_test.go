@@ -27,6 +27,7 @@ var _ = Describe("User", func() {
 	Describe("Create User", func() {
 		db := testutils.NewMockDB()
 		userService, _ := user.NewService(db)
+		userService = user.NewTransactionBasedService(userService)
 		It("Should create user with new username", func() {
 			id, err := userService.CreateUser("username", &user.Config{}, &user.Address{})
 			Ω(err).ShouldNot(HaveOccurred())
@@ -44,7 +45,14 @@ var _ = Describe("User", func() {
 			Ω(err).Should(HaveOccurred())
 		})
 
-		PIt("Should not add address if user can't be created")
+		It("Should not add address if user can't be created", func() {
+			db.SetError(3)
+			city := "city"
+			_, err := userService.CreateUser("username3", &user.Config{}, &user.Address{City: city})
+			Ω(err).Should(HaveOccurred())
+			db.Where("city = ?", city)
+			Ω(db.GetValue()).Should(BeNil())
+		})
 	})
 
 	Describe("Edit User", func() {
