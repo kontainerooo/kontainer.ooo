@@ -4,8 +4,8 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
-	"github.com/ttdennis/kontainer.io/abstraction"
-	"github.com/ttdennis/kontainer.io/user"
+	"github.com/ttdennis/kontainer.io/pkg/abstraction"
+	"github.com/ttdennis/kontainer.io/pkg/user"
 )
 
 func main() {
