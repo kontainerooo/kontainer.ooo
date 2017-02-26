@@ -47,6 +47,31 @@ var _ = Describe("User", func() {
 		PIt("Should not add address if user can't be created")
 	})
 
+	Describe("Edit User", func() {
+		db := testutils.NewMockDB()
+		userService, _ := user.NewService(db)
+		It("Should change User Config", func() {
+			id, _ := userService.CreateUser("foo", &user.Config{Email: "test@abc.com"}, &user.Address{})
+			email := "new@abc.com"
+			err := userService.EditUser(id, &user.Config{Email: email})
+			Ω(err).ShouldNot(HaveOccurred())
+			user := &user.User{}
+			userService.GetUser(id, user)
+			Expect(user.Email).To(BeEquivalentTo(email))
+		})
+
+		It("Should return error on db failure", func() {
+			id, _ := userService.CreateUser("foo", &user.Config{}, &user.Address{})
+			db.SetError(1)
+			err := userService.EditUser(id, &user.Config{Email: "email"})
+			Ω(err).Should(HaveOccurred())
+
+			db.SetError(2)
+			err = userService.EditUser(id, &user.Config{Email: "email"})
+			Ω(err).Should(HaveOccurred())
+		})
+	})
+
 	Describe("Change Username", func() {
 		db := testutils.NewMockDB()
 		userService, _ := user.NewService(db)

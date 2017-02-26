@@ -66,7 +66,15 @@ func (s *service) CreateUser(username string, cfg *Config, adr *Address) (uint, 
 }
 
 func (s *service) EditUser(id uint, cfg *Config) error {
-	// TODO: implement functionality
+	err := s.db.Where("ID = ?", id)
+	if err != nil {
+		return err
+	}
+
+	err = s.db.Update((&User{}).setConfig(cfg))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
