@@ -1,8 +1,8 @@
 package user_test
 
 import (
-	"github.com/ttdennis/kontainer.io/testutils"
-	"github.com/ttdennis/kontainer.io/user"
+	"github.com/ttdennis/kontainer.io/pkg/testutils"
+	"github.com/ttdennis/kontainer.io/pkg/user"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
