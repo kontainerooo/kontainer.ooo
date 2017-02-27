@@ -1,10 +1,15 @@
-ANGULAR_CLI=ng
+mkfile_path := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
+ANGULAR_CLI=ng
+CMD_DIRS=$(wildcard cmd/*)
+PKG_DIRS=$(wildcard pkg/*)
+
+.PHONY: force
 
 all: fe be all-scripts
 
 fe:
-	cd ./frontend && $(ANGULAR_CLI) build
+	cd ./frontend && npm install && $(ANGULAR_CLI) build
 
 fe-watch:
 	cd ./frontend && $(ANGULAR_CLI) build --watch
@@ -12,8 +17,10 @@ fe-watch:
 all-scripts:
 	$(MAKE) -C ./scripts
 
-be: all-services cmds
+be: $(PKG_DIRS) $(CMD_DIRS)
 
-all-services: # empty as of now
+$(CMD_DIRS): force
+	cd $@ && export GOOS="linux" && go get && go build -o $(mkfile_path)/build/$(notdir $@)
 
-cmds: # empty as of now
+$(PKG_DIRS): force
+	cd $@ && go get && go test -short && export GOOS="linux" && go build
