@@ -1,5 +1,7 @@
 import { Component, Input, OnChanges, ElementRef, Renderer } from '@angular/core';
 
+import { SideNavElement } from '../../interfaces/side-nav-element';
+
 @Component({
   selector: 'kio-account',
   templateUrl: './account.component.html',
@@ -10,7 +12,22 @@ export class AccountComponent implements OnChanges {
   @Input() realname: string;
   @Input() username: string;
 
-  constructor(private elRef: ElementRef, private renderer: Renderer) { }
+  navigation: SideNavElement[];
+
+  constructor(private elRef: ElementRef, private renderer: Renderer) {
+    this.navigation = [
+      {
+        title: "Profile Settings",
+        icon: "settings",
+        route: "#"
+      },
+      {
+        title: "Logout",
+        icon: "exit_to_app",
+        route: "/sign-in"
+      }
+    ];
+  }
 
   ngOnChanges() {
     this.setBackground();
