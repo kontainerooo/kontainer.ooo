@@ -37,3 +37,5 @@ script:
     - cd frontend
     - karma start karma.conf.js --single-run
     - cd ..
+    # Test go
+    - make be
