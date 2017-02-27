@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	db, err := gorm.Open("postgres", "host=localhost user=postgres sslmode=disable")
+	db, err := gorm.Open("postgres", "host=postgres user=postgres sslmode=disable")
 	if err != nil {
 		panic(err)
 	}
