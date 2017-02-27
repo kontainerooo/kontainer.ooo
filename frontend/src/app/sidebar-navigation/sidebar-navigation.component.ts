@@ -22,7 +22,7 @@ export class SidebarNavigationComponent implements OnInit {
         icon: "view_module",
         route: "/dashboard"
       }
-    ]
+    ];
   }
 
   ngOnInit() {
