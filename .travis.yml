@@ -6,11 +6,6 @@ sudo: true
 env:
     - TRAVIS_NODE_VERSION="stable"
 
-cache:
-  directories:
-  - $(npm root -g)
-  - $(npm root)
-
 before_install:
     - export CHROME_BIN=chromium-browser
     - export DISPLAY=:99.0
