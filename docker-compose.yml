@@ -13,9 +13,8 @@ services:
     postgres:
         image: postgres
         container_name: postgres
-        environment:
-            - POSTGRES_PASSWORD=password
-            - POSTGRES_USER=postgres
+        expose:
+            - "5432"
 
     kio:
         image: docker:dind
@@ -27,7 +26,7 @@ services:
             - /var/run/docker.sock:/tmp/docker.sock:ro
         expose:
             - "8080"
-        command: /bin/sh -c "/kio/kio"
+        command: /kio/kio
         environment:
             - VIRTUAL_HOST=api.*
         links:
