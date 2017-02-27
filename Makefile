@@ -24,3 +24,6 @@ $(CMD_DIRS): force
 
 $(PKG_DIRS): force
 	cd $@ && go get && go test -short && export GOOS="linux" && go build
+
+clean:
+	rm -rf build && mkdir build && touch build/.gitkeep
