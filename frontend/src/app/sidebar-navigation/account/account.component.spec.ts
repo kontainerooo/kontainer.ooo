@@ -19,7 +19,8 @@ describe('AccountComponent', () => {
   beforeEach(async(() => {
     TestBed.configureTestingModule({
       declarations: [
-          AccountComponent
+          AccountComponent,
+          RouterLinkStubDirective
       ],
       imports: [
           MaterialModule
