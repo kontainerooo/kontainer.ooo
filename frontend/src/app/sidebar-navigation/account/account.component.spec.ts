@@ -48,13 +48,13 @@ describe('AccountComponent', () => {
     it('should get all router links from template', () => {
       expect(links.length).toBe(component.navigation.length, 'should have as links as the component navigation');
 
-      for(let i: number = 0; i < links.length; i++) {
+      for(let i in links) {
         expect(links[i].linkParams).toBe(component.navigation[i].route, `link ${i} should go to SignIn`);
       }
     });
 
     it('should route to the component defined sites', () => {
-      for(let i: number = 0; i < links.length; i++) {
+      for(let i in links) {
         checkRouteClick(linkDes[i], links[i], component.navigation[i].route);
       }
     });
