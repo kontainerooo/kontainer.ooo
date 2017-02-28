@@ -23,7 +23,7 @@ $(CMD_DIRS): force
 	cd $@ && export GOOS="linux" && go get && go build -o $(mkfile_path)/build/$(notdir $@)
 
 $(PKG_DIRS): force
-	cd $@ && go get && go test -short && export GOOS="linux" && go build
+	cd $@ && go get -t && go test -short && export GOOS="linux" && go build
 
 clean:
 	rm -rf build && mkdir build && touch build/.gitkeep
