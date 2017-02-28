@@ -11,6 +11,8 @@ import { SidebarNavigationComponent } from '../../sidebar-navigation/sidebar-nav
 import { AccountComponent } from '../../sidebar-navigation/account/account.component';
 import { AvatarComponent } from '../../sidebar-navigation/account/avatar/avatar.component';
 
+import { RouterLinkStubDirective } from '../../../testing/router-stubs';
+
 describe('DashboardComponent', () => {
   let component: DashboardComponent;
   let fixture: ComponentFixture<DashboardComponent>;
@@ -22,7 +24,8 @@ describe('DashboardComponent', () => {
           DashboardToolbarComponent,
           SidebarNavigationComponent,
           AccountComponent,
-          AvatarComponent
+          AvatarComponent,
+          RouterLinkStubDirective
       ],
       imports: [
           MaterialModule
