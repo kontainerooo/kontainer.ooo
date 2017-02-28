@@ -19,7 +19,8 @@ describe('AccountComponent', () => {
   beforeEach(async(() => {
     TestBed.configureTestingModule({
       declarations: [
-          AccountComponent
+          AccountComponent,
+          RouterLinkStubDirective
       ],
       imports: [
           MaterialModule
@@ -45,12 +46,17 @@ describe('AccountComponent', () => {
 
   it('should route correctly', () => {
     it('should get all router links from template', () => {
-      expect(links.length).toBe(1, 'should have 1 link');
-      expect(links[0].linkParams).toBe('/sign-in', '1st link should go to SignIn');
+      expect(links.length).toBe(component.navigation.length, 'should have as links as the component navigation');
+
+      for(let i in links) {
+        expect(links[i].linkParams).toBe(component.navigation[i].route, `link ${i} should go to SignIn`);
+      }
     });
 
-    it('should route to the sign-in on logout item', () => {
-      checkRouteClick(linkDes[0], links[0], '/sign-in');
+    it('should route to the component defined sites', () => {
+      for(let i in links) {
+        checkRouteClick(linkDes[i], links[i], component.navigation[i].route);
+      }
     });
   });
 
