@@ -32,7 +32,7 @@ $(PKG_DIRS): force
 proto: $(PROTOC_DIRS)
 
 $(PROTOC_DIRS): force
-	$(PROTOC) $(PROTOC_OPTS) --go_out=pkg/$(basename $(notdir $@)) ./messages/$(basename $(notdir $@)).proto
+	$(PROTOC) $(PROTOC_OPTS) --go_out=pkg/$(basename $(notdir $@))/pb ./messages/$(basename $(notdir $@)).proto
 
 clean:
 	rm -rf build && mkdir build && touch build/.gitkeep
