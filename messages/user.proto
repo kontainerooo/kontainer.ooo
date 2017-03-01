@@ -1,7 +1,7 @@
 syntax = "proto3";
 package user;
 
-message AddressPB {
+message Address {
   uint32 ID = 1;
   string postcode = 2;
   string city = 3;
@@ -11,25 +11,25 @@ message AddressPB {
   string additional = 15;
 }
 
-message ConfigPB {
+message Config {
   bool admin = 1;
   string email = 2;
   string password = 3;
   string salt = 4;
-  AddressPB address = 5;
+  Address address = 5;
   string phone = 6;
   string image = 15;
 }
 
-message UserPB {
+message User {
   uint32 ID = 1;
   string username = 2;
-  ConfigPB config = 3;
+  Config config = 3;
 }
 
 message CreateUserRequest {
   string username = 1;
-  ConfigPB config = 2;
+  Config config = 2;
 }
 
 message CreateUserResponse {
@@ -39,7 +39,7 @@ message CreateUserResponse {
 
 message EditUserRequest {
   uint32 ID = 1;
-  ConfigPB config = 2;
+  Config config = 2;
 }
 
 message EditUserResponse {
@@ -76,7 +76,7 @@ message GetUserRequest {
 }
 
 message GetUserResponse {
-  UserPB user = 1;
+  User user = 1;
   string error = 2;
 }
 

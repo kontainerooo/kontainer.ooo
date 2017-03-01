@@ -58,6 +58,7 @@ var _ = Describe("User", func() {
 	Describe("Edit User", func() {
 		db := testutils.NewMockDB()
 		userService, _ := user.NewService(db)
+		userService = user.NewTransactionBasedService(userService)
 		It("Should change User Config", func() {
 			id, _ := userService.CreateUser("foo", &user.Config{Email: "test@abc.com"}, &user.Address{})
 			email := "new@abc.com"
@@ -83,6 +84,7 @@ var _ = Describe("User", func() {
 	Describe("Change Username", func() {
 		db := testutils.NewMockDB()
 		userService, _ := user.NewService(db)
+		userService = user.NewTransactionBasedService(userService)
 		It("Should rename User", func() {
 			id, _ := userService.CreateUser("foo", &user.Config{}, &user.Address{})
 			username := "bar"
@@ -108,6 +110,7 @@ var _ = Describe("User", func() {
 	Describe("Delete User", func() {
 		db := testutils.NewMockDB()
 		userService, _ := user.NewService(db)
+		userService = user.NewTransactionBasedService(userService)
 		It("Should remove User from DB", func() {
 			id, _ := userService.CreateUser("username", &user.Config{}, &user.Address{})
 			err := userService.DeleteUser(id)
@@ -130,6 +133,7 @@ var _ = Describe("User", func() {
 	Describe("GetUser", func() {
 		db := testutils.NewMockDB()
 		userService, _ := user.NewService(db)
+		userService = user.NewTransactionBasedService(userService)
 		It("Should fill user struct", func() {
 			username := "username"
 			id, _ := userService.CreateUser(username, &user.Config{}, &user.Address{})
