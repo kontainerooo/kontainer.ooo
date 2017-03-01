@@ -1,7 +1,7 @@
-package containerLifecycle_test
+package containerlifecycle_test
 
 import (
-	"github.com/ttdennis/kontainer.io/pkg/containerLifecycle"
+	"github.com/ttdennis/kontainer.io/pkg/containerlifecycle"
 	"github.com/ttdennis/kontainer.io/pkg/testutils"
 
 	. "github.com/onsi/ginkgo"
@@ -11,14 +11,14 @@ import (
 var _ = Describe("Container Lifecycle", func() {
 	Describe("Create Service", func() {
 		It("Should create Service", func() {
-			cls := containerLifecycle.NewService(testutils.NewMockDCli())
+			cls := containerlifecycle.NewService(testutils.NewMockDCli())
 			Expect(cls).ToNot(BeZero())
 		})
 	})
 
 	Describe("Start Container", func() {
 		dcli := testutils.NewMockDCli()
-		cls := containerLifecycle.NewService(dcli)
+		cls := containerlifecycle.NewService(dcli)
 		It("Should start a container", func() {
 			container := "test"
 			err := cls.StartContainer(container)
@@ -44,7 +44,7 @@ var _ = Describe("Container Lifecycle", func() {
 
 	Describe("Execute Command", func() {
 		dcli := testutils.NewMockDCli()
-		cls := containerLifecycle.NewService(dcli)
+		cls := containerlifecycle.NewService(dcli)
 		container := "test"
 		cls.StartContainer(container)
 
@@ -77,7 +77,7 @@ var _ = Describe("Container Lifecycle", func() {
 
 	Describe("Stop Container", func() {
 		dcli := testutils.NewMockDCli()
-		cls := containerLifecycle.NewService(dcli)
+		cls := containerlifecycle.NewService(dcli)
 		container := "test"
 		It("Should stop a container", func() {
 			cls.StartContainer(container)

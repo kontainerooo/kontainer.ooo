@@ -1,4 +1,4 @@
-package containerLifecycle_test
+package containerlifecycle_test
 
 import (
 	. "github.com/onsi/ginkgo"

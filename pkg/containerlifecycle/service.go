@@ -1,4 +1,4 @@
-package containerLifecycle
+package containerlifecycle
 
 import (
 	"context"
