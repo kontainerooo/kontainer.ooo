@@ -33,15 +33,12 @@ type service struct {
 // imageExists checks if a docker image exists.
 func (s *service) imageExists(image string) bool {
 	_, _, err := s.dcli.ImageInspectWithRaw(context.Background(), image)
+
 	if err == nil {
 		return true
 	}
 
-	if s.dcli.IsErrImageNotFound(err) {
-		return false
-	}
-
-	return false
+	return !s.dcli.IsErrImageNotFound(err)
 }
 
 func (s *service) CreateContainer(refid int, cfg *ContainerConfig) (id string, err error) {
@@ -50,7 +47,7 @@ func (s *service) CreateContainer(refid int, cfg *ContainerConfig) (id string, e
 	}
 
 	b := bytes.NewBuffer(nil)
-	if err := json.Compact(b, []byte(seccompProfile)); err != nil {
+	if err := json.Compact(b, []byte(SeccompProfile)); err != nil {
 		return "", fmt.Errorf("compacting json for seccomp profile failed: %v", err)
 	}
 
@@ -61,7 +58,7 @@ func (s *service) CreateContainer(refid int, cfg *ContainerConfig) (id string, e
 	dropCaps := &strslice.StrSlice{"NET_RAW"}
 
 	// Check if the image exists
-	if exists := s.imageExists(cfg.imageName); !exists {
+	if exists := s.imageExists(cfg.ImageName); !exists {
 		return "", fmt.Errorf("Image does not exist")
 	}
 
@@ -69,7 +66,7 @@ func (s *service) CreateContainer(refid int, cfg *ContainerConfig) (id string, e
 	r, err := s.dcli.ContainerCreate(
 		context.Background(),
 		&container.Config{
-			Image:        cfg.imageName,
+			Image:        cfg.ImageName,
 			Cmd:          []string{"sh"},
 			Tty:          true,
 			AttachStdin:  true,
@@ -92,7 +89,13 @@ func (s *service) CreateContainer(refid int, cfg *ContainerConfig) (id string, e
 		return "", err
 	}
 
-	return r.ID, nil
+	// Name the container $userID-$contaierID
+	containerName := fmt.Sprintf("%d-%s", refid, r.ID)
+	if err := s.dcli.ContainerRename(context.Background(), r.ID, containerName); err != nil {
+		return "", err
+	}
+
+	return containerName, nil
 }
 
 func (s *service) EditContainer(id int, cfg *ContainerConfig) error {
@@ -108,4 +111,11 @@ func (s *service) RemoveContainer(id int) error {
 func (s *service) Instances(refid int) []string {
 	// TODO: implement
 	return nil
+}
+
+// NewService creates a customercontainer with necessary dependencies.
+func NewService(dcli abstraction.DCli) Service {
+	return &service{
+		dcli: dcli,
+	}
 }

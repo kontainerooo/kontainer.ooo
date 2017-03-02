@@ -1,7 +1,8 @@
 package customercontainer
 
-const (
-	seccompProfile = `{
+var (
+	// SeccompProfile is the docker default seccomp profile
+	SeccompProfile = `{
 	"defaultAction": "SCMP_ACT_ERRNO",
 	"syscalls": [
 		{
