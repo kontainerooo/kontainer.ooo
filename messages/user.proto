@@ -1,11 +1,20 @@
 syntax = "proto3";
-package user;
+package pb;
+
+service UserService {
+  rpc CreateUser (CreateUserRequest) returns (CreateUserResponse);
+  rpc EditUser (EditUserRequest) returns (EditUserResponse);
+  rpc ChangeUsername (ChangeUsernameRequest) returns (ChangeUsernameResponse);
+  rpc DeleteUser (DeleteUserRequest) returns (DeleteUserResponse);
+  rpc ResetPassword (ResetPasswordRequest) returns (ResetPasswordResponse);
+  rpc GetUser (GetUserRequest) returns (GetUserResponse);
+}
 
 message Address {
   uint32 ID = 1;
   string postcode = 2;
   string city = 3;
-  string county = 4;
+  string country = 4;
   string street = 5;
   int32 houseno = 6;
   string additional = 15;
@@ -16,8 +25,9 @@ message Config {
   string email = 2;
   string password = 3;
   string salt = 4;
-  Address address = 5;
-  string phone = 6;
+  Address Address = 5;
+  uint32 addressID = 6;
+  string phone = 7;
   string image = 15;
 }
 
@@ -63,7 +73,7 @@ message DeleteUserResponse {
   string error = 1;
 }
 
-message ResetPassowrdRequest {
+message ResetPasswordRequest {
   string email = 1;
 }
 
@@ -78,13 +88,4 @@ message GetUserRequest {
 message GetUserResponse {
   User user = 1;
   string error = 2;
-}
-
-service rpcService {
-  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
-  rpc EditUser(EditUserRequest) returns (EditUserResponse);
-  rpc ChangeUsername(ChangeUsernameRequest) returns (ChangeUsernameResponse);
-  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
-  rpc ResetPassword(ResetPassowrdRequest) returns (ResetPasswordResponse);
-  rpc GetUser(GetUserRequest) returns (GetUserResponse);
 }
