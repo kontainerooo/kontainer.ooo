@@ -5,17 +5,9 @@
     </kio-account>
 
     <md-list>
-      <md-list-item routerLink="/dashboard" routerLinkActive="active">
-        <md-icon md-list-avatar>dashboard</md-icon>
-        Dashboard
-      </md-list-item>
-      <md-list-item routerLink="/signup" routerLinkActive="active">
-        <md-icon md-list-avatar>person</md-icon>
-        Sign Up
-      </md-list-item>
-      <md-list-item routerLink="/standings" routerLinkActive="active">
-        <md-icon md-list-avatar>insert_chart</md-icon>
-        Standings
+      <md-list-item *ngFor="let navEl of navigation" [routerLink]="navEl.route" routerLinkActive="active">
+        <md-icon md-list-avatar>{{navEl.icon}}</md-icon>
+        <span>{{navEl.title}}</span>
       </md-list-item>
     </md-list>
   </md-sidenav>
