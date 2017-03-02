@@ -92,4 +92,34 @@ var _ = Describe("Customercontainer", func() {
 			customercontainer.SeccompProfile = tmpSeccomp
 		})
 	})
+
+	Describe("Edit Container", func() {
+		cli := testutils.NewMockDCli()
+		cc := customercontainer.NewService(cli)
+		It("Should edit container", func() {
+			err := cc.EditContainer(123, &customercontainer.ContainerConfig{})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+	})
+
+	Describe("Remove container", func() {
+		cli := testutils.NewMockDCli()
+		cc := customercontainer.NewService(cli)
+		It("Should remove container", func() {
+			err := cc.RemoveContainer(123)
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+	})
+
+	Describe("Get instances", func() {
+		cli := testutils.NewMockDCli()
+		cc := customercontainer.NewService(cli)
+		It("Should return intances", func() {
+			instances := cc.Instances(123)
+
+			Ω(instances).Should(BeEmpty())
+		})
+	})
 })
