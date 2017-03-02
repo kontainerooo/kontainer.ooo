@@ -5,7 +5,9 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/network"
 )
 
 var (
@@ -67,6 +69,24 @@ func (d *MockDCli) ContainerExecCreate(ctx context.Context, container string, co
 		return "", ErrClientError
 	}
 	return strings.Join(config.Cmd, " "), nil
+}
+
+// ContainerCreate is
+func (d *MockDCli) ContainerCreate(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, containerName string) (container.ContainerCreateCreatedBody, error) {
+	if d.produceError() {
+		return container.ContainerCreateCreatedBody{}, ErrClientError
+	}
+
+	return container.ContainerCreateCreatedBody{}, nil
+}
+
+// ImageInspectWithRaw is
+func (d *MockDCli) ImageInspectWithRaw(ctx context.Context, imageID string) (types.ImageInspect, []byte, error) {
+	if d.produceError() {
+		return types.ImageInspect{}, nil, ErrClientError
+	}
+
+	return types.ImageInspect{}, nil, nil
 }
 
 // NewMockDCli returns a new instance of MockDCli
