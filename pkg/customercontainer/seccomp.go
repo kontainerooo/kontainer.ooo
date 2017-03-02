@@ -1,4 +1,4 @@
-package containerlifecycle
+package customercontainer
 
 const (
 	seccompProfile = `{
