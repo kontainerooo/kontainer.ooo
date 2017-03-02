@@ -51,12 +51,17 @@ describe('SidebarNavigationComponent', () => {
 
   it('should route correctly', () => {
     it('should get all router links from template', () => {
-      expect(links.length).toBe(3, 'should have 3 links');
-      expect(links[0].linkParams).toBe('/dashboard', '1st link should go to Dashboard');
+      expect(links.length).toBe(component.navigation.length, 'should have as links as the component navigation');
+
+      for(let i in links) {
+        expect(links[i].linkParams).toBe(component.navigation[i].route, `link ${i} should go to SignIn`);
+      }
     });
 
-    it('should route to the dashboard on dashboard item', () => {
-      checkRouteClick(linkDes[0], links[0], '/dashboard');
+    it('should route to the component defined sites', () => {
+      for(let i in links) {
+        checkRouteClick(linkDes[i], links[i], component.navigation[i].route);
+      }
     });
   });
 
