@@ -1,6 +1,8 @@
 package user_test
 
 import (
+	"context"
+
 	"github.com/ttdennis/kontainer.io/pkg/testutils"
 	"github.com/ttdennis/kontainer.io/pkg/user"
 
@@ -155,6 +157,80 @@ var _ = Describe("User", func() {
 			err := userService.GetUser(1, user)
 			Ω(err).Should(HaveOccurred())
 		})
+	})
+
+	Describe("Endpoints and Transport", func() {
+		db := testutils.NewMockDB()
+		s, _ := user.NewService(db)
+		s = user.NewTransactionBasedService(s)
+		es := &user.Endpoints{}
+		ctx := context.Background()
+		It("Should create valid Endpoints", func() {
+			es.CreateUserEndpoint = user.MakeCreateUserEndpoint(s)
+			es.EditUserEndpoint = user.MakeEditUserEndpoint(s)
+			es.ChangeUsernameEndpoint = user.MakeChangeUsernameEndpoint(s)
+			es.DeleteUserEndpoint = user.MakeDeleteUserEndpoint(s)
+			es.ResetPasswordEndpoint = user.MakeResetPasswordEndpoint(s)
+			es.GetUserEndpoint = user.MakeGetUserEndpoint(s)
+		})
+
+		Context("CreateUserEndpoint", func() {
+			It("Should work with CreateUser request and response", func() {
+				res, err := es.CreateUserEndpoint(ctx, user.CreateUserRequest{
+					Username: "foo",
+					Cfg:      &user.Config{},
+					Adr:      &user.Address{},
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res.(user.CreateUserResponse).ID).To(BeEquivalentTo(1))
+			})
+		})
+
+		Context("ChangeUsernameEndpoint", func() {
+			It("Should work with ChangeUsername request and response", func() {
+				res, err := es.ChangeUsernameEndpoint(ctx, user.ChangeUsernameRequest{
+					ID:       1,
+					Username: "bar",
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res.(user.ChangeUsernameResponse).Error).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("EditUserEndpoint", func() {
+			It("Should work with EditUser request and response", func() {
+				res, err := es.EditUserEndpoint(ctx, user.EditUserRequest{
+					ID: 1,
+					Cfg: &user.Config{
+						Email: "test",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res.(user.EditUserResponse).Error).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("GetUserEndpoint", func() {
+			It("Should work with GetUser request and response", func() {
+				res, err := es.GetUserEndpoint(ctx, user.GetUserRequest{
+					ID: 1,
+				})
+				r := res.(user.GetUserResponse)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(r.Error).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("DeleteUserEndpoint", func() {
+			It("Should work with DeleteUser request and response", func() {
+				res, err := es.DeleteUserEndpoint(ctx, user.DeleteUserRequest{
+					ID: 1,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res.(user.DeleteUserResponse).Error).NotTo(HaveOccurred())
+			})
+		})
+
 	})
 
 })

@@ -16,13 +16,15 @@ type Endpoints struct {
 	GetUserEndpoint        endpoint.Endpoint
 }
 
-type createUserRequest struct {
+// CreateUserRequest is the request struct for the CreateUserEndpoint
+type CreateUserRequest struct {
 	Username string
 	Cfg      *Config
 	Adr      *Address
 }
 
-type createUserResponse struct {
+// CreateUserResponse is the response struct for the CreateUserEndpoint
+type CreateUserResponse struct {
 	ID    uint
 	Error error
 }
@@ -30,97 +32,108 @@ type createUserResponse struct {
 // MakeCreateUserEndpoint creates a gokit endpoint which invokes CreateUser
 func MakeCreateUserEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		createReq := request.(createUserRequest)
+		createReq := request.(CreateUserRequest)
 		id, err := s.CreateUser(createReq.Username, createReq.Cfg, createReq.Adr)
-		return createUserResponse{
+		return CreateUserResponse{
 			ID:    id,
 			Error: err,
 		}, nil
 	}
 }
 
-type editUserRequest struct {
+// EditUserRequest is the request struct for the EditUserEndpoint
+type EditUserRequest struct {
 	ID  uint
 	Cfg *Config
 }
 
-type editUserResponse struct {
+// EditUserResponse is the response struct for the EditUserEndpoint
+type EditUserResponse struct {
 	Error error
 }
 
 // MakeEditUserEndpoint creates a gokit endpoint which invokes EditUser
 func MakeEditUserEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		editReq := request.(editUserRequest)
+		editReq := request.(EditUserRequest)
 		err := s.EditUser(editReq.ID, editReq.Cfg)
-		return editUserResponse{
+		return EditUserResponse{
 			Error: err,
 		}, nil
 	}
 }
 
-type changeUsernameRequest struct {
+// ChangeUsernameRequest is the request struct for the ChangeUsernameEndpoint
+type ChangeUsernameRequest struct {
 	ID       uint
 	Username string
 }
 
-type changeUsernameResponse struct {
+// ChangeUsernameResponse is the response struct for the ChangeUsernameResponse
+type ChangeUsernameResponse struct {
 	Error error
 }
 
 // MakeChangeUsernameEndpoint creates a gokit endpoint which invokes ChangeUsername
 func MakeChangeUsernameEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		changeReq := request.(changeUsernameRequest)
+		changeReq := request.(ChangeUsernameRequest)
 		err := s.ChangeUsername(changeReq.ID, changeReq.Username)
-		return changeUsernameResponse{
+		return ChangeUsernameResponse{
 			Error: err,
 		}, nil
 	}
 }
 
-type deleteUserRequest struct {
+// DeleteUserRequest is the request struct for the DeleteUserEndpoint
+type DeleteUserRequest struct {
 	ID uint
 }
 
-type deleteUserResponse struct {
+// DeleteUserResponse is the response struct for the DeleteUserEndpoint
+type DeleteUserResponse struct {
 	Error error
 }
 
 // MakeDeleteUserEndpoint creates a gokit endpoint which invokes DeleteUser
 func MakeDeleteUserEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		deleteReq := request.(deleteUserRequest)
+		deleteReq := request.(DeleteUserRequest)
 		err := s.DeleteUser(deleteReq.ID)
-		return deleteUserResponse{
+		return DeleteUserResponse{
 			Error: err,
 		}, nil
 	}
 }
 
-type resetPasswordRequest struct {
+// ResetPasswordRequest is the request struct for the ResetPasswordEndpoint
+type ResetPasswordRequest struct {
 	Email string
 }
 
-type resetPasswordResponse struct {
+// ResetPasswordResponse is the response struct for the ResetPasswordEndpoint
+type ResetPasswordResponse struct {
 	Error error
 }
 
 // MakeResetPasswordEndpoint creates a gokit endpoint which invokes ResetPassword
 func MakeResetPasswordEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		resetPasswordReq := request.(resetPasswordRequest)
-		err := s.ResetPassword(resetPasswordReq.Email)
-		return resetPasswordResponse{
+		ResetPasswordReq := request.(ResetPasswordRequest)
+		err := s.ResetPassword(ResetPasswordReq.Email)
+		return ResetPasswordResponse{
 			Error: err,
 		}, nil
 	}
 }
 
-type getUserRequest struct {
+// GetUserRequest is the request struct for the GetUserEndpoint
+type GetUserRequest struct {
 	ID uint
 }
-type getUserResponse struct {
+
+// GetUserResponse is the response struct for the GetUserEndpoint
+type GetUserResponse struct {
 	User  *User
 	Error error
 }
@@ -128,10 +141,10 @@ type getUserResponse struct {
 // MakeGetUserEndpoint creates a gokit endpoiint which invokes GetUser
 func MakeGetUserEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		getRequest := request.(getUserRequest)
+		getRequest := request.(GetUserRequest)
 		user := &User{}
 		err := s.GetUser(getRequest.ID, user)
-		return getUserResponse{
+		return GetUserResponse{
 			User:  user,
 			Error: err,
 		}, nil
