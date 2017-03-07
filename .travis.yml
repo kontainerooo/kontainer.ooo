@@ -30,13 +30,11 @@ before_script:
     - cd ..
 
 script:
-    # Make all scripts
-    - cd scripts
-    - make
-    - cd ..
-    # Test frontend
-    - cd frontend
-    - karma start karma.conf.js --single-run
-    - cd ..
-    # Test go
-    - make be
+    # Build frontend or backend independently based on branch name
+    - if [ ${TRAVIS_BRANCH:0:3} = "be/" ]; then
+        make be;
+      elif [ ${TRAVIS_BRANCH:0:3} = "fe/" ]; then
+        cd frontend && make fe-test fi;
+      else
+        make
+      fi
