@@ -21,11 +21,12 @@ var (
 
 // MockDCli simulates a docker client for testing purposes
 type MockDCli struct {
+	running         map[string]bool
 	containers      map[string]bool
 	images          map[string]bool
 	err             bool
-	dockerIsOffline bool
 	idNotExist      bool
+	dockerIsOffline bool
 }
 
 // SetError sets the err property of MockDCli to be true, causing the next instruction to return an error
@@ -53,7 +54,7 @@ func (d *MockDCli) produceError() bool {
 
 // IsRunning checks if a mocked container is running
 func (d *MockDCli) IsRunning(container string) bool {
-	return d.containers[container]
+	return d.running[container]
 }
 
 // CreateMockImage creates a mock image
@@ -67,7 +68,7 @@ func (d *MockDCli) ContainerStart(ctx context.Context, container string, options
 		return ErrClientError
 	}
 	if !d.IsRunning(container) {
-		d.containers[container] = true
+		d.running[container] = true
 		return nil
 	}
 	return ErrAlreadyRunning
@@ -78,7 +79,7 @@ func (d *MockDCli) ContainerKill(ctx context.Context, container string, signal s
 	if d.produceError() || !d.IsRunning(container) {
 		return ErrClientError
 	}
-	d.containers[container] = false
+	d.running[container] = false
 	return nil
 }
 
@@ -96,14 +97,29 @@ func (d *MockDCli) ContainerCreate(ctx context.Context, config *container.Config
 		return container.ContainerCreateCreatedBody{}, ErrClientError
 	}
 
-	return container.ContainerCreateCreatedBody{}, nil
+	d.containers[containerName] = true
+
+	return container.ContainerCreateCreatedBody{
+		ID: containerName,
+	}, nil
 }
 
 // ContainerRename renames a container with a given ID
 func (d *MockDCli) ContainerRename(ctx context.Context, containerID, newContainerName string) error {
-	if d.produceError() || d.idNotExist {
+	if d.produceError() || !d.containers[containerID] || d.idNotExist {
 		return ErrClientError
 	}
+
+	return nil
+}
+
+// ContainerRemove removes a container with a given ID
+func (d *MockDCli) ContainerRemove(ctx context.Context, containerID string, options types.ContainerRemoveOptions) error {
+	if d.produceError() || !d.containers[containerID] {
+		return ErrClientError
+	}
+
+	d.containers[containerID] = false
 
 	return nil
 }
@@ -129,6 +145,7 @@ func (d *MockDCli) IsErrImageNotFound(err error) bool {
 // NewMockDCli returns a new instance of MockDCli
 func NewMockDCli() *MockDCli {
 	return &MockDCli{
+		running:    make(map[string]bool),
 		containers: make(map[string]bool),
 		images:     make(map[string]bool),
 	}
