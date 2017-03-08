@@ -1,0 +1,91 @@
+syntax = "proto3";
+package pb;
+
+service UserService {
+  rpc CreateUser (CreateUserRequest) returns (CreateUserResponse);
+  rpc EditUser (EditUserRequest) returns (EditUserResponse);
+  rpc ChangeUsername (ChangeUsernameRequest) returns (ChangeUsernameResponse);
+  rpc DeleteUser (DeleteUserRequest) returns (DeleteUserResponse);
+  rpc ResetPassword (ResetPasswordRequest) returns (ResetPasswordResponse);
+  rpc GetUser (GetUserRequest) returns (GetUserResponse);
+}
+
+message Address {
+  uint32 ID = 1;
+  string postcode = 2;
+  string city = 3;
+  string country = 4;
+  string street = 5;
+  int32 houseno = 6;
+  string additional = 15;
+}
+
+message Config {
+  bool admin = 1;
+  string email = 2;
+  string password = 3;
+  string salt = 4;
+  Address Address = 5;
+  uint32 addressID = 6;
+  string phone = 7;
+  string image = 15;
+}
+
+message User {
+  uint32 ID = 1;
+  string username = 2;
+  Config config = 3;
+}
+
+message CreateUserRequest {
+  string username = 1;
+  Config config = 2;
+}
+
+message CreateUserResponse {
+  uint32 ID = 1;
+  string error = 2;
+}
+
+message EditUserRequest {
+  uint32 ID = 1;
+  Config config = 2;
+}
+
+message EditUserResponse {
+  string error = 1;
+}
+
+message ChangeUsernameRequest {
+  uint32 ID = 1;
+  string username = 2;
+}
+
+message ChangeUsernameResponse {
+  string error = 1;
+}
+
+message DeleteUserRequest {
+  uint32 ID = 1;
+}
+
+message DeleteUserResponse {
+  string error = 1;
+}
+
+message ResetPasswordRequest {
+  string email = 1;
+}
+
+message ResetPasswordResponse {
+  string error = 1;
+}
+
+message GetUserRequest {
+  uint32 ID = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+  string error = 2;
+}
