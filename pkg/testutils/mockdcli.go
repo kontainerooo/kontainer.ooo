@@ -63,7 +63,7 @@ func (d *MockDCli) CreateMockImage(image string) {
 	d.images[image] = true
 }
 
-// ContainerStart is
+// ContainerStart sets a given container to the status running
 func (d *MockDCli) ContainerStart(ctx context.Context, container string, options types.ContainerStartOptions) error {
 	if d.produceError() {
 		return ErrClientError
@@ -75,7 +75,7 @@ func (d *MockDCli) ContainerStart(ctx context.Context, container string, options
 	return ErrAlreadyRunning
 }
 
-// ContainerKill is
+// ContainerKill sets the given container to the status stopped
 func (d *MockDCli) ContainerKill(ctx context.Context, container string, signal string) error {
 	if d.produceError() || !d.IsRunning(container) {
 		return ErrClientError
@@ -84,7 +84,7 @@ func (d *MockDCli) ContainerKill(ctx context.Context, container string, signal s
 	return nil
 }
 
-// ContainerExecCreate is
+// ContainerExecCreate creates a new execution on a given container
 func (d *MockDCli) ContainerExecCreate(ctx context.Context, container string, config types.ExecConfig) (string, error) {
 	if d.produceError() || !d.IsRunning(container) {
 		return "", ErrClientError
@@ -92,7 +92,7 @@ func (d *MockDCli) ContainerExecCreate(ctx context.Context, container string, co
 	return strings.Join(config.Cmd, " "), nil
 }
 
-// ContainerCreate is
+// ContainerCreate creates a mock container
 func (d *MockDCli) ContainerCreate(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, containerName string) (container.ContainerCreateCreatedBody, error) {
 	if d.produceError() || d.dockerIsOffline {
 		return container.ContainerCreateCreatedBody{}, ErrClientError
@@ -153,7 +153,7 @@ func (d *MockDCli) ContainerList(ctx context.Context, options types.ContainerLis
 	return tContainers, nil
 }
 
-// ImageInspectWithRaw is
+// ImageInspectWithRaw gets information about a mock image
 func (d *MockDCli) ImageInspectWithRaw(ctx context.Context, imageID string) (types.ImageInspect, []byte, error) {
 	if d.images[imageID] {
 		return types.ImageInspect{}, nil, nil
