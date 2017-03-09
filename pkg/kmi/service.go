@@ -1,7 +1,11 @@
 // Package kmi provides functionality to handle kmi files
 package kmi
 
-import "github.com/ttdennis/kontainer.io/pkg/abstraction"
+import (
+	"fmt"
+
+	"github.com/ttdennis/kontainer.io/pkg/abstraction"
+)
 
 // The Service interface describes the functions necessary for a KMI Service
 type Service interface {
@@ -21,6 +25,9 @@ type Service interface {
 type dbAdapter interface {
 	abstraction.DBAdapter
 	AutoMigrate(...interface{}) error
+	Where(interface{}, ...interface{}) error
+	Create(interface{}) error
+	Delete(interface{}, ...interface{}) error
 }
 
 type service struct {
@@ -32,13 +39,36 @@ func (s *service) InitializeDatabases() error {
 }
 
 func (s *service) AddKMI(path string) (uint, error) {
-	//TODO: implement
-	return 0, nil
+	kC := &kmiContent{}
+	err := extract(path, kC)
+	if err != nil {
+		return 0, err
+	}
+
+	k := &KMI{}
+	err = getData(kC, k)
+	if err != nil {
+		return 0, err
+	}
+
+	s.db.Where("name = ?", k.Name)
+	res := s.db.GetValue()
+	if res != nil && res != (&KMI{}) {
+		return 0, fmt.Errorf("%s already exists", k.Name)
+	}
+
+	err = s.db.Create(k)
+	if err != nil {
+		return 0, err
+	}
+	return k.ID, nil
 }
 
 func (s *service) RemoveKMI(id uint) error {
-	//TODO: implement
-	return nil
+	k := &KMI{}
+	k.ID = id
+	err := s.db.Delete(k)
+	return err
 }
 
 func (s *service) GetKMI(id uint) (*KMI, error) {
