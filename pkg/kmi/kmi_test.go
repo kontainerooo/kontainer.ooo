@@ -24,12 +24,26 @@ var _ = Describe("KMI", func() {
 		})
 	})
 
-	XDescribe("Add KMI", func() {
+	Describe("Add KMI", func() {
+		db := testutils.NewMockDB()
+		kmiService, _ := kmi.NewService(db)
+		It("Should Add KMI", func() {
+			id, err := kmiService.AddKMI("test.kmi")
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(id).Should(BeEquivalentTo(1))
+		})
 
+		XIt("error handling test")
 	})
 
-	XDescribe("Remove KMI", func() {
-
+	Describe("Remove KMI", func() {
+		db := testutils.NewMockDB()
+		kmiService, _ := kmi.NewService(db)
+		It("Should Remove KMI", func() {
+			id, _ := kmiService.AddKMI("test.kmi")
+			err := kmiService.RemoveKMI(id)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
 	})
 
 	XDescribe("Get KMI", func() {
