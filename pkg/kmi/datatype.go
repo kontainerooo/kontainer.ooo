@@ -2,6 +2,7 @@ package kmi
 
 // The KMDI struct contains the displaying information for the frontend
 type KMDI struct {
+	ID          uint
 	Name        string
 	Version     string
 	Description string
@@ -9,18 +10,18 @@ type KMDI struct {
 }
 
 type frontendModule struct {
-	Template   string
-	parameters map[string]string
+	template   string
+	parameters map[string]interface{}
 }
 
 // The KMI struct is used to represent every information included in a kmi-file
 type KMI struct {
 	KMDI
-	Commands    map[string]string
+	Commands    map[string]interface{}
 	Environment map[string]interface{}
 	Frontend    []frontendModule
 	Imports     []string
-	Interfaces  map[string]uint16
+	Interfaces  map[string]interface{}
 }
 
 // TableName sets KMI's tablename
