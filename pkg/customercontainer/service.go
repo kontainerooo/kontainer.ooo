@@ -1,3 +1,4 @@
+// Package provides basic container functions to create and remove containers
 package customercontainer
 
 import (
@@ -5,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -109,8 +111,19 @@ func (s *service) RemoveContainer(id string) error {
 }
 
 func (s *service) Instances(refid int) []string {
-	// TODO: implement
-	return nil
+
+	containers, _ := s.dcli.ContainerList(context.Background(), types.ContainerListOptions{})
+
+	var containerList []string
+	userid := fmt.Sprintf("%d", refid)
+	for _, v := range containers {
+		if len(v.Names) > 0 && strings.HasPrefix(v.Names[0], userid) {
+			entry := v.ID
+			containerList = append(containerList, entry)
+		}
+	}
+
+	return containerList
 }
 
 // NewService creates a customercontainer with necessary dependencies.
