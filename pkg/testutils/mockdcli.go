@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -22,7 +23,7 @@ var (
 // MockDCli simulates a docker client for testing purposes
 type MockDCli struct {
 	running         map[string]bool
-	containers      map[string]bool
+	containers      map[string]types.Container
 	images          map[string]bool
 	err             bool
 	idNotExist      bool
@@ -62,7 +63,7 @@ func (d *MockDCli) CreateMockImage(image string) {
 	d.images[image] = true
 }
 
-// ContainerStart is
+// ContainerStart sets a given container to the status running
 func (d *MockDCli) ContainerStart(ctx context.Context, container string, options types.ContainerStartOptions) error {
 	if d.produceError() {
 		return ErrClientError
@@ -74,7 +75,7 @@ func (d *MockDCli) ContainerStart(ctx context.Context, container string, options
 	return ErrAlreadyRunning
 }
 
-// ContainerKill is
+// ContainerKill sets the given container to the status stopped
 func (d *MockDCli) ContainerKill(ctx context.Context, container string, signal string) error {
 	if d.produceError() || !d.IsRunning(container) {
 		return ErrClientError
@@ -83,7 +84,7 @@ func (d *MockDCli) ContainerKill(ctx context.Context, container string, signal s
 	return nil
 }
 
-// ContainerExecCreate is
+// ContainerExecCreate creates a new execution on a given container
 func (d *MockDCli) ContainerExecCreate(ctx context.Context, container string, config types.ExecConfig) (string, error) {
 	if d.produceError() || !d.IsRunning(container) {
 		return "", ErrClientError
@@ -91,23 +92,32 @@ func (d *MockDCli) ContainerExecCreate(ctx context.Context, container string, co
 	return strings.Join(config.Cmd, " "), nil
 }
 
-// ContainerCreate is
+// ContainerCreate creates a mock container
 func (d *MockDCli) ContainerCreate(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, containerName string) (container.ContainerCreateCreatedBody, error) {
 	if d.produceError() || d.dockerIsOffline {
 		return container.ContainerCreateCreatedBody{}, ErrClientError
 	}
 
-	d.containers[containerName] = true
+	id := fmt.Sprintf("%d", rand.Int())
+	d.containers[id] = types.Container{
+		ID: id,
+	}
 
 	return container.ContainerCreateCreatedBody{
-		ID: containerName,
+		ID: id,
 	}, nil
 }
 
 // ContainerRename renames a container with a given ID
 func (d *MockDCli) ContainerRename(ctx context.Context, containerID, newContainerName string) error {
-	if d.produceError() || !d.containers[containerID] || d.idNotExist {
+	_, ok := d.containers[containerID]
+	if d.produceError() || !ok || d.idNotExist {
 		return ErrClientError
+	}
+
+	d.containers[containerID] = types.Container{
+		ID:    d.containers[containerID].ID,
+		Names: []string{newContainerName},
 	}
 
 	return nil
@@ -115,16 +125,35 @@ func (d *MockDCli) ContainerRename(ctx context.Context, containerID, newContaine
 
 // ContainerRemove removes a container with a given ID
 func (d *MockDCli) ContainerRemove(ctx context.Context, containerID string, options types.ContainerRemoveOptions) error {
-	if d.produceError() || !d.containers[containerID] {
+	_, ok := d.containers[containerID]
+	if d.produceError() || !ok {
 		return ErrClientError
 	}
 
-	d.containers[containerID] = false
+	delete(d.containers, containerID)
 
 	return nil
 }
 
-// ImageInspectWithRaw is
+// ContainerList lists all containers on the host
+func (d *MockDCli) ContainerList(ctx context.Context, options types.ContainerListOptions) ([]types.Container, error) {
+	if d.produceError() {
+		return nil, ErrClientError
+	}
+
+	var tContainers []types.Container
+	for cid := range d.containers {
+		tmp := types.Container{
+			ID:    cid,
+			Names: []string{fmt.Sprintf("123-%s", cid)},
+		}
+		tContainers = append(tContainers, tmp)
+	}
+
+	return tContainers, nil
+}
+
+// ImageInspectWithRaw gets information about a mock image
 func (d *MockDCli) ImageInspectWithRaw(ctx context.Context, imageID string) (types.ImageInspect, []byte, error) {
 	if d.images[imageID] {
 		return types.ImageInspect{}, nil, nil
@@ -146,7 +175,7 @@ func (d *MockDCli) IsErrImageNotFound(err error) bool {
 func NewMockDCli() *MockDCli {
 	return &MockDCli{
 		running:    make(map[string]bool),
-		containers: make(map[string]bool),
+		containers: make(map[string]types.Container),
 		images:     make(map[string]bool),
 	}
 }

@@ -1,7 +1,6 @@
 package customercontainer_test
 
 import (
-	"fmt"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -84,7 +83,6 @@ var _ = Describe("Customercontainer", func() {
 			containerName, _, err := cc.CreateContainer(123, &customercontainer.ContainerConfig{
 				ImageName: "testimage",
 			})
-			fmt.Println(err)
 
 			Ω(err).Should(HaveOccurred())
 			Ω(containerName).Should(BeZero())
@@ -126,9 +124,24 @@ var _ = Describe("Customercontainer", func() {
 	Describe("Get instances", func() {
 		cli := testutils.NewMockDCli()
 		cc := customercontainer.NewService(cli)
+		cli.CreateMockImage("testimage")
+
 		It("Should return intances", func() {
+			_, containerID, err := cc.CreateContainer(123, &customercontainer.ContainerConfig{
+				ImageName: "testimage",
+			})
+
 			instances := cc.Instances(123)
 
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(instances).ShouldNot(BeEmpty())
+			Ω(instances[0]).Should(Equal(containerID))
+
+			cc.RemoveContainer(containerID)
+		})
+
+		It("Should return no instances when none exist", func() {
+			instances := cc.Instances(123)
 			Ω(instances).Should(BeEmpty())
 		})
 	})
