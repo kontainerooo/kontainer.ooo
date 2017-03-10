@@ -10,16 +10,18 @@ import (
 	"reflect"
 )
 
-type kmiContent struct {
-	module     []byte
-	frontend   []byte
-	interfaces []byte
-	env        []byte
-	cmd        []byte
-	imports    []byte
+// Content is a struct type which may hold a byte array for every file which can be in the kmi file
+type Content struct {
+	Module     []byte
+	Frontend   []byte
+	Interfaces []byte
+	Env        []byte
+	Cmd        []byte
+	Imports    []byte
 }
 
-func extract(src string, k *kmiContent) error {
+// Extract is used to get the data from a kmi tar ball
+func Extract(src string, k *Content) error {
 	f, err := os.Open(src)
 	if err != nil {
 		return err
@@ -49,18 +51,18 @@ func extract(src string, k *kmiContent) error {
 
 		switch name {
 		case "module.json":
-			k.module = data
+			k.Module = data
 		case "frontend.json":
-			k.frontend = data
+			k.Frontend = data
 		case "interfaces.json":
 		case "if.json":
-			k.interfaces = data
+			k.Interfaces = data
 		case "env.json":
-			k.env = data
+			k.Env = data
 		case "cmd.json":
-			k.cmd = data
+			k.Cmd = data
 		case "imports.json":
-			k.imports = data
+			k.Imports = data
 		default:
 			continue
 		}
@@ -80,7 +82,8 @@ type moduleJSON struct {
 	Cmd         interface{}
 }
 
-func chooseSource(src interface{}, outsrc []byte, kind reflect.Kind, name string) error {
+// ChooseSource fills src with outsrc if src is not the expected data kind
+func ChooseSource(src interface{}, outsrc []byte, kind reflect.Kind, name string) error {
 	v := reflect.ValueOf(src).Elem().Elem()
 	k := v.Kind()
 	if k == reflect.String {
@@ -99,7 +102,9 @@ func chooseSource(src interface{}, outsrc []byte, kind reflect.Kind, name string
 	return nil
 }
 
-func extractStringMap(value reflect.Value, dst map[string]interface{}, restriction map[reflect.Kind]bool) error {
+// ExtractStringMap creates a map[string]interface{} based on a reflect.Value of Kind map,
+// restriction can be used to exclude specific Kinds from beeing the value to a key in the map
+func ExtractStringMap(value reflect.Value, dst map[string]interface{}, restriction map[reflect.Kind]bool) error {
 	if value.Kind() != reflect.Map {
 		return fmt.Errorf("src aint no map bra")
 	}
@@ -124,21 +129,25 @@ func extractStringMap(value reflect.Value, dst map[string]interface{}, restricti
 	return nil
 }
 
-func getStringMap(src interface{}, outsrc []byte, dst map[string]interface{}, name string, restriction map[reflect.Kind]bool) error {
-	err := chooseSource(&src, outsrc, reflect.Map, name)
+// GetStringMap takes a src and an outsrc, a destination map and a restriction map, decides which source to use to fill
+// the destination map
+func GetStringMap(src interface{}, outsrc []byte, dst map[string]interface{}, name string, restriction map[reflect.Kind]bool) error {
+	err := ChooseSource(&src, outsrc, reflect.Map, name)
 	if err != nil {
 		return err
 	}
 
-	err = extractStringMap(reflect.ValueOf(src), dst, restriction)
+	err = ExtractStringMap(reflect.ValueOf(src), dst, restriction)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func getStringSlice(src interface{}, outsrc []byte, dst *[]string, name string) error {
-	err := chooseSource(&src, outsrc, reflect.Slice, name)
+// GetStringSlice takes a src and an outsrc and a destination slice, decides which source to use and to fill
+// the destination slice
+func GetStringSlice(src interface{}, outsrc []byte, dst *[]string, name string) error {
+	err := ChooseSource(&src, outsrc, reflect.Slice, name)
 	if err != nil {
 		return err
 	}
@@ -157,8 +166,10 @@ func getStringSlice(src interface{}, outsrc []byte, dst *[]string, name string) 
 	return nil
 }
 
-func getFrontend(src interface{}, outsrc []byte, dst *[]frontendModule) error {
-	err := chooseSource(&src, outsrc, reflect.Slice, "frontend")
+// GetFrontend takes a src and an outsrc and a destination frontendModule slice, decides which source to use and extracts
+// the frontendModule specific information to fill the destination slice
+func GetFrontend(src interface{}, outsrc []byte, dst *[]frontendModule) error {
+	err := ChooseSource(&src, outsrc, reflect.Slice, "frontend")
 	if err != nil {
 		return err
 	}
@@ -183,7 +194,7 @@ func getFrontend(src interface{}, outsrc []byte, dst *[]frontendModule) error {
 					return fmt.Errorf("parameters are no json in module %d", i)
 				}
 				fm.parameters = make(map[string]interface{})
-				err = extractStringMap(params, fm.parameters, nil)
+				err = ExtractStringMap(params, fm.parameters, nil)
 				if err != nil {
 					return err
 				}
@@ -197,9 +208,10 @@ func getFrontend(src interface{}, outsrc []byte, dst *[]frontendModule) error {
 	return nil
 }
 
-func getData(kC *kmiContent, k *KMI) error {
+// GetData is used to fill a KMI struct based on a Content struct
+func GetData(kC *Content, k *KMI) error {
 	m := &moduleJSON{}
-	err := json.Unmarshal(kC.module, m)
+	err := json.Unmarshal(kC.Module, m)
 	if err != nil {
 		return err
 	}
@@ -213,29 +225,29 @@ func getData(kC *kmiContent, k *KMI) error {
 	intRestriction[reflect.Int] = true
 
 	k.Commands = make(map[string]interface{})
-	err = getStringMap(m.Cmd, kC.cmd, k.Commands, "commands", intRestriction)
+	err = GetStringMap(m.Cmd, kC.Cmd, k.Commands, "commands", intRestriction)
 	if err != nil {
 		return err
 	}
 
 	k.Environment = make(map[string]interface{})
-	err = getStringMap(m.Env, kC.env, k.Environment, "environment", nil)
+	err = GetStringMap(m.Env, kC.Env, k.Environment, "environment", nil)
 	if err != nil {
 		return err
 	}
 
 	k.Interfaces = make(map[string]interface{})
-	err = getStringMap(m.Interfaces, kC.interfaces, k.Interfaces, "interfaces", nil)
+	err = GetStringMap(m.Interfaces, kC.Interfaces, k.Interfaces, "interfaces", nil)
 	if err != nil {
 		return err
 	}
 
-	err = getFrontend(m.Frontend, kC.frontend, &k.Frontend)
+	err = GetFrontend(m.Frontend, kC.Frontend, &k.Frontend)
 	if err != nil {
 		return err
 	}
 
-	err = getStringSlice(m.Imports, kC.imports, &k.Imports, "imports")
+	err = GetStringSlice(m.Imports, kC.Imports, &k.Imports, "imports")
 	if err != nil {
 		return err
 	}
