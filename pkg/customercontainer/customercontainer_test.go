@@ -1,7 +1,6 @@
 package customercontainer_test
 
 import (
-	"fmt"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -24,7 +23,7 @@ var _ = Describe("Customercontainer", func() {
 			cli := testutils.NewMockDCli()
 			cc := customercontainer.NewService(cli)
 			cli.CreateMockImage("testimage")
-			containerName, err := cc.CreateContainer(123, &customercontainer.ContainerConfig{
+			containerName, _, err := cc.CreateContainer(123, &customercontainer.ContainerConfig{
 				ImageName: "testimage",
 			})
 
@@ -36,7 +35,7 @@ var _ = Describe("Customercontainer", func() {
 			cli := testutils.NewMockDCli()
 			cc := customercontainer.NewService(cli)
 
-			containerName, err := cc.CreateContainer(123, &customercontainer.ContainerConfig{
+			containerName, _, err := cc.CreateContainer(123, &customercontainer.ContainerConfig{
 				ImageName: "testimage",
 			})
 
@@ -50,7 +49,7 @@ var _ = Describe("Customercontainer", func() {
 			cli.CreateMockImage("testimage")
 
 			cli.SetDockerOffline()
-			containerName, err := cc.CreateContainer(123, &customercontainer.ContainerConfig{
+			containerName, _, err := cc.CreateContainer(123, &customercontainer.ContainerConfig{
 				ImageName: "testimage",
 			})
 
@@ -64,7 +63,7 @@ var _ = Describe("Customercontainer", func() {
 			cli.CreateMockImage("testimage")
 
 			cli.SetIDNotExisting()
-			containerName, err := cc.CreateContainer(123, &customercontainer.ContainerConfig{
+			containerName, _, err := cc.CreateContainer(123, &customercontainer.ContainerConfig{
 				ImageName: "testimage",
 			})
 
@@ -81,10 +80,9 @@ var _ = Describe("Customercontainer", func() {
 			tmpSeccomp := customercontainer.SeccompProfile
 			customercontainer.SeccompProfile = ``
 
-			containerName, err := cc.CreateContainer(123, &customercontainer.ContainerConfig{
+			containerName, _, err := cc.CreateContainer(123, &customercontainer.ContainerConfig{
 				ImageName: "testimage",
 			})
-			fmt.Println(err)
 
 			Ω(err).Should(HaveOccurred())
 			Ω(containerName).Should(BeZero())
@@ -97,7 +95,7 @@ var _ = Describe("Customercontainer", func() {
 		cli := testutils.NewMockDCli()
 		cc := customercontainer.NewService(cli)
 		It("Should edit container", func() {
-			err := cc.EditContainer(123, &customercontainer.ContainerConfig{})
+			err := cc.EditContainer("123", &customercontainer.ContainerConfig{})
 
 			Ω(err).ShouldNot(HaveOccurred())
 		})
@@ -106,19 +104,44 @@ var _ = Describe("Customercontainer", func() {
 	Describe("Remove container", func() {
 		cli := testutils.NewMockDCli()
 		cc := customercontainer.NewService(cli)
+		cli.CreateMockImage("testimage")
+		_, containerID, _ := cc.CreateContainer(123, &customercontainer.ContainerConfig{
+			ImageName: "testimage",
+		})
 		It("Should remove container", func() {
-			err := cc.RemoveContainer(123)
+			err := cc.RemoveContainer(containerID)
 
 			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should fail when container does not exist", func() {
+			err := cc.RemoveContainer(containerID)
+
+			Ω(err).Should(HaveOccurred())
 		})
 	})
 
 	Describe("Get instances", func() {
 		cli := testutils.NewMockDCli()
 		cc := customercontainer.NewService(cli)
+		cli.CreateMockImage("testimage")
+
 		It("Should return intances", func() {
+			_, containerID, err := cc.CreateContainer(123, &customercontainer.ContainerConfig{
+				ImageName: "testimage",
+			})
+
 			instances := cc.Instances(123)
 
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(instances).ShouldNot(BeEmpty())
+			Ω(instances[0]).Should(Equal(containerID))
+
+			cc.RemoveContainer(containerID)
+		})
+
+		It("Should return no instances when none exist", func() {
+			instances := cc.Instances(123)
 			Ω(instances).Should(BeEmpty())
 		})
 	})
