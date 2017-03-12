@@ -52,7 +52,7 @@ message RemoveKMIResponse {
 }
 
 message GetKMIRequest {
-  uint32 id = 1;
+  uint32 ID = 1;
 }
 
 message GetKMIResponse {
@@ -65,6 +65,6 @@ message KMIRequest{
 }
 
 message KMIResponse {
-  repeated KMI kmi = 1;
+  repeated KMDI kmdi = 1;
   string error = 2;
 }
