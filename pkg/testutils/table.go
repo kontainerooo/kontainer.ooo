@@ -23,6 +23,10 @@ func (t *table) String() string {
 	return s
 }
 
+func (t *table) getRef() reflect.Type {
+	return t.ref
+}
+
 func (t *table) copy() *table {
 	nt := &table{
 		Name:  t.Name,
@@ -36,6 +40,14 @@ func (t *table) copy() *table {
 	}
 
 	return nt
+}
+
+func (t *table) all(out interface{}) error {
+	outVal := reflect.ValueOf(out).Elem()
+	for _, row := range t.rows {
+		outVal.Set(reflect.Append(outVal, reflect.ValueOf(row).Elem()))
+	}
+	return nil
 }
 
 func (t *table) checkForField(f string) bool {
