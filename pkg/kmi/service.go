@@ -16,7 +16,7 @@ type Service interface {
 	RemoveKMI(id uint) error
 
 	// GetKMI retrieves kontainer module information for a specific module
-	GetKMI(id uint) (*KMI, error)
+	GetKMI(id uint, k *KMI) error
 
 	// KMI returns display information for all exisiting kontainer modules
 	KMI() *[]KMDI
@@ -26,6 +26,7 @@ type dbAdapter interface {
 	abstraction.DBAdapter
 	AutoMigrate(...interface{}) error
 	Where(interface{}, ...interface{}) error
+	First(interface{}, ...interface{}) error
 	Create(interface{}) error
 	Delete(interface{}, ...interface{}) error
 }
@@ -71,9 +72,17 @@ func (s *service) RemoveKMI(id uint) error {
 	return err
 }
 
-func (s *service) GetKMI(id uint) (*KMI, error) {
-	//TODO: implement
-	return nil, nil
+func (s *service) GetKMI(id uint, k *KMI) error {
+	err := s.db.Where("ID = ?", id)
+	if err != nil {
+		return err
+	}
+
+	err = s.db.First(k)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *service) KMI() *[]KMDI {
