@@ -1,3 +1,4 @@
+// Package provides basic container functions to create and remove containers
 package customercontainer
 
 import (
@@ -5,7 +6,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/strslice"
 	"github.com/ttdennis/kontainer.io/pkg/abstraction"
@@ -14,13 +17,13 @@ import (
 // Service Customer Container service
 type Service interface {
 	// CreateContainer instanciates a container for a User with the id refid and returns its id
-	CreateContainer(refid int, cfg *ContainerConfig) (id string, err error)
+	CreateContainer(refid int, cfg *ContainerConfig) (name string, id string, err error)
 
 	// EditContainer is used to edit a container instances configuration by id
-	EditContainer(id int, cfg *ContainerConfig) error
+	EditContainer(id string, cfg *ContainerConfig) error
 
 	// RemoveContainer is used to remove a container instance by id
-	RemoveContainer(id int) error
+	RemoveContainer(id string) error
 
 	// Instances returns a list of instances of an user by id
 	Instances(refid int) []string
@@ -41,14 +44,14 @@ func (s *service) imageExists(image string) bool {
 	return !s.dcli.IsErrImageNotFound(err)
 }
 
-func (s *service) CreateContainer(refid int, cfg *ContainerConfig) (id string, err error) {
+func (s *service) CreateContainer(refid int, cfg *ContainerConfig) (name string, id string, err error) {
 	securityOpts := []string{
 		"no-new-privileges",
 	}
 
 	b := bytes.NewBuffer(nil)
 	if err := json.Compact(b, []byte(SeccompProfile)); err != nil {
-		return "", fmt.Errorf("compacting json for seccomp profile failed: %v", err)
+		return "", "", fmt.Errorf("compacting json for seccomp profile failed: %v", err)
 	}
 
 	// Use docker standard
@@ -59,7 +62,7 @@ func (s *service) CreateContainer(refid int, cfg *ContainerConfig) (id string, e
 
 	// Check if the image exists
 	if exists := s.imageExists(cfg.ImageName); !exists {
-		return "", fmt.Errorf("Image does not exist")
+		return "", "", fmt.Errorf("Image does not exist")
 	}
 
 	// Create the container
@@ -86,31 +89,41 @@ func (s *service) CreateContainer(refid int, cfg *ContainerConfig) (id string, e
 		nil, "")
 
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	// Name the container $userID-$contaierID
 	containerName := fmt.Sprintf("%d-%s", refid, r.ID)
 	if err := s.dcli.ContainerRename(context.Background(), r.ID, containerName); err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return containerName, nil
+	return containerName, r.ID, nil
 }
 
-func (s *service) EditContainer(id int, cfg *ContainerConfig) error {
+func (s *service) EditContainer(id string, cfg *ContainerConfig) error {
 	// TODO: implement
 	return nil
 }
 
-func (s *service) RemoveContainer(id int) error {
-	// TODO: implement
-	return nil
+func (s *service) RemoveContainer(id string) error {
+	return s.dcli.ContainerRemove(context.Background(), id, types.ContainerRemoveOptions{})
 }
 
 func (s *service) Instances(refid int) []string {
-	// TODO: implement
-	return nil
+
+	containers, _ := s.dcli.ContainerList(context.Background(), types.ContainerListOptions{})
+
+	var containerList []string
+	userid := fmt.Sprintf("%d", refid)
+	for _, v := range containers {
+		if len(v.Names) > 0 && strings.HasPrefix(v.Names[0], userid) {
+			entry := v.ID
+			containerList = append(containerList, entry)
+		}
+	}
+
+	return containerList
 }
 
 // NewService creates a customercontainer with necessary dependencies.

@@ -17,6 +17,8 @@ type DCli interface {
 	ContainerExecCreate(ctx context.Context, container string, config types.ExecConfig) (string, error)
 	ContainerCreate(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, containerName string) (container.ContainerCreateCreatedBody, error)
 	ContainerRename(ctx context.Context, containerID, newContainerName string) error
+	ContainerRemove(ctx context.Context, containerID string, options types.ContainerRemoveOptions) error
+	ContainerList(ctx context.Context, options types.ContainerListOptions) ([]types.Container, error)
 	ImageInspectWithRaw(ctx context.Context, imageID string) (types.ImageInspect, []byte, error)
 	IsErrImageNotFound(err error) bool
 }
@@ -44,6 +46,14 @@ func (d dcliAbstract) ContainerCreate(ctx context.Context, config *container.Con
 
 func (d dcliAbstract) ContainerRename(ctx context.Context, containerID, newContainerName string) error {
 	return d.cli.ContainerRename(ctx, containerID, newContainerName)
+}
+
+func (d dcliAbstract) ContainerRemove(ctx context.Context, containerID string, options types.ContainerRemoveOptions) error {
+	return d.cli.ContainerRemove(ctx, containerID, options)
+}
+
+func (d dcliAbstract) ContainerList(ctx context.Context, options types.ContainerListOptions) ([]types.Container, error) {
+	return d.cli.ContainerList(ctx, options)
 }
 
 func (d dcliAbstract) ImageInspectWithRaw(ctx context.Context, imageID string) (types.ImageInspect, []byte, error) {
