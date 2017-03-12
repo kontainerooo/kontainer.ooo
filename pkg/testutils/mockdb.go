@@ -165,6 +165,25 @@ func (m *MockDB) First(out interface{}, where ...interface{}) error {
 	return nil
 }
 
+// Find mocks gorm.DBs Find function
+func (m *MockDB) Find(out interface{}, where ...interface{}) error {
+	if m.produceError() {
+		return ErrDBFailure
+	}
+
+	ref := reflect.TypeOf(out).Elem()
+	for _, t := range m.tables {
+		if ref == reflect.SliceOf(t.getRef()) {
+			err := t.all(out)
+			if err != nil {
+				return err
+			}
+			break
+		}
+	}
+	return nil
+}
+
 // Create mocks gorm.DBs Create function
 func (m *MockDB) Create(value interface{}) error {
 	if m.produceError() {

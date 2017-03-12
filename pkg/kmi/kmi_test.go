@@ -259,7 +259,7 @@ var _ = Describe("KMI", func() {
 			Ω(k.ID).Should(BeEquivalentTo(id))
 		})
 
-		It("Shoudl handle db Errors", func() {
+		It("Should handle db Errors", func() {
 			db.SetError(1)
 			err := kmiService.GetKMI(0, &kmi.KMI{})
 			Ω(err).Should(HaveOccurred())
@@ -270,7 +270,21 @@ var _ = Describe("KMI", func() {
 		})
 	})
 
-	XDescribe("KMI", func() {
+	Describe("KMI", func() {
+		db := testutils.NewMockDB()
+		kmiService, _ := kmi.NewService(db)
+		id, _ := kmiService.AddKMI("test.kmi")
+		It("Should return all kmdi", func() {
+			res := []kmi.KMDI{}
+			err := kmiService.KMI(&res)
+			Ω(err).ShouldNot(HaveOccurred())
+			Expect(res[0].ID).To(BeEquivalentTo(id))
+		})
 
+		It("Should handle DB errors", func() {
+			db.SetError(1)
+			err := kmiService.KMI(&[]kmi.KMDI{})
+			Ω(err).Should(HaveOccurred())
+		})
 	})
 })
