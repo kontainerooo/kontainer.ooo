@@ -5,12 +5,12 @@ import (
 	"reflect"
 )
 
-func merge(dst, src reflect.Value, depth int) error {
+func merge(dst, src reflect.Value, overwriteID bool, depth int) error {
 	if depth > 7 {
 		return errors.New("too deep")
 	}
 	for i := 0; i < src.NumField(); i++ {
-		if src.Type().Field(i).Name == "ID" {
+		if !overwriteID && src.Type().Field(i).Name == "ID" {
 			continue
 		}
 
@@ -22,7 +22,7 @@ func merge(dst, src reflect.Value, depth int) error {
 		}
 
 		if field.Kind() == reflect.Struct || (field.Kind() == reflect.Ptr && field.Elem().Kind() == reflect.Struct) {
-			merge(field, src.Field(i), depth+1)
+			merge(field, src.Field(i), overwriteID, depth+1)
 		} else if field.CanSet() {
 			srcVal := src.Field(i)
 			if srcVal.IsValid() && (!isZero(srcVal)) {
