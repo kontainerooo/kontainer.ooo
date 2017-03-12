@@ -32,6 +32,7 @@ type DB interface {
 	AutoMigrate(values ...interface{}) error
 	Where(query interface{}, args ...interface{}) error
 	First(out interface{}, where ...interface{}) error
+	Find(out interface{}, where ...interface{}) error
 	Create(value interface{}) error
 	Delete(value interface{}, where ...interface{}) error
 	Update(model interface{}, attrs ...interface{}) error
@@ -88,6 +89,13 @@ func (w *dbWrapper) First(out interface{}, where ...interface{}) error {
 		return w.tx.First(out, where...).Error
 	}
 	return w.db.First(out, where...).Error
+}
+
+func (w *dbWrapper) Find(out interface{}, where ...interface{}) error {
+	if w.tx != nil {
+		return w.tx.Find(out, where...).Error
+	}
+	return w.db.Find(out, where...).Error
 }
 
 func (w *dbWrapper) Create(value interface{}) error {

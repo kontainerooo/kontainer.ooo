@@ -19,7 +19,7 @@ type Service interface {
 	GetKMI(id uint, k *KMI) error
 
 	// KMI returns display information for all exisiting kontainer modules
-	KMI() *[]KMDI
+	KMI(*[]KMDI) error
 }
 
 type dbAdapter interface {
@@ -27,6 +27,7 @@ type dbAdapter interface {
 	AutoMigrate(...interface{}) error
 	Where(interface{}, ...interface{}) error
 	First(interface{}, ...interface{}) error
+	Find(interface{}, ...interface{}) error
 	Create(interface{}) error
 	Delete(interface{}, ...interface{}) error
 }
@@ -85,8 +86,15 @@ func (s *service) GetKMI(id uint, k *KMI) error {
 	return nil
 }
 
-func (s *service) KMI() *[]KMDI {
-	//TODO: implement
+func (s *service) KMI(out *[]KMDI) error {
+	k := []KMI{}
+	err := s.db.Find(&k)
+	if err != nil {
+		return err
+	}
+	for _, kmi := range k {
+		*out = append(*out, kmi.KMDI)
+	}
 	return nil
 }
 
