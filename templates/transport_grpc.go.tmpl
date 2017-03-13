@@ -1,0 +1,68 @@
+package {{.File.Name | splitArray "/" | last | splitArray "." | first}}
+
+{{$file := .File}}
+
+import (
+    "context"
+
+    "github.com/go-kit/kit/log"
+    grpctransport "github.com/go-kit/kit/transport/grpc"
+    "github.com/ttdennis/kontainer.io/pkg/pb"
+    oldcontext "golang.org/x/net/context"
+)
+
+// MakeGRPCServer makes a set of Endpoints available as a gRPC {{$file.Name | splitArray "/" | last | splitArray "." | first}}Server
+func MakeGRPCServer(ctx context.Context, endpoints Endpoints, logger log.Logger) pb.{{$file.Name | splitArray "/" | last | splitArray "." | first | upper}}ServiceServer {
+  options := []grpctransport.ServerOption{
+		grpctransport.ServerErrorLogger(logger),
+	}
+
+	return &grpcServer{
+		{{range .Service.Method}}
+			{{.Name | lower}}: grpctransport.NewServer(
+				endpoints.{{.Name}}Endpoint,
+				DecodeGRPC{{.Name}}Request,
+				EncodeGRPC{{.Name}}Response,
+				options...,
+			),
+    {{end}}
+	}
+}
+
+type grpcServer struct {
+	{{range .Service.Method}}
+		{{.Name | lower}} grpctransport.Handler
+	{{end}}
+}
+
+{{range .Service.Method}}
+	func (s *grpcServer) {{.Name}}(ctx oldcontext.Context, req *pb.{{.InputType | splitArray "." | last}}) (*pb.{{.OutputType | splitArray "." | last}}, error) {
+	_, res, err := s.{{.Name | lower}}.ServeGRPC(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		return res.(*pb.{{.OutputType | splitArray "." | last}}), nil
+	}
+{{end}}
+
+{{range .Service.Method}}
+  // DecodeGRPC{{.Name}}Request is a transport/grpc.DecodeRequestFunc that converts a
+  // gRPC {{.Name}} request to a {{$file.Name}}-domain {{.Name | lower}} request.
+	func DecodeGRPC{{.Name}}Request(_ context.Context, grpcReq interface{}) (interface{}, error) {
+		req := grpcReq.(*pb.{{.InputType | splitArray "." | last}})
+    return {{.Name}}Request {
+      
+    }, nil
+	}
+{{end}}
+
+{{range .Service.Method}}
+  // EncodeGRPC{{.Name}}Response is a transport/grpc.EncodeRequestFunc that converts a
+  // {{$file.Name}}-domain {{.Name | lower}} response to a gRPC {{.Name}} response.
+	func EncodeGRPC{{.Name}}Response(_ context.Context, response interface{}) (interface{}, error) {
+		res := response.({{.Name}}Response)
+    return &pb.{{.OutputType | splitArray "." | last}}{
+      Error: res.Error.Error(),
+    }, nil
+	}
+{{end}}

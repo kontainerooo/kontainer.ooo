@@ -8,6 +8,8 @@ import (
 	"os"
 	"path"
 	"reflect"
+
+	"github.com/lib/pq"
 )
 
 // Content is a struct type which may hold a byte array for every file which can be in the kmi file
@@ -146,7 +148,7 @@ func GetStringMap(src interface{}, outsrc []byte, dst map[string]interface{}, na
 
 // GetStringSlice takes a src and an outsrc and a destination slice, decides which source to use and to fill
 // the destination slice
-func GetStringSlice(src interface{}, outsrc []byte, dst *[]string, name string) error {
+func GetStringSlice(src interface{}, outsrc []byte, dst *pq.StringArray, name string) error {
 	err := ChooseSource(&src, outsrc, reflect.Slice, name)
 	if err != nil {
 		return err
@@ -168,7 +170,7 @@ func GetStringSlice(src interface{}, outsrc []byte, dst *[]string, name string) 
 
 // GetFrontend takes a src and an outsrc and a destination frontendModule slice, decides which source to use and extracts
 // the frontendModule specific information to fill the destination slice
-func GetFrontend(src interface{}, outsrc []byte, dst *[]frontendModule) error {
+func GetFrontend(src interface{}, outsrc []byte, dst *FrontendArray) error {
 	err := ChooseSource(&src, outsrc, reflect.Slice, "frontend")
 	if err != nil {
 		return err

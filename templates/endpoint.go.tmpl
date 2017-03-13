@@ -1,0 +1,38 @@
+package {{.File.Name | splitArray "/" | last | splitArray "." | first}}
+
+import (
+	"context"
+
+	"github.com/go-kit/kit/endpoint"
+)
+
+// Endpoints is a struct which collects all endpoints for the {{.File.Name | splitArray "/" | last | splitArray "." | first}} service
+type Endpoints struct {
+	{{range .Service.Method}}
+			{{.Name}}Endpoint endpoint.Endpoint
+	{{end}}
+}
+
+
+{{range .Service.Method}}
+// {{.Name}}Request is the request struct for the {{.Name}}Endpoint
+type {{.Name}}Request struct {
+
+}
+
+// {{.Name}}Response is the response struct for the {{.Name}}Endpoint
+type {{.Name}}Response struct {
+
+}
+
+// Make{{.Name}}Endpoint creates a gokit endpoint which invokes {{.Name}}
+func Make{{.Name}}Endpoint(s Service) endpoint.Endpoint {
+   return func(ctx context.Context, request interface{}) (interface{}, error) {
+	     req := request.({{.Name}}Request)
+	     err := s.{{.Name}}()
+	     return {{.Name}}Response{
+
+       }, nil
+   }
+}
+{{end}}
