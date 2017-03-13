@@ -16,6 +16,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
 	"github.com/ttdennis/kontainer.io/pkg/abstraction"
+	"github.com/ttdennis/kontainer.io/pkg/kmi"
 	"github.com/ttdennis/kontainer.io/pkg/pb"
 	"github.com/ttdennis/kontainer.io/pkg/user"
 )
@@ -53,10 +54,20 @@ func main() {
 
 	userEndpoints := makeUserServiceEndpoints(userService)
 
+	var kmiService kmi.Service
+	{
+		kmiService, err = kmi.NewService(dbWrapper)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	kmiEndpoints := makeKMIServiceEndpoints(kmiService)
+
 	errc := make(chan error)
 	ctx := context.Background()
 
-	go startGRPCTransport(ctx, errc, logger, grpcAddr, userEndpoints)
+	go startGRPCTransport(ctx, errc, logger, grpcAddr, userEndpoints, kmiEndpoints)
 
 	// Interrupt handler.
 	go func() {
@@ -68,7 +79,7 @@ func main() {
 	logger.Log("exit", <-errc)
 }
 
-func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger, grpcAddr string, ue user.Endpoints) {
+func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger, grpcAddr string, ue user.Endpoints, ke kmi.Endpoints) {
 	logger = log.With(logger, "transport", "gRPC")
 
 	ln, err := net.Listen("tcp", grpcAddr)
@@ -76,10 +87,13 @@ func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger,
 		errc <- err
 		return
 	}
-
-	srv := user.MakeGRPCServer(ctx, ue, logger)
 	s := grpc.NewServer()
-	pb.RegisterUserServiceServer(s, srv)
+
+	userServer := user.MakeGRPCServer(ctx, ue, logger)
+	pb.RegisterUserServiceServer(s, userServer)
+
+	kmiServer := kmi.MakeGRPCServer(ctx, ke, logger)
+	pb.RegisterKMIServiceServer(s, kmiServer)
 
 	logger.Log("addr", grpcAddr)
 	errc <- s.Serve(ln)
@@ -123,5 +137,34 @@ func makeUserServiceEndpoints(s user.Service) user.Endpoints {
 		DeleteUserEndpoint:     deleteUserEndpoint,
 		ResetPasswordEndpoint:  resetPasswordEndpoint,
 		GetUserEndpoint:        getUserEndpoint,
+	}
+}
+
+func makeKMIServiceEndpoints(s kmi.Service) kmi.Endpoints {
+	var AddKMIEndpoint endpoint.Endpoint
+	{
+		AddKMIEndpoint = kmi.MakeAddKMIEndpoint(s)
+	}
+
+	var RemoveKMIEndpoint endpoint.Endpoint
+	{
+		RemoveKMIEndpoint = kmi.MakeRemoveKMIEndpoint(s)
+	}
+
+	var GetKMIEndpoint endpoint.Endpoint
+	{
+		GetKMIEndpoint = kmi.MakeGetKMIEndpoint(s)
+	}
+
+	var KMIEndpoint endpoint.Endpoint
+	{
+		KMIEndpoint = kmi.MakeKMIEndpoint(s)
+	}
+
+	return kmi.Endpoints{
+		AddKMIEndpoint:    AddKMIEndpoint,
+		RemoveKMIEndpoint: RemoveKMIEndpoint,
+		GetKMIEndpoint:    GetKMIEndpoint,
+		KMIEndpoint:       KMIEndpoint,
 	}
 }

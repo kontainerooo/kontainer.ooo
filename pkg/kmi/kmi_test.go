@@ -1,6 +1,7 @@
 package kmi_test
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/ttdennis/kontainer.io/pkg/kmi"
@@ -287,4 +288,57 @@ var _ = Describe("KMI", func() {
 			Ω(err).Should(HaveOccurred())
 		})
 	})
+
+	Describe("Endpoints and Transport", func() {
+		db := testutils.NewMockDB()
+		s, _ := kmi.NewService(db)
+		es := &kmi.Endpoints{}
+		ctx := context.Background()
+		It("Should create valid Endpoints", func() {
+			es.AddKMIEndpoint = kmi.MakeAddKMIEndpoint(s)
+			es.RemoveKMIEndpoint = kmi.MakeRemoveKMIEndpoint(s)
+			es.GetKMIEndpoint = kmi.MakeGetKMIEndpoint(s)
+			es.KMIEndpoint = kmi.MakeKMIEndpoint(s)
+		})
+
+		Context("AddKMIEndpoint", func() {
+			It("Should work with AddKMI request and response", func() {
+				res, err := es.AddKMIEndpoint(ctx, kmi.AddKMIRequest{
+					Path: "test.kmi",
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res.(kmi.AddKMIResponse).ID).To(BeEquivalentTo(1))
+			})
+		})
+
+		Context("GetKMIEndpoint", func() {
+			It("Should work with GetKMI request and response", func() {
+				res, err := es.GetKMIEndpoint(ctx, kmi.GetKMIRequest{
+					ID: 1,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res.(kmi.GetKMIResponse).KMI.ID).To(BeEquivalentTo(1))
+			})
+		})
+
+		Context("KMIEndpoint", func() {
+			It("Should work with KMI request and response", func() {
+				res, err := es.KMIEndpoint(ctx, kmi.KMIRequest{})
+				kmdi := *res.(kmi.KMIResponse).KMDI
+				Expect(err).NotTo(HaveOccurred())
+				Expect(kmdi[0].ID).To(BeEquivalentTo(1))
+			})
+		})
+
+		Context("RemoveKMIEndpoint", func() {
+			It("Should work with RemoveKMI request and response", func() {
+				res, err := es.RemoveKMIEndpoint(ctx, kmi.RemoveKMIRequest{
+					ID: 1,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res.(kmi.RemoveKMIResponse).Error).NotTo(HaveOccurred())
+			})
+		})
+	})
+
 })

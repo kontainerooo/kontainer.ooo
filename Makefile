@@ -6,7 +6,6 @@ PKG_DIRS=$(wildcard pkg/*)
 
 PROTOC=protoc
 PROTOC_OPTS="-Imessages/"
-PROTOC_DIRS=$(wildcard messages/*)
 
 .PHONY: force
 
@@ -29,10 +28,8 @@ $(CMD_DIRS): force
 $(PKG_DIRS): force
 	cd $@ && go get -t && go test -short && export GOOS="linux" && go build
 
-proto: $(PROTOC_DIRS)
-
-$(PROTOC_DIRS): force
-	$(PROTOC) $(PROTOC_OPTS) --go_out=plugins=grpc:pkg/pb ./messages/$(basename $(notdir $@)).proto
+proto: force
+	$(PROTOC) $(PROTOC_OPTS) --go_out=plugins=grpc:pkg/pb ./messages/*
 
 clean:
 	rm -rf build && mkdir build && touch build/.gitkeep

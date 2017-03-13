@@ -1,0 +1,70 @@
+syntax = "proto3";
+package pb;
+
+service KMIService {
+  rpc AddKMI (AddKMIRequest) returns (AddKMIResponse);
+  rpc RemoveKMI (RemoveKMIRequest) returns (RemoveKMIResponse);
+  rpc GetKMI (GetKMIRequest) returns (GetKMIResponse);
+  rpc KMI (KMIRequest) returns (KMIResponse);
+}
+
+enum Type {
+  WEBSERVER = 0;
+}
+
+message KMDI {
+  uint32 ID = 1;
+  string name = 2;
+  string version = 3;
+  string description = 4;
+  Type type = 5;
+}
+
+message FrontendModule {
+  string template = 1;
+  map<string, string> parameters = 2;
+}
+
+message KMI {
+  KMDI KMDI = 1;
+  map<string, string> commands = 2;
+  map<string, string> environment = 3;
+  repeated FrontendModule frontend = 4;
+  repeated string imports = 5;
+  map<string, string> interfaces = 6;
+}
+
+message AddKMIRequest {
+  string path = 1;
+}
+
+message AddKMIResponse {
+  uint32 ID = 1;
+  string error = 2;
+}
+
+message RemoveKMIRequest {
+  uint32 ID = 1;
+}
+
+message RemoveKMIResponse {
+  string error = 1;
+}
+
+message GetKMIRequest {
+  uint32 ID = 1;
+}
+
+message GetKMIResponse {
+  KMI kmi = 1;
+  string error = 2;
+}
+
+message KMIRequest{
+
+}
+
+message KMIResponse {
+  repeated KMDI kmdi = 1;
+  string error = 2;
+}
