@@ -35,14 +35,18 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var upgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		s.logger.Log(err)
+		s.logger.Log("err", err)
 		return
 	}
 
+	s.logger.Log("conn", conn.RemoteAddr())
 	go s.handleConnection(conn)
 }
 
@@ -58,7 +62,7 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
-				s.logger.Log(err)
+				s.logger.Log("err", err)
 				return
 			}
 			continue
@@ -68,7 +72,7 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
-				s.logger.Log(err)
+				s.logger.Log("err", err)
 				return
 			}
 			continue
@@ -78,7 +82,7 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
-				s.logger.Log(err)
+				s.logger.Log("err", err)
 				return
 			}
 			continue
@@ -88,7 +92,7 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
-				s.logger.Log(err)
+				s.logger.Log("err", err)
 				return
 			}
 			continue
@@ -96,7 +100,7 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 
 		err = conn.WriteMessage(messageType, response)
 		if err != nil {
-			s.logger.Log(err)
+			s.logger.Log("err", err)
 			return
 		}
 	}
