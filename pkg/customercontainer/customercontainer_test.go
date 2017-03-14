@@ -1,6 +1,7 @@
 package customercontainer_test
 
 import (
+	"context"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -143,6 +144,79 @@ var _ = Describe("Customercontainer", func() {
 		It("Should return no instances when none exist", func() {
 			instances := cc.Instances(123)
 			Ω(instances).Should(BeEmpty())
+		})
+	})
+
+	Describe("Endpoints and Transport", func() {
+		cli := testutils.NewMockDCli()
+		cc := customercontainer.NewService(cli)
+		cli.CreateMockImage("testimage")
+		es := &customercontainer.Endpoints{}
+		ctx := context.Background()
+		gID := ""
+
+		It("Should create valid Endpoints", func() {
+			es.CreateContainerEndpoint = customercontainer.MakeCreateContainerEndpoint(cc)
+			es.EditContainerEndpoint = customercontainer.MakeEditContainerEndpoint(cc)
+			es.InstancesEndpoint = customercontainer.MakeInstancesEndpoint(cc)
+			es.RemoveContainerEndpoint = customercontainer.MakeRemoveContainerEndpoint(cc)
+		})
+
+		Context("CreateContainerEndpoint", func() {
+			It("Should work with CreateContainer request and response", func() {
+				cfg := customercontainer.ContainerConfig{
+					ImageName: "testimage",
+				}
+				res, err := es.CreateContainerEndpoint(ctx, customercontainer.CreateContainerRequest{
+					Refid: 123,
+					Cfg:   &cfg,
+				})
+
+				gID = res.(customercontainer.CreateContainerResponse).ID
+
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(res.(customercontainer.CreateContainerResponse).Error).ShouldNot(HaveOccurred())
+				Ω(res.(customercontainer.CreateContainerResponse).ID).ShouldNot(BeEmpty())
+				Ω(res.(customercontainer.CreateContainerResponse).Name).ShouldNot(BeEmpty())
+			})
+		})
+
+		Context("EditContainerEndpoint", func() {
+			It("Should work with EditContainer request and response", func() {
+				cfg := customercontainer.ContainerConfig{
+					ImageName: "testimage",
+				}
+				res, err := es.EditContainerEndpoint(ctx, customercontainer.EditContainerRequest{
+					ID:  gID,
+					Cfg: &cfg,
+				})
+
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(res.(customercontainer.EditContainerResponse).Error).ShouldNot(HaveOccurred())
+			})
+		})
+
+		Context("InstancesEndpoint", func() {
+			It("Should work with Instances request and response", func() {
+				res, err := es.InstancesEndpoint(ctx, customercontainer.InstancesRequest{
+					Refid: 123,
+				})
+
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(res.(customercontainer.InstancesResponse).Instances).ShouldNot(BeNil())
+			})
+		})
+
+		Context("RemoveContainerEndpoint", func() {
+			It("Should work with RemoveContainer request and response", func() {
+
+				res, err := es.RemoveContainerEndpoint(ctx, customercontainer.RemoveContainerRequest{
+					ID: gID,
+				})
+
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(res.(customercontainer.RemoveContainerResponse).Error).ShouldNot(HaveOccurred())
+			})
 		})
 	})
 })
