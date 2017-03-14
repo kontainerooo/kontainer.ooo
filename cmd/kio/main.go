@@ -19,6 +19,7 @@ import (
 
 	"github.com/ttdennis/kontainer.io/pkg/abstraction"
 	"github.com/ttdennis/kontainer.io/pkg/containerlifecycle"
+	"github.com/ttdennis/kontainer.io/pkg/customercontainer"
 	"github.com/ttdennis/kontainer.io/pkg/kmi"
 	"github.com/ttdennis/kontainer.io/pkg/pb"
 	"github.com/ttdennis/kontainer.io/pkg/user"
@@ -86,10 +87,17 @@ func main() {
 
 	clsEndpoints := makeCLServiceEndpoints(containerlifecycleService)
 
+	var customercontainerService customercontainer.Service
+	{
+		customercontainerService = customercontainer.NewService(dcliWrapper)
+	}
+
+	ccEndpoint := makeCustomerContainerServiceEndpoints(customercontainerService)
+
 	errc := make(chan error)
 	ctx := context.Background()
 
-	go startGRPCTransport(ctx, errc, logger, grpcAddr, userEndpoints, kmiEndpoints, clsEndpoints)
+	go startGRPCTransport(ctx, errc, logger, grpcAddr, userEndpoints, kmiEndpoints, clsEndpoints, ccEndpoint)
 
 	// Interrupt handler.
 	go func() {
@@ -101,7 +109,7 @@ func main() {
 	logger.Log("exit", <-errc)
 }
 
-func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger, grpcAddr string, ue user.Endpoints, ke kmi.Endpoints, cle containerlifecycle.Endpoints) {
+func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger, grpcAddr string, ue user.Endpoints, ke kmi.Endpoints, cle containerlifecycle.Endpoints, cce customercontainer.Endpoints) {
 	logger = log.With(logger, "transport", "gRPC")
 
 	ln, err := net.Listen("tcp", grpcAddr)
@@ -119,6 +127,9 @@ func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger,
 
 	clsServer := containerlifecycle.MakeGRPCServer(ctx, cle, logger)
 	pb.RegisterContainerLifecycleServiceServer(s, clsServer)
+
+	ccsServer := customercontainer.MakeGRPCServer(ctx, cce, logger)
+	pb.RegisterCustomerContainerServiceServer(s, ccsServer)
 
 	logger.Log("addr", grpcAddr)
 	errc <- s.Serve(ln)
@@ -214,5 +225,35 @@ func makeCLServiceEndpoints(s containerlifecycle.Service) containerlifecycle.End
 		StartContainerEndpoint: StartContainerEndpoint,
 		StartCommandEndpoint:   StartCommandEndpoint,
 		StopContainerEndpoint:  StopContainerEndpoint,
+	}
+}
+
+func makeCustomerContainerServiceEndpoints(s customercontainer.Service) customercontainer.Endpoints {
+	var CreateContainerEndpoint endpoint.Endpoint
+	{
+		CreateContainerEndpoint = customercontainer.MakeCreateContainerEndpoint(s)
+	}
+
+	var EditContainerEndpoint endpoint.Endpoint
+	{
+		EditContainerEndpoint = customercontainer.MakeEditContainerEndpoint(s)
+	}
+
+	var RemoveContainerEndpoint endpoint.Endpoint
+	{
+		RemoveContainerEndpoint = customercontainer.MakeRemoveContainerEndpoint(s)
+	}
+
+	var InstancesEndpoint endpoint.Endpoint
+	{
+		InstancesEndpoint = customercontainer.MakeInstancesEndpoint(s)
+
+	}
+
+	return customercontainer.Endpoints{
+		CreateContainerEndpoint: CreateContainerEndpoint,
+		EditContainerEndpoint:   EditContainerEndpoint,
+		RemoveContainerEndpoint: RemoveContainerEndpoint,
+		InstancesEndpoint:       InstancesEndpoint,
 	}
 }
