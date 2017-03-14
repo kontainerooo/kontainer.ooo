@@ -1,0 +1,22 @@
+package {{.File.Name | splitArray "/" | last | splitArray "." | first}}
+
+{{$file := .File}}
+
+import (
+	ws "github.com/ttdennis/kontainer.io/pkg/websocket"
+)
+
+// MakeWebsocketService makes a set of {{$file.Name | splitArray "/" | last | splitArray "." | first}} Endpoints available as a websocket Service
+func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
+	service := ws.NewServiceDescription("{{$file.Name | splitArray "/" | last | splitArray "." | first}}Service", ws.ProtoIDFromString("{{$file.Name | splitArray "/" | last | splitArray "." | first}}"))
+  {{range .Service.Method}}
+  service.AddEndpoint(ws.NewServiceEndpoint(
+    "{{.Name}}",
+    ws.ProtoIDFromString(""),
+    endpoints.{{.Name}}Endpoint,
+    DecodeGRPC{{.Name}}Request,
+    EncodeGRPC{{.Name}}Response,
+    ))
+  {{end}}
+	return service
+}
