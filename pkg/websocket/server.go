@@ -8,17 +8,11 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// ProtocolHandler is an interface defining the needed functionality to Decode and Encode messages
-type ProtocolHandler interface {
-	Decode(message []byte) (service [3]byte, method [3]byte, data interface{}, err error)
-	Encode(service [3]byte, method [3]byte, data interface{}) (message []byte, err error)
-}
-
 // Server is a struct type containing every value needed for a websocket server
 type Server struct {
 	protocolHandler ProtocolHandler
 	logger          log.Logger
-	services        map[[3]byte]*ServiceDescription
+	services        map[ProtoID]*ServiceDescription
 }
 
 // RegisterService adds the given ServiceDescription to the Server's services map
@@ -53,6 +47,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleConnection(conn *websocket.Conn) {
+	defer conn.Close()
 	for {
 		messageType, request, err := conn.ReadMessage()
 		if err != nil {
@@ -65,18 +60,16 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
 				s.logger.Log(err)
-				conn.Close()
 				return
 			}
 			continue
 		}
 
-		handler, err := s.services[srv].EndpointHandler(me)
+		handler, err := s.services[*srv].GetEndpointHandler(*me)
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
 				s.logger.Log(err)
-				conn.Close()
 				return
 			}
 			continue
@@ -87,7 +80,6 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
 				s.logger.Log(err)
-				conn.Close()
 				return
 			}
 			continue
@@ -98,7 +90,6 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
 				s.logger.Log(err)
-				conn.Close()
 				return
 			}
 			continue
@@ -107,7 +98,6 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 		err = conn.WriteMessage(messageType, response)
 		if err != nil {
 			s.logger.Log(err)
-			conn.Close()
 			return
 		}
 	}
@@ -121,5 +111,6 @@ func NewServer(
 	return &Server{
 		protocolHandler: ph,
 		logger:          logger,
+		services:        make(map[ProtoID]*ServiceDescription),
 	}
 }

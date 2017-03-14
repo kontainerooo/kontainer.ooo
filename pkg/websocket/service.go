@@ -14,7 +14,7 @@ type EndpointHandler func(message interface{}) (response interface{}, err error)
 // ServiceEndpoint is a struct type containing every value/function needed for an Endpoint in a Service
 type ServiceEndpoint struct {
 	name         string
-	protocolName [3]byte
+	protocolName ProtoID
 	e            endpoint.Endpoint
 	dec          DecodeRequestFunc
 	enc          EncodeResponseFunc
@@ -23,7 +23,7 @@ type ServiceEndpoint struct {
 // NewServiceEndpoint returns a pointer to a ServiceEdnpoint instance
 func NewServiceEndpoint(
 	name string,
-	protocolName [3]byte,
+	protocolName ProtoID,
 	e endpoint.Endpoint,
 	dec DecodeRequestFunc,
 	enc EncodeResponseFunc,
@@ -40,8 +40,8 @@ func NewServiceEndpoint(
 // ServiceDescription is a struct type containing every value needed for a Service in a Websocket Server
 type ServiceDescription struct {
 	name         string
-	protocolName [3]byte
-	endpoints    map[[3]byte]*ServiceEndpoint
+	protocolName ProtoID
+	endpoints    map[ProtoID]*ServiceEndpoint
 }
 
 // AddEndpoint takes a ServiceEndpoint and adds it to the ServiceDescription's endpoint map
@@ -55,8 +55,8 @@ func (s *ServiceDescription) AddEndpoint(se *ServiceEndpoint) error {
 	return nil
 }
 
-// EndpointHandler returns an EndpointHandler if an endpoint with name name exists, if not an error is returned
-func (s *ServiceDescription) EndpointHandler(name [3]byte) (EndpointHandler, error) {
+// GetEndpointHandler returns an EndpointHandler if an endpoint with name name exists, if not an error is returned
+func (s *ServiceDescription) GetEndpointHandler(name ProtoID) (EndpointHandler, error) {
 	e, exist := s.endpoints[name]
 	if !exist {
 		return nil, fmt.Errorf("Service Endpoint %s does not exists", name)
@@ -81,10 +81,11 @@ func (s *ServiceDescription) EndpointHandler(name [3]byte) (EndpointHandler, err
 // NewServiceDescription returns a pointer to a ServiceDescription instance
 func NewServiceDescription(
 	name string,
-	protocolName [3]byte,
+	protocolName ProtoID,
 ) *ServiceDescription {
 	return &ServiceDescription{
 		name:         name,
 		protocolName: protocolName,
+		endpoints:    make(map[ProtoID]*ServiceEndpoint),
 	}
 }
