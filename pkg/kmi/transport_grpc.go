@@ -127,37 +127,50 @@ func DecodeGRPCKMIRequest(_ context.Context, grpcReq interface{}) (interface{}, 
 // messages/KMI.proto-domain addKMI response to a gRPC AddKMI response.
 func EncodeGRPCAddKMIResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(AddKMIResponse)
-	return &pb.AddKMIResponse{
-		ID:    uint32(res.ID),
-		Error: res.Error.Error(),
-	}, nil
+	gRPCRes := &pb.AddKMIResponse{
+		ID: uint32(res.ID),
+	}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
 }
 
 // EncodeGRPCRemoveKMIResponse is a transport/grpc.EncodeRequestFunc that converts a
 // messages/KMI.proto-domain removeKMI response to a gRPC RemoveKMI response.
 func EncodeGRPCRemoveKMIResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(RemoveKMIResponse)
-	return &pb.RemoveKMIResponse{
-		Error: res.Error.Error(),
-	}, nil
+	gRPCRes := &pb.RemoveKMIResponse{}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
 }
 
 // EncodeGRPCGetKMIResponse is a transport/grpc.EncodeRequestFunc that converts a
 // messages/KMI.proto-domain getKMI response to a gRPC GetKMI response.
 func EncodeGRPCGetKMIResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(GetKMIResponse)
-	return &pb.GetKMIResponse{
-		Kmi:   transformIntoPBKMI(res.KMI),
-		Error: res.Error.Error(),
-	}, nil
+	gRPCRes := &pb.GetKMIResponse{}
+	if res.KMI != nil {
+		gRPCRes.Kmi = transformIntoPBKMI(res.KMI)
+	}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
 }
 
 // EncodeGRPCKMIResponse is a transport/grpc.EncodeRequestFunc that converts a
 // messages/KMI.proto-domain KMI response to a gRPC KMI response.
 func EncodeGRPCKMIResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(KMIResponse)
-	return &pb.KMIResponse{
-		Kmdi:  transformIntoPBKMDI(res.KMDI),
-		Error: res.Error.Error(),
-	}, nil
+	gRPCRes := &pb.KMIResponse{}
+	if res.KMDI != nil {
+		gRPCRes.Kmdi = transformIntoPBKMDI(res.KMDI)
+	}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
 }
