@@ -1,0 +1,49 @@
+syntax = "proto3";
+package pb;
+
+service CustomerContainerService {
+    rpc CreateContainer (CreateContainerRequest) returns (CreateContainerResponse);
+    rpc EditContainer (EditContainerRequest) returns (EditContainerResponse);
+    rpc RemoveContainer (RemoveContainerRequest) returns (RemoveContainerResponse);
+    rpc Instances (InstancesRequest) returns (InstancesResponse);
+}
+
+message ContainerConfig {
+    string ImageName = 1;
+}
+
+message CreateContainerRequest {
+    uint32 Refid = 1;
+    ContainerConfig Cfg = 2;
+}
+
+message CreateContainerResponse {
+    string Name = 1;
+    string ID = 2;
+    string Error = 3;
+}
+
+message EditContainerRequest {
+    string ID = 1;
+    ContainerConfig Cfg = 2;
+}
+
+message EditContainerResponse {
+    string Error = 1;
+}
+
+message RemoveContainerRequest {
+    string ID = 1;
+}
+
+message RemoveContainerResponse {
+    string Error = 1;
+}
+
+message InstancesRequest {
+    uint32 Refid = 1;
+}
+
+message InstancesResponse {
+    repeated string Instances = 1;
+}
