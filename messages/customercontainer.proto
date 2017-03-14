@@ -24,7 +24,7 @@ message CreateContainerResponse {
 }
 
 message EditContainerRequest {
-    uint32 ID = 1;
+    string ID = 1;
     ContainerConfig Cfg = 2;
 }
 
@@ -41,7 +41,7 @@ message RemoveContainerResponse {
 }
 
 message InstancesRequest {
-    uint32 ID = 1;
+    uint32 Refid = 1;
 }
 
 message InstancesResponse {
