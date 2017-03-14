@@ -9,12 +9,14 @@ import (
 	"os"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/ttdennis/kontainer.io/pkg/pb"
 	ws "github.com/ttdennis/kontainer.io/pkg/websocket"
 )
 
@@ -225,6 +227,44 @@ var _ = Describe("Websocket", func() {
 				_, message, _ := conn.ReadMessage()
 				Ω(message).Should(BeEquivalentTo("service fail doesnt exist"))
 			})
+		})
+	})
+
+	Context("BasicHandler", func() {
+		h := ws.BasicHandler{}
+		It("Should Decode messages", func() {
+			message := []byte("TSTTST")
+			path := "test"
+			p, _ := proto.Marshal(&pb.AddKMIRequest{
+				Path: path,
+			})
+			message = append(message, p...)
+
+			_, _, data, err := h.Decode(message)
+			Ω(err).ShouldNot(HaveOccurred())
+			q := &pb.AddKMIRequest{}
+			proto.Unmarshal(data.([]byte), q)
+			Ω(q.Path).Should(BeEquivalentTo(path))
+		})
+
+		It("Should return an error if message is malformatted", func() {
+			_, _, _, err := h.Decode([]byte{})
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Should encode messages", func() {
+			tst := ws.ProtoIDFromString("TST")
+			message, err := h.Encode(&tst, &tst, &pb.AddKMIRequest{
+				Path: "path",
+			})
+			Ω(err).ShouldNot(HaveOccurred())
+			srv, me, data, _ := h.Decode(message)
+			Ω(srv.String()).Should(BeEquivalentTo(tst.String()))
+			Ω(me.String()).Should(BeEquivalentTo(tst.String()))
+			p, _ := proto.Marshal(&pb.AddKMIRequest{
+				Path: "path",
+			})
+			Ω(data).Should(BeEquivalentTo(p))
 		})
 	})
 })
