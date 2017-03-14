@@ -24,7 +24,7 @@ type DCli interface {
 }
 
 type dcliAbstract struct {
-	cli engine.Client
+	cli *engine.Client
 }
 
 func (d dcliAbstract) ContainerStart(ctx context.Context, container string, options types.ContainerStartOptions) error {
@@ -62,4 +62,11 @@ func (d dcliAbstract) ImageInspectWithRaw(ctx context.Context, imageID string) (
 
 func (d dcliAbstract) IsErrImageNotFound(err error) bool {
 	return engine.IsErrImageNotFound(err)
+}
+
+// NewDCLI returns an new Wrapper instance
+func NewDCLI(dcli *engine.Client) DCli {
+	return &dcliAbstract{
+		cli: dcli,
+	}
 }
