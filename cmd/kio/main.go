@@ -4,18 +4,21 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"google.golang.org/grpc"
 
+	"github.com/docker/docker/client"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
 	"github.com/ttdennis/kontainer.io/pkg/abstraction"
+	"github.com/ttdennis/kontainer.io/pkg/containerlifecycle"
 	"github.com/ttdennis/kontainer.io/pkg/kmi"
 	"github.com/ttdennis/kontainer.io/pkg/pb"
 	"github.com/ttdennis/kontainer.io/pkg/user"
@@ -24,7 +27,8 @@ import (
 func main() {
 
 	var (
-		grpcAddr = ":8082"
+		grpcAddr   = ":8082"
+		dockerHost = "http://127.0.0.1:2375"
 	)
 
 	var logger log.Logger
@@ -42,6 +46,17 @@ func main() {
 	}
 	defer db.Close()
 	dbWrapper := abstraction.NewDB(db)
+
+	clientTransport := &http.Client{
+		Transport: &http.Transport{},
+	}
+
+	defaultHeaders := map[string]string{"User-Agent": "engine-api-cli-1.0"}
+	dcli, err := client.NewClient(dockerHost, "", clientTransport, defaultHeaders)
+	if err != nil {
+		panic(err)
+	}
+	dcliWrapper := abstraction.NewDCLI(dcli)
 
 	var userService user.Service
 	{
@@ -64,10 +79,17 @@ func main() {
 
 	kmiEndpoints := makeKMIServiceEndpoints(kmiService)
 
+	var containerlifecycleService containerlifecycle.Service
+	{
+		containerlifecycleService = containerlifecycle.NewService(dcliWrapper)
+	}
+
+	clsEndpoints := makeCLServiceEndpoints(containerlifecycleService)
+
 	errc := make(chan error)
 	ctx := context.Background()
 
-	go startGRPCTransport(ctx, errc, logger, grpcAddr, userEndpoints, kmiEndpoints)
+	go startGRPCTransport(ctx, errc, logger, grpcAddr, userEndpoints, kmiEndpoints, clsEndpoints)
 
 	// Interrupt handler.
 	go func() {
@@ -79,7 +101,7 @@ func main() {
 	logger.Log("exit", <-errc)
 }
 
-func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger, grpcAddr string, ue user.Endpoints, ke kmi.Endpoints) {
+func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger, grpcAddr string, ue user.Endpoints, ke kmi.Endpoints, cle containerlifecycle.Endpoints) {
 	logger = log.With(logger, "transport", "gRPC")
 
 	ln, err := net.Listen("tcp", grpcAddr)
@@ -94,6 +116,9 @@ func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger,
 
 	kmiServer := kmi.MakeGRPCServer(ctx, ke, logger)
 	pb.RegisterKMIServiceServer(s, kmiServer)
+
+	clsServer := containerlifecycle.MakeGRPCServer(ctx, cle, logger)
+	pb.RegisterContainerLifecycleServiceServer(s, clsServer)
 
 	logger.Log("addr", grpcAddr)
 	errc <- s.Serve(ln)
@@ -166,5 +191,28 @@ func makeKMIServiceEndpoints(s kmi.Service) kmi.Endpoints {
 		RemoveKMIEndpoint: RemoveKMIEndpoint,
 		GetKMIEndpoint:    GetKMIEndpoint,
 		KMIEndpoint:       KMIEndpoint,
+	}
+}
+
+func makeCLServiceEndpoints(s containerlifecycle.Service) containerlifecycle.Endpoints {
+	var StartContainerEndpoint endpoint.Endpoint
+	{
+		StartContainerEndpoint = containerlifecycle.MakeStartContainerEndpoint(s)
+	}
+
+	var StartCommandEndpoint endpoint.Endpoint
+	{
+		StartCommandEndpoint = containerlifecycle.MakeStartCommandEndpoint(s)
+	}
+
+	var StopContainerEndpoint endpoint.Endpoint
+	{
+		StopContainerEndpoint = containerlifecycle.MakeStopContainerEndpoint(s)
+	}
+
+	return containerlifecycle.Endpoints{
+		StartContainerEndpoint: StartContainerEndpoint,
+		StartCommandEndpoint:   StartCommandEndpoint,
+		StopContainerEndpoint:  StopContainerEndpoint,
 	}
 }
