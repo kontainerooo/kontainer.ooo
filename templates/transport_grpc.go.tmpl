@@ -51,7 +51,7 @@ type grpcServer struct {
 	func DecodeGRPC{{.Name}}Request(_ context.Context, grpcReq interface{}) (interface{}, error) {
 		req := grpcReq.(*pb.{{.InputType | splitArray "." | last}})
     return {{.Name}}Request {
-      
+
     }, nil
 	}
 {{end}}
@@ -60,9 +60,11 @@ type grpcServer struct {
   // EncodeGRPC{{.Name}}Response is a transport/grpc.EncodeRequestFunc that converts a
   // {{$file.Name}}-domain {{.Name | lower}} response to a gRPC {{.Name}} response.
 	func EncodeGRPC{{.Name}}Response(_ context.Context, response interface{}) (interface{}, error) {
-		res := response.({{.Name}}Response)
-    return &pb.{{.OutputType | splitArray "." | last}}{
-      Error: res.Error.Error(),
-    }, nil
+    res := response.({{.Name}}Response)
+    gRPCRes := &pb.{{.OutputType | splitArray "." | last}}{}
+    if res.Error != nil {
+      gRPCRes.Error = res.Error.Error()
+    }
+    return gRPCRes, nil
 	}
 {{end}}

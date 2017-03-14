@@ -129,36 +129,44 @@ func DecodeGRPCInstancesRequest(_ context.Context, grpcReq interface{}) (interfa
 // messages/customercontainer.proto-domain createcontainer response to a gRPC CreateContainer response.
 func EncodeGRPCCreateContainerResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(CreateContainerResponse)
-	return &pb.CreateContainerResponse{
-		Error: res.Error.Error(),
-		Name:  res.Name,
-		ID:    res.ID,
-	}, nil
+	gRPCRes := &pb.CreateContainerResponse{
+		ID:   res.ID,
+		Name: res.Name,
+	}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
 }
 
 // EncodeGRPCEditContainerResponse is a transport/grpc.EncodeRequestFunc that converts a
 // messages/customercontainer.proto-domain editcontainer response to a gRPC EditContainer response.
 func EncodeGRPCEditContainerResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(EditContainerResponse)
-	return &pb.EditContainerResponse{
-		Error: res.Error.Error(),
-	}, nil
+	gRPCRes := &pb.EditContainerResponse{}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
 }
 
 // EncodeGRPCRemoveContainerResponse is a transport/grpc.EncodeRequestFunc that converts a
 // messages/customercontainer.proto-domain removecontainer response to a gRPC RemoveContainer response.
 func EncodeGRPCRemoveContainerResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(RemoveContainerResponse)
-	return &pb.RemoveContainerResponse{
-		Error: res.Error.Error(),
-	}, nil
+	gRPCRes := &pb.RemoveContainerResponse{}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
 }
 
 // EncodeGRPCInstancesResponse is a transport/grpc.EncodeRequestFunc that converts a
 // messages/customercontainer.proto-domain instances response to a gRPC Instances response.
 func EncodeGRPCInstancesResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(InstancesResponse)
-	return &pb.InstancesResponse{
+	gRPCRes := &pb.InstancesResponse{
 		Instances: res.Instances,
-	}, nil
+	}
+	return gRPCRes, nil
 }
