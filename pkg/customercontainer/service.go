@@ -1,4 +1,4 @@
-// Package provides basic container functions to create and remove containers
+// Package customercontainer provides basic container functions to create and remove containers
 package customercontainer
 
 import (
