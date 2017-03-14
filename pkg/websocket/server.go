@@ -51,7 +51,6 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 	for {
 		messageType, request, err := conn.ReadMessage()
 		if err != nil {
-			conn.Close()
 			return
 		}
 
