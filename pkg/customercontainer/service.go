@@ -1,4 +1,4 @@
-// Package provides basic container functions to create and remove containers
+// Package customercontainer provides basic container functions to create and remove containers
 package customercontainer
 
 import (
@@ -12,6 +12,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/strslice"
 	"github.com/ttdennis/kontainer.io/pkg/abstraction"
+	"github.com/ttdennis/kontainer.io/pkg/kmi"
 )
 
 // Service Customer Container service
@@ -27,6 +28,9 @@ type Service interface {
 
 	// Instances returns a list of instances of an user by id
 	Instances(refid int) []string
+
+	// CreateDockerImage creates a Docker image from a given KMI
+	CreateDockerImage(kmi kmi.KMI) error
 }
 
 type service struct {
@@ -124,6 +128,11 @@ func (s *service) Instances(refid int) []string {
 	}
 
 	return containerList
+}
+
+func (s *service) CreateDockerImage(kmi kmi.KMI) error {
+	// TODO: implement
+	return nil
 }
 
 // NewService creates a customercontainer with necessary dependencies.
