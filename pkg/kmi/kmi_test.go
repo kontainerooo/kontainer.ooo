@@ -44,14 +44,16 @@ var _ = Describe("KMI", func() {
 			It("Should return an error if outsrc is not of type JSON", func() {
 				var src interface{}
 				src = "test"
-				err := kmi.ChooseSource(&src, []byte("a"), reflect.Slice, "")
+				content := kmi.NewContent()
+				content.AddFile("", "test", &[]byte{'a'})
+				err := kmi.ChooseSource(&src, content, reflect.Slice, "")
 				Ω(err).Should(HaveOccurred())
 			})
 
 			It("Should return an error if src is not of the right Kind", func() {
 				var src interface{}
 				src = make(map[string]string)
-				err := kmi.ChooseSource(&src, []byte("a"), reflect.Slice, "")
+				err := kmi.ChooseSource(&src, nil, reflect.Slice, "")
 				Ω(err).Should(HaveOccurred())
 			})
 		})
@@ -163,48 +165,76 @@ var _ = Describe("KMI", func() {
 		})
 
 		Context("Get Data", func() {
-			content := &kmi.Content{}
+			content := kmi.NewContent()
 			It("Should return an error if module json is corrupt", func() {
 				err := kmi.GetData(content, &kmi.KMI{})
 				Ω(err).Should(HaveOccurred())
 			})
 
 			It("Should return an error if commands json is corrupt", func() {
-				content.Module = []byte(`{
-          "commands": "",
-          "env": "",
-          "cmd": "",
-          "interfaces": "",
-          "imports": "",
-          "frontend": ""
-          }`)
+				module := []byte(`{
+	        "cmd": "./cmd.json",
+	        "env": "./env.json",
+	        "interfaces": "./if.json",
+	        "imports": "./imports.json",
+	        "frontend": "./frontend.json"
+	        }`)
+				content.AddFile("./", "module.json", &module)
 				err := kmi.GetData(content, &kmi.KMI{})
 				Ω(err).Should(HaveOccurred())
 			})
 
 			It("Should return an error if environment json is corrupt", func() {
-				content.Cmd = []byte("{}")
+				data := []byte("{}")
+				content.AddFile("./", "cmd.json", &data)
 				err := kmi.GetData(content, &kmi.KMI{})
 				Ω(err).Should(HaveOccurred())
 			})
 
 			It("Should return an error if interfaces json is corrupt", func() {
-				content.Env = []byte("{}")
+				data := []byte("{}")
+				content.AddFile("./", "env.json", &data)
 				err := kmi.GetData(content, &kmi.KMI{})
 				Ω(err).Should(HaveOccurred())
 			})
 
 			It("Should return an error if frontend json is corrupt", func() {
-				content.Interfaces = []byte("{}")
+				data := []byte("{}")
+				content.AddFile("./", "if.json", &data)
 				err := kmi.GetData(content, &kmi.KMI{})
 				Ω(err).Should(HaveOccurred())
 			})
 
 			It("Should return an error if Imports json is corrupt", func() {
-				content.Frontend = []byte("[]")
+				data := []byte("[]")
+				content.AddFile("./", "frontend.json", &data)
 				err := kmi.GetData(content, &kmi.KMI{})
 				Ω(err).Should(HaveOccurred())
 			})
+		})
+	})
+
+	Describe("FolderMap", func() {
+		var fm kmi.FolderMap
+		It("AddFile should add a file", func() {
+			fm = make(kmi.FolderMap)
+			fm.AddFile("/i/have/files", &[]byte{'a'})
+		})
+
+		It("GetFile should get a file", func() {
+			file, err := fm.GetFile("/i/have/files")
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(string(*file)).Should(BeEquivalentTo("a"))
+		})
+
+		It("GetFile should return an error if directory does not exist", func() {
+			_, err := fm.GetFile("/i/dont/exist")
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("GetFile should return an error if file does not exist", func() {
+			_, err := fm.GetFile("/i/dont")
+			Ω(err).Should(HaveOccurred())
 		})
 	})
 
