@@ -2,6 +2,7 @@ package abstraction
 
 import (
 	"context"
+	"io"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -58,6 +59,10 @@ func (d dcliAbstract) ContainerList(ctx context.Context, options types.Container
 
 func (d dcliAbstract) ImageInspectWithRaw(ctx context.Context, imageID string) (types.ImageInspect, []byte, error) {
 	return d.cli.ImageInspectWithRaw(ctx, imageID)
+}
+
+func (d dcliAbstract) ImageBuild(ctx context.Context, buildContext io.Reader, options types.ImageBuildOptions) (types.ImageBuildResponse, error) {
+	return d.cli.ImageBuild(ctx, buildContext, options)
 }
 
 func (d dcliAbstract) IsErrImageNotFound(err error) bool {
