@@ -26,6 +26,16 @@ func (s *Server) RegisterService(sd *ServiceDescription) error {
 	return nil
 }
 
+// GetService returns a ServiceDescription given its ProtoID or an error
+func (s *Server) GetService(name ProtoID) (*ServiceDescription, error) {
+	sd, exist := s.services[name]
+	if !exist {
+		return nil, fmt.Errorf("Service Description %s does not exists", name)
+	}
+
+	return sd, nil
+}
+
 // Serve starts the http transport for the websocket, listening on addr
 func (s *Server) Serve(addr string) error {
 	return http.ListenAndServe(addr, s)
@@ -35,14 +45,18 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var upgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		s.logger.Log(err)
+		s.logger.Log("err", err)
 		return
 	}
 
+	s.logger.Log("conn", conn.RemoteAddr())
 	go s.handleConnection(conn)
 }
 
@@ -58,17 +72,27 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
-				s.logger.Log(err)
+				s.logger.Log("err", err)
 				return
 			}
 			continue
 		}
 
-		handler, err := s.services[*srv].GetEndpointHandler(*me)
+		service, err := s.GetService(*srv)
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
-				s.logger.Log(err)
+				s.logger.Log("err", err)
+				return
+			}
+			continue
+		}
+
+		handler, err := service.GetEndpointHandler(*me)
+		if err != nil {
+			err = conn.WriteMessage(messageType, []byte(err.Error()))
+			if err != nil {
+				s.logger.Log("err", err)
 				return
 			}
 			continue
@@ -78,7 +102,7 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
-				s.logger.Log(err)
+				s.logger.Log("err", err)
 				return
 			}
 			continue
@@ -88,7 +112,7 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
-				s.logger.Log(err)
+				s.logger.Log("err", err)
 				return
 			}
 			continue
@@ -96,7 +120,7 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 
 		err = conn.WriteMessage(messageType, response)
 		if err != nil {
-			s.logger.Log(err)
+			s.logger.Log("err", err)
 			return
 		}
 	}
