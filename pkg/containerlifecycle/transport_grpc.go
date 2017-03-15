@@ -99,26 +99,33 @@ func DecodeGRPCStopContainerRequest(_ context.Context, grpcReq interface{}) (int
 // messages/containerlifecycle.proto-domain startcontainer response to a gRPC StartContainer response.
 func EncodeGRPCStartContainerResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(StartContainerResponse)
-	return &pb.StartContainerResponse{
-		Error: res.Error.Error(),
-	}, nil
+	gRPCRes := &pb.StartContainerResponse{}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
 }
 
 // EncodeGRPCStartCommandResponse is a transport/grpc.EncodeRequestFunc that converts a
 // messages/containerlifecycle.proto-domain startcommand response to a gRPC StartCommand response.
 func EncodeGRPCStartCommandResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(StartCommandResponse)
-	return &pb.StartCommandResponse{
-		ID:    res.ID,
-		Error: res.Error.Error(),
-	}, nil
+	gRPCRes := &pb.StartCommandResponse{
+		ID: res.ID,
+	}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
 }
 
 // EncodeGRPCStopContainerResponse is a transport/grpc.EncodeRequestFunc that converts a
 // messages/containerlifecycle.proto-domain stopcontainer response to a gRPC StopContainer response.
 func EncodeGRPCStopContainerResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(StopContainerResponse)
-	return &pb.StopContainerResponse{
-		Error: res.Error.Error(),
-	}, nil
+	gRPCRes := &pb.StopContainerResponse{}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
 }
