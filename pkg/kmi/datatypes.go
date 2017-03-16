@@ -42,7 +42,7 @@ func (f *FrontendArray) Scan(src interface{}) error {
 }
 
 func (f *FrontendArray) scanBytes(src []byte) error {
-	return GetFrontend(src, nil, f)
+	return GetFrontend(src, f)
 }
 
 // Value implements the driver.Valuer interface.
@@ -58,11 +58,16 @@ func (f FrontendArray) Value() (driver.Value, error) {
 // The KMI struct is used to represent every information included in a kmi-file
 type KMI struct {
 	KMDI
+	Dockerfile  string
+	Container   string
 	Commands    abstraction.JSON `sql:"type:jsonb"`
 	Environment abstraction.JSON `sql:"type:jsonb"`
 	Frontend    FrontendArray    `sql:"type:jsonb"`
 	Imports     pq.StringArray   `sql:"type:text[]"`
 	Interfaces  abstraction.JSON `sql:"type:jsonb"`
+	Mounts      pq.StringArray   `sql:"type:text[]"`
+	Variables   pq.StringArray   `sql:"type:text[]"`
+	Resources   abstraction.JSON `sql:"type:jsonb"`
 }
 
 // TableName sets KMI's tablename
