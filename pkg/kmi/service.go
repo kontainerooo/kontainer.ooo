@@ -41,7 +41,7 @@ func (s *service) InitializeDatabases() error {
 }
 
 func (s *service) AddKMI(path string) (uint, error) {
-	kC := &Content{}
+	kC := NewContent()
 	err := Extract(path, kC)
 	if err != nil {
 		return 0, err
