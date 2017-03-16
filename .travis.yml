@@ -26,6 +26,8 @@ install:
         rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm; install $TRAVIS_NODE_VERSION;
         npm install -g @angular/cli karma;
         cd frontend && npm install && cd ..;
+      elif [ ${TRAVIS_BRANCH:0:4} = "doc/" ]; then
+        echo "Docs - nothing to do.";
       else
         curl -Lo protoc.zip https://github.com/google/protobuf/releases/download/v3.2.0/protoc-3.2.0-linux-x86_64.zip;
         unzip protoc.zip -d $HOME;
@@ -43,6 +45,8 @@ before_script:
         make proto;
       elif [ ${TRAVIS_BRANCH:0:3} = "fe/" ]; then
         cd frontend && ng build && cd ..;
+      elif [ ${TRAVIS_BRANCH:0:4} = "doc/" ]; then
+        echo "Docs - nothing to do.";
       else
         make proto && cd frontend && ng build && cd ..;
       fi
@@ -53,6 +57,8 @@ script:
         make be;
       elif [ ${TRAVIS_BRANCH:0:3} = "fe/" ]; then
         cd frontend && make fe-test fi;
+      elif [ ${TRAVIS_BRANCH:0:4} = "doc/" ]; then
+        echo "Docs - nothing to do.";
       else
         make;
       fi
