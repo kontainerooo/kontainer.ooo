@@ -30,7 +30,7 @@ type Service interface {
 	Instances(refid int) []string
 
 	// CreateDockerImage creates a Docker image from a given KMI
-	CreateDockerImage(kmi kmi.KMI) error
+	CreateDockerImage(refid int, kmi kmi.KMI) error
 }
 
 type service struct {
@@ -130,8 +130,46 @@ func (s *service) Instances(refid int) []string {
 	return containerList
 }
 
-func (s *service) CreateDockerImage(kmi kmi.KMI) error {
-	// TODO: implement
+func (s *service) CreateDockerImage(refid int, kmi kmi.KMI) error {
+	labels := make(map[string]string)
+	labels["user"] = string(refid)
+
+	s.dcli.ImageBuild(context.Background(), nil, types.ImageBuildOptions{
+		Tags: []string{
+			fmt.Sprintf("%d-%s", refid, kmi.Name),
+		},
+		SuppressOutput: false,
+		RemoteContext: kmi.Context
+		NoCache:     true,
+		Remove:      false,
+		ForceRemove: false,
+		PullParent:  false,
+		CPUSetCPUs:  "1",
+		// CPUSetMems:  "1",
+		Memory:     0x1fffffff, // 500 MB
+		MemorySwap: 0x3fffffff, // 1 GB
+		// CgroupParent   string
+		// NetworkMode    string
+		// ShmSize        int64
+		Dockerfile: kmi.Dockerfile + kmi.Env,
+		// Ulimits        []*units.Ulimit
+		// BuildArgs needs to be a *string instead of just a string so that
+		// we can tell the difference between "" (empty string) and no value
+		// at all (nil). See the parsing of buildArgs in
+		// api/server/router/build/build_routes.go for even more info.
+		// BuildArgs   map[string]*string
+		// AuthConfigs map[string]AuthConfig
+		// Context     io.Reader
+		Labels: labels,
+		// squash the resulting image's layers to the parent
+		// preserves the original image and creates a new one from the parent with all
+		// the changes applied to a single layer
+		Squash: false, // TODO: Test disk impact
+		// CacheFrom specifies images that are used for matching cache. Images
+		// specified here do not need to have a valid parent chain to match cache.
+		// CacheFrom   []string
+		// ExtraHosts  []string // List of extra hosts
+	})
 	return nil
 }
 
