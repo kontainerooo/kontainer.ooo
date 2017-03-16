@@ -14,25 +14,38 @@ before_install:
     - sh -e /etc/init.d/xvfb start
 
 install:
-    - sudo apt-get update
-    - sudo apt-get install -y libappindicator1 fonts-liberation
-    - wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-    - sudo dpkg -i google-chrome*.deb
-    - curl -Lo protoc.zip https://github.com/google/protobuf/releases/download/v3.2.0/protoc-3.2.0-linux-x86_64.zip
-    - unzip protoc.zip -d $HOME
-    - go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
-    - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install $TRAVIS_NODE_VERSION
-    - npm install -g @angular/cli
-    - npm install -g karma
-    - cd frontend
-    - npm install
-    - cd ..
-
+    - if [ ${TRAVIS_BRANCH:0:3} = "be/" ]; then
+        curl -Lo protoc.zip https://github.com/google/protobuf/releases/download/v3.2.0/protoc-3.2.0-linux-x86_64.zip;
+        unzip protoc.zip -d $HOME;
+        go get -u github.com/golang/protobuf/{proto,protoc-gen-go};
+      elif  [ ${TRAVIS_BRANCH:0:3} = "fe/" ]; then
+        sudo apt-get update;
+        sudo apt-get install -y libappindicator1 fonts-liberation;
+        wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb;
+        sudo dpkg -i google-chrome*.deb;
+        rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm; install $TRAVIS_NODE_VERSION;
+        npm install -g @angular/cli karma;
+        cd frontend && npm install && cd ..;
+      else
+        curl -Lo protoc.zip https://github.com/google/protobuf/releases/download/v3.2.0/protoc-3.2.0-linux-x86_64.zip;
+        unzip protoc.zip -d $HOME;
+        go get -u github.com/golang/protobuf/{proto,protoc-gen-go};
+        sudo apt-get update;
+        sudo apt-get install -y libappindicator1 fonts-liberation;
+        wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb;
+        sudo dpkg -i google-chrome*.deb;
+        rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install $TRAVIS_NODE_VERSION;
+        npm install -g @angular/cli karma;
+        cd frontend && npm install && cd ..;
+      fi
 before_script:
-    - make proto
-    - cd frontend
-    - ng build
-    - cd ..
+    - if [ ${TRAVIS_BRANCH:0:3} = "be/" ]; then
+        make proto;
+      elif [ ${TRAVIS_BRANCH:0:3} = "fe/" ]; then
+        cd frontend && ng build && cd ..;
+      else
+        make proto && cd frontend && ng build && cd ..;
+      fi
 
 script:
     # Build frontend or backend independently based on branch name
