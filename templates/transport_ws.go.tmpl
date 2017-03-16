@@ -1,0 +1,36 @@
+package {{.File.Name | splitArray "/" | last | splitArray "." | first}}
+
+{{$file := .File}}
+
+import (
+	ws "github.com/ttdennis/kontainer.io/pkg/websocket"
+)
+
+// MakeWebsocketService makes a set of {{$file.Name | splitArray "/" | last | splitArray "." | first}} Endpoints available as a websocket Service
+func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
+	service := ws.NewServiceDescription("{{$file.Name | splitArray "/" | last | splitArray "." | first}}Service", ws.ProtoIDFromString("{{$file.Name | splitArray "/" | last | splitArray "." | first}}"))
+  {{range .Service.Method}}
+  service.AddEndpoint(ws.NewServiceEndpoint(
+    "{{.Name}}",
+    ws.ProtoIDFromString(""),
+    endpoints.{{.Name}}Endpoint,
+    DecodeWS{{.Name}}Request,
+    EncodeGRPC{{.Name}}Response,
+    ))
+  {{end}}
+	return service
+}
+
+{{range .Service.Method}}
+  // DecodeWS{{.Name}}Request is a websocket.DecodeRequestFunc that converts a
+  // WS {{.Name}} request to a {{$file.Name}}-domain {{.Name | lower}} request.
+	func DecodeWS{{.Name}}Request(ctx context.Context, data interface{}) (interface{}, error) {
+    req := &pb.{{.InputType | splitArray "." | last}}{}
+    err := proto.Unmarshal(data.([]byte), req)
+    if err != nil {
+      return nil, err
+    }
+
+    return DecodeGRPC{{.Name}}Request(ctx, req)
+	}
+{{end}}

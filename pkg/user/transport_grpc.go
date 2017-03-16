@@ -228,55 +228,69 @@ func DecodeGRPCGetUserRequest(_ context.Context, grpcReq interface{}) (interface
 // user-domain createUser response to a gRPC CreateUser response.
 func EncodeGRPCCreateUserResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(CreateUserResponse)
-	return &pb.CreateUserResponse{
-		ID:    uint32(res.ID),
-		Error: res.Error.Error(),
-	}, nil
+	gRPCRes := &pb.CreateUserResponse{
+		ID: uint32(res.ID),
+	}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
 }
 
 // EncodeGRPCEditUserResponse is a transport/grpc.EncodeRequestFunc that converts a
 // user-domain editUser response to a gRPC EditUser response.
 func EncodeGRPCEditUserResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(EditUserResponse)
-	return &pb.EditUserResponse{
-		Error: res.Error.Error(),
-	}, nil
+	gRPCRes := &pb.EditUserResponse{}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
 }
 
 // EncodeGRPCChangeUsernameResponse is a transport/grpc.EncodeRequestFunc that converts a
 // user-domain changeUsername response to a gRPC ChangeUsername response.
 func EncodeGRPCChangeUsernameResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(ChangeUsernameResponse)
-	return &pb.ChangeUsernameResponse{
-		Error: res.Error.Error(),
-	}, nil
+	gRPCRes := &pb.ChangeUsernameResponse{}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
 }
 
 // EncodeGRPCDeleteUserResponse is a transport/grpc.EncodeRequestFunc that converts a
 // user-domain deleteUser response to a gRPC DeleteUser response.
 func EncodeGRPCDeleteUserResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(DeleteUserResponse)
-	return &pb.DeleteUserResponse{
-		Error: res.Error.Error(),
-	}, nil
+	gRPCRes := &pb.DeleteUserResponse{}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
 }
 
 // EncodeGRPCResetPasswordResponse is a transport/grpc.EncodeRequestFunc that converts a
 // user-domain createUser response to a gRPC CreateUser response.
 func EncodeGRPCResetPasswordResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(ResetPasswordResponse)
-	return &pb.ResetPasswordResponse{
-		Error: res.Error.Error(),
-	}, nil
+	gRPCRes := &pb.ResetPasswordResponse{}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
 }
 
 // EncodeGRPCGetUserResponse is a transport/grpc.EncodeRequestFunc that converts a
 // user-domain getUser response to a gRPC GetUser response.
 func EncodeGRPCGetUserResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(GetUserResponse)
-	user := convertUser(res.User)
-	return &pb.GetUserResponse{
-		User:  user,
-		Error: res.Error.Error(),
-	}, nil
+	gRPCRes := &pb.GetUserResponse{}
+	if res.User != nil {
+		gRPCRes.User = convertUser(res.User)
+	}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
 }
