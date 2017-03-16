@@ -3,6 +3,7 @@ package kmi
 import (
 	"archive/tar"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -146,11 +147,15 @@ type moduleJSON struct {
 	Version     string
 	Description string
 	Type        float64
-	Imports     interface{}
+	Dockerfile  string
+	Container   string
 	Frontend    interface{}
-	Interfaces  interface{}
 	Env         interface{}
+	Interfaces  interface{}
 	Cmd         interface{}
+	Mounts      interface{}
+	Variables   interface{}
+	Resources   interface{}
 }
 
 // ChooseSource fills src with outsrc if src is not the expected data kind
@@ -184,23 +189,17 @@ func ExtractStringMap(value reflect.Value, dst map[string]interface{}, restricti
 	if value.Kind() != reflect.Map {
 		return fmt.Errorf("src aint no map bra")
 	}
+
+	vs := valueSwitch(restriction)
+
 	keys := value.MapKeys()
 	for _, key := range keys {
 		element := value.MapIndex(key).Elem()
-		switch element.Kind() {
-		case reflect.String:
-			if restriction[reflect.String] {
-				return fmt.Errorf("unexpected string")
-			}
-			dst[key.String()] = element.String()
-		case reflect.Float64:
-			if restriction[reflect.Int] {
-				return fmt.Errorf("unexpected number")
-			}
-			dst[key.String()] = int(element.Float())
-		default:
-			return fmt.Errorf("unexpected %s", element.Kind().String())
+		value, err := vs(element)
+		if err != nil {
+			return err
 		}
+		dst[key.String()] = value
 	}
 	return nil
 }
@@ -242,15 +241,73 @@ func GetStringSlice(src interface{}, outsrc *Content, dst *pq.StringArray, name 
 	return nil
 }
 
-// GetFrontend takes a src and an outsrc and a destination frontendModule slice, decides which source to use and extracts
-// the frontendModule specific information to fill the destination slice
-func GetFrontend(src interface{}, outsrc *Content, dst *FrontendArray) error {
-	err := ChooseSource(&src, outsrc, reflect.Slice, "frontend")
-	if err != nil {
-		return err
+func valueSwitch(restriction map[reflect.Kind]bool) func(reflect.Value) (interface{}, error) {
+	return func(v reflect.Value) (interface{}, error) {
+		switch v.Kind() {
+		case reflect.String:
+			if restriction[reflect.String] {
+				return nil, fmt.Errorf("unexpected string")
+			}
+			return v.String(), nil
+		case reflect.Float64:
+			if restriction[reflect.Int] {
+				return nil, fmt.Errorf("unexpected number")
+			}
+			return int(v.Float()), nil
+		case reflect.Slice:
+			if restriction[reflect.Slice] {
+				return nil, fmt.Errorf("unexpected array")
+			}
+			return getInterfaceSlice(v, restriction)
+		case reflect.Map:
+			if restriction[reflect.Map] {
+				return nil, fmt.Errorf("unexpected map")
+			}
+			m := make(map[string]interface{})
+			err := ExtractStringMap(v, m, restriction)
+			if err != nil {
+				return nil, err
+			}
+			return m, nil
+		default:
+			return nil, fmt.Errorf("unexpected %s", v.Kind().String())
+		}
+	}
+}
+
+func getInterfaceSlice(src reflect.Value, restriction map[reflect.Kind]bool) ([]interface{}, error) {
+	if src.Kind() != reflect.Slice {
+		return nil, fmt.Errorf("unexpected %s", src.Kind())
 	}
 
+	len := src.Len()
+	vs := valueSwitch(restriction)
+
+	dst := make([]interface{}, len)
+
+	for i := 0; i < len; i++ {
+		element := src.Index(i).Elem()
+		value, err := vs(element)
+		if err != nil {
+			return nil, err
+		}
+		dst[i] = value
+	}
+
+	return dst, nil
+}
+
+// GetFrontend takes a src and an outsrc and a destination frontendModule slice, decides which source to use and extracts
+// the frontendModule specific information to fill the destination slice
+func GetFrontend(src interface{}, dst *FrontendArray) error {
 	value := reflect.ValueOf(src)
+	if value.Kind() == reflect.Ptr {
+		value = value.Elem()
+	}
+	if value.Kind() != reflect.Slice {
+		return fmt.Errorf("%s is wrong kind", value.Kind())
+	}
+
 	len := value.Len()
 	for i := 0; i < len; i++ {
 		fm := frontendModule{}
@@ -270,7 +327,7 @@ func GetFrontend(src interface{}, outsrc *Content, dst *FrontendArray) error {
 					return fmt.Errorf("parameters are no json in module %d", i)
 				}
 				fm.parameters = make(map[string]interface{})
-				err = ExtractStringMap(params, fm.parameters, nil)
+				err := ExtractStringMap(params, fm.parameters, nil)
 				if err != nil {
 					return err
 				}
@@ -296,6 +353,8 @@ func GetData(kC *Content, k *KMI) error {
 	k.Version = m.Version
 	k.Description = m.Description
 	k.Type = int(m.Type)
+	k.Dockerfile = m.Dockerfile
+	k.Container = m.Container
 
 	intRestriction := make(map[reflect.Kind]bool)
 	intRestriction[reflect.Int] = true
@@ -318,12 +377,44 @@ func GetData(kC *Content, k *KMI) error {
 		return err
 	}
 
-	err = GetFrontend(m.Frontend, kC, &k.Frontend)
+	k.Resources = make(map[string]interface{})
+	err = GetStringMap(m.Resources, kC, k.Resources, "resources", nil)
 	if err != nil {
 		return err
 	}
 
-	err = GetStringSlice(m.Imports, kC, &k.Imports, "imports")
+	err = GetStringSlice(m.Mounts, kC, &k.Mounts, "mounts")
+	if err != nil {
+		return err
+	}
+
+	err = GetStringSlice(m.Variables, kC, &k.Variables, "variabls")
+	if err != nil {
+		return err
+	}
+
+	frontend := make(map[string]interface{})
+	err = GetStringMap(m.Frontend, kC, frontend, "frontend", nil)
+	if err != nil {
+		return err
+	}
+
+	_, ok := frontend["imports"]
+	if !ok {
+		return errors.New("frontend definition has no imports section")
+	}
+
+	err = GetStringSlice(frontend["imports"], nil, &k.Imports, "imports")
+	if err != nil {
+		return err
+	}
+
+	_, ok = frontend["modules"]
+	if !ok {
+		return errors.New("frontend definition has no modules section")
+	}
+
+	err = GetFrontend(frontend["modules"], &k.Frontend)
 	if err != nil {
 		return err
 	}
