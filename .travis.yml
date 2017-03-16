@@ -41,5 +41,5 @@ script:
       elif [ ${TRAVIS_BRANCH:0:3} = "fe/" ]; then
         cd frontend && make fe-test fi;
       else
-        make
+        make;
       fi
