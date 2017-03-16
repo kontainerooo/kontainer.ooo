@@ -1,6 +1,8 @@
 package containerlifecycle_test
 
 import (
+	"context"
+
 	"github.com/ttdennis/kontainer.io/pkg/containerlifecycle"
 	"github.com/ttdennis/kontainer.io/pkg/testutils"
 
@@ -90,6 +92,50 @@ var _ = Describe("Container Lifecycle", func() {
 		It("Should return an error if container is not running", func() {
 			err := cls.StopContainer(container)
 			Ω(err).Should(HaveOccurred())
+		})
+	})
+
+	Describe("Endpoints and Transport", func() {
+		dcli := testutils.NewMockDCli()
+		cls := containerlifecycle.NewService(dcli)
+		es := &containerlifecycle.Endpoints{}
+		ctx := context.Background()
+		It("Should create valid Endpoints", func() {
+			es.StartCommandEndpoint = containerlifecycle.MakeStartCommandEndpoint(cls)
+			es.StartContainerEndpoint = containerlifecycle.MakeStartContainerEndpoint(cls)
+			es.StopContainerEndpoint = containerlifecycle.MakeStopContainerEndpoint(cls)
+		})
+
+		Context("StartContainerEndpoint", func() {
+			It("Should work with StartContainer request and response", func() {
+				res, err := es.StartContainerEndpoint(ctx, containerlifecycle.StartContainerRequest{
+					ID: "123",
+				})
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(res.(containerlifecycle.StartContainerResponse).Error).ShouldNot(HaveOccurred())
+			})
+		})
+
+		Context("StartCommandEndpoint", func() {
+			It("Should work with StartCommand request and response", func() {
+				res, err := es.StartCommandEndpoint(ctx, containerlifecycle.StartCommandRequest{
+					ID:  "123",
+					Cmd: "/bin/sh",
+				})
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(res.(containerlifecycle.StartCommandResponse).ID).ShouldNot(BeZero())
+				Ω(res.(containerlifecycle.StartCommandResponse).Error).ShouldNot(HaveOccurred())
+			})
+		})
+
+		Context("StopContainerEndpoint", func() {
+			It("Should work with StopContainer request and response", func() {
+				res, err := es.StopContainerEndpoint(ctx, containerlifecycle.StopContainerRequest{
+					ID: "123",
+				})
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(res.(containerlifecycle.StopContainerResponse).Error).ShouldNot(HaveOccurred())
+			})
 		})
 	})
 })

@@ -153,7 +153,7 @@ func (m *MockDB) First(out interface{}, where ...interface{}) error {
 		if res.table == name {
 			src := res.values.Slice(0, 1).Index(0).Elem()
 			dst := reflect.ValueOf(out).Elem()
-			err := merge(dst, src, 0)
+			err := merge(dst, src, true, 0)
 			if err != nil {
 				return err
 			}
@@ -162,6 +162,25 @@ func (m *MockDB) First(out interface{}, where ...interface{}) error {
 	}
 
 	m.value, m.multiValue = RNil, nil
+	return nil
+}
+
+// Find mocks gorm.DBs Find function
+func (m *MockDB) Find(out interface{}, where ...interface{}) error {
+	if m.produceError() {
+		return ErrDBFailure
+	}
+
+	ref := reflect.TypeOf(out).Elem()
+	for _, t := range m.tables {
+		if ref == reflect.SliceOf(t.getRef()) {
+			err := t.all(out)
+			if err != nil {
+				return err
+			}
+			break
+		}
+	}
 	return nil
 }
 
@@ -209,7 +228,7 @@ func (m *MockDB) Update(model interface{}, attrs ...interface{}) error {
 		len := m.value.Len()
 		slice := m.value.Slice(0, len)
 		for i := 0; i < len; i++ {
-			err := merge(slice.Index(i), reflect.ValueOf(attrs[0]).Elem(), 0) // apply to table?
+			err := merge(slice.Index(i), reflect.ValueOf(attrs[0]).Elem(), false, 0) // apply to table?
 			if err != nil {
 				return err
 			}

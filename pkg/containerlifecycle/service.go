@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	dockerTypes "github.com/docker/engine-api/types"
+	dockerTypes "github.com/docker/docker/api/types"
 	"github.com/ttdennis/kontainer.io/pkg/abstraction"
 )
 
