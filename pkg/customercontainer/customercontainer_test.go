@@ -2,11 +2,13 @@ package customercontainer_test
 
 import (
 	"context"
+	"os"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/ttdennis/kontainer.io/pkg/customercontainer"
+	"github.com/ttdennis/kontainer.io/pkg/kmi"
 	"github.com/ttdennis/kontainer.io/pkg/testutils"
 )
 
@@ -144,6 +146,73 @@ var _ = Describe("Customercontainer", func() {
 		It("Should return no instances when none exist", func() {
 			instances := cc.Instances(123)
 			Ω(instances).Should(BeEmpty())
+		})
+	})
+
+	Describe("Create image", func() {
+		cli := testutils.NewMockDCli()
+		cc := customercontainer.NewService(cli)
+
+		os.Mkdir("container-test", 0777)
+		os.Create("container-test/.dockerignore")
+
+		AfterSuite(func() {
+			os.Remove("container-test")
+		})
+
+		It("Should create an image", func() {
+			err := cc.CreateDockerImage(123, kmi.KMI{
+				Dockerfile: "FROM FROM node:7-wheezy",
+				Container:  "./container-test",
+				Commands:   nil,
+				Environment: map[string]interface{}{
+					"PORT":    "8080",
+					"String":  "\"string\"",
+					"_string": "d",
+				},
+				Frontend:   nil,
+				Imports:    nil,
+				Interfaces: nil,
+				Mounts:     nil,
+				Variables:  nil,
+				Resources: map[string]interface{}{
+					"cpus": "1",
+					"mem":  500,
+					"swap": 500,
+				},
+			})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should fail on invalid environment", func() {
+			err := cc.CreateDockerImage(123, kmi.KMI{
+				KMDI: kmi.KMDI{
+					ID:          1,
+					Name:        "node",
+					Version:     "",
+					Description: "",
+					Type:        3,
+				},
+				Dockerfile: "FROM FROM node:7-wheezy",
+				Container:  "./container-test",
+				Commands:   nil,
+				Environment: map[string]interface{}{
+					"in valid": "val",
+				},
+				Frontend:   nil,
+				Imports:    nil,
+				Interfaces: nil,
+				Mounts:     nil,
+				Variables:  nil,
+				Resources: map[string]interface{}{
+					"cpus": "1",
+					"mem":  500,
+					"swap": 500,
+				},
+			})
+
+			Ω(err).Should(HaveOccurred())
 		})
 	})
 
