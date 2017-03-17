@@ -162,8 +162,8 @@ func (s *service) CreateDockerImage(refid int, kmi kmi.KMI) error {
 		ForceRemove:    false,
 		PullParent:     false,
 		CPUSetCPUs:     kmi.Resources["cpus"].(string),
-		Memory:         kmi.Resources["mem"].(int64),
-		MemorySwap:     kmi.Resources["swap"].(int64),
+		Memory:         int64(kmi.Resources["mem"].(int)),
+		MemorySwap:     int64(kmi.Resources["swap"].(int)),
 		Dockerfile:     dockerfile,
 		Labels:         labels,
 	})
@@ -219,46 +219,50 @@ func addDockerfileToTar(inputTar io.ReadCloser, dockerfileContent string) (io.Re
 	// Open current archive for reading
 	tr := tar.NewReader(inputTar)
 
-	for {
-		hdr, err := tr.Next()
+	go func() {
+		for {
+			hdr, err := tr.Next()
 
-		// End of archive
-		if err == io.EOF {
-			// Write dockerfile to tar
-			dockerfileBytes := []byte(dockerfileContent)
-			hdr = &tar.Header{
-				Name: "Dockerfile",
-				Size: int64(len(dockerfileBytes)),
+			// End of archive
+			if err == io.EOF {
+				// Write dockerfile to tar
+				dockerfileBytes := []byte(dockerfileContent)
+				hdr = &tar.Header{
+					Name: "Dockerfile",
+					Size: int64(len(dockerfileBytes)),
+				}
+
+				if err := tw.WriteHeader(hdr); err != nil {
+					return
+				}
+
+				if _, err := tw.Write(dockerfileBytes); err != nil {
+					return
+				}
+
+				tw.Close()
+				return
 			}
 
+			if err != nil {
+				return
+			}
+
+			// Copy header from file
 			if err := tw.WriteHeader(hdr); err != nil {
-				return nil, err
+				return
 			}
 
-			if _, err := tw.Write(dockerfileBytes); err != nil {
-				return nil, err
+			// Copy contents of file
+			content := io.Reader(tr)
+			if _, err := io.Copy(tw, content); err != nil {
+				return
 			}
 
-			tw.Close()
-			return pipeReader, nil
 		}
+	}()
 
-		if err != nil {
-			return nil, err
-		}
-
-		// Copy header from file
-		if err := tw.WriteHeader(hdr); err != nil {
-			return nil, err
-		}
-
-		// Copy contents of file
-		content := io.Reader(tr)
-		if _, err := io.Copy(tw, content); err != nil {
-			return nil, err
-		}
-
-	}
+	return pipeReader, nil
 }
 
 func addEnvToDockerfile(dockerfile string, env map[string]interface{}) (string, error) {
@@ -274,15 +278,12 @@ func addEnvToDockerfile(dockerfile string, env map[string]interface{}) (string, 
 		}
 	}
 
-	return dockerfile, nil
+	return fmt.Sprintf("%s\n%s", dockerfile, envString), nil
 }
 
 func envKeyValid(envKey string) bool {
 	r, _ := regexp.Compile("^[a-zA-Z_][a-zA-Z0-9_]*$")
-	if r.MatchString(envKey) {
-		return true
-	}
-	return false
+	return r.MatchString(envKey)
 }
 
 func envValueEscape(envValue string) string {
