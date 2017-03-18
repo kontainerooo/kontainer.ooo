@@ -6,11 +6,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -38,7 +40,7 @@ type Service interface {
 	Instances(refid int) []string
 
 	// CreateDockerImage creates a Docker image from a given KMI
-	CreateDockerImage(refid int, kmi kmi.KMI) error
+	CreateDockerImage(refid int, kmiID uint) error
 
 	// AddKMIClient adds the kmi Endpoints to the service
 	AddKMIClient(ke *kmi.Endpoints)
@@ -142,9 +144,17 @@ func (s *service) Instances(refid int) []string {
 	return containerList
 }
 
-func (s *service) CreateDockerImage(refid int, kmi kmi.KMI) error {
-	labels := make(map[string]string)
-	labels["user"] = string(refid)
+func (s *service) CreateDockerImage(refid int, kmiID uint) error {
+
+	if s.kmiClient == nil {
+		return errors.New("No KMI client")
+	}
+
+	kmiResponse, _ := s.kmiClient.GetKMIEndpoint(context.Background(), &kmi.GetKMIRequest{
+		ID: kmiID,
+	})
+
+	kmi := kmiResponse.(*kmi.GetKMIResponse).KMI
 
 	dockerfile, err := addEnvToDockerfile(kmi.Dockerfile, kmi.Environment)
 	if err != nil {
@@ -156,26 +166,76 @@ func (s *service) CreateDockerImage(refid int, kmi kmi.KMI) error {
 		return err
 	}
 
-	s.dcli.ImageBuild(context.Background(), buildContext, types.ImageBuildOptions{
-		Tags: []string{
-			fmt.Sprintf("%d-%s", refid, kmi.Name),
-		},
-		SuppressOutput: false,
-		NoCache:        true,
-		Remove:         false,
-		ForceRemove:    false,
-		PullParent:     false,
-		CPUSetCPUs:     kmi.Resources["cpus"].(string),
-		Memory:         int64(kmi.Resources["mem"].(int)),
-		MemorySwap:     int64(kmi.Resources["swap"].(int)),
-		Dockerfile:     dockerfile,
-		Labels:         labels,
-	})
+	buildOptions := generateBuildOptions(kmi, refid)
+
+	res, err := s.dcli.ImageBuild(context.Background(), buildContext, buildOptions)
+
+	fmt.Println(err)
+	fmt.Println(res.OSType)
+
+	for {
+		b := make([]byte, 512)
+		info, err := res.Body.Read(b)
+
+		fmt.Printf("Info: %d, err: %s\n%s\n", info, err, string(b))
+
+		if err == io.EOF {
+			break
+		}
+	}
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (s *service) AddKMIClient(ke *kmi.Endpoints) {
 	s.kmiClient = ke
+}
+
+func generateBuildOptions(kmi *kmi.KMI, userID int) types.ImageBuildOptions {
+	var (
+		cpus string
+		mem  int64
+		swap int64
+	)
+	labels := make(map[string]string)
+	labels["user"] = string(userID)
+
+	tags := []string{
+		fmt.Sprintf("kio/%s:%d", strings.ToLower(kmi.Name), userID),
+	}
+
+	intCpus, ok := kmi.Resources["cpus"]
+	if ok {
+		cpus = strconv.FormatInt(int64(intCpus.(int)), 10)
+	}
+
+	intMem, ok := kmi.Resources["mem"]
+	if ok {
+		mem = int64(intMem.(int))
+	}
+
+	intSwap, ok := kmi.Resources["swap"]
+	if ok {
+		swap = int64(intSwap.(int))
+	}
+
+	return types.ImageBuildOptions{
+		Tags:           tags,
+		SuppressOutput: false,
+		NoCache:        true,
+		Remove:         false,
+		ForceRemove:    false,
+		PullParent:     false,
+		CPUSetCPUs:     cpus,
+		Memory:         mem,
+		MemorySwap:     swap,
+		Dockerfile:     "./Dockerfile",
+		Labels:         labels,
+	}
 }
 
 func createBuildContext(path string, dockerfileContent string) (io.Reader, error) {
@@ -189,9 +249,11 @@ func createBuildContext(path string, dockerfileContent string) (io.Reader, error
 	defer f.Close()
 
 	var excludes []string
-	excludes, err = dockerignore.ReadAll(f)
-	if err != nil {
-		return nil, err
+	if err == nil {
+		excludes, err = dockerignore.ReadAll(f)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if err := build.ValidateContextDirectory(path, excludes); err != nil {
@@ -275,6 +337,11 @@ func addDockerfileToTar(inputTar io.ReadCloser, dockerfileContent string) (io.Re
 }
 
 func addEnvToDockerfile(dockerfile string, env map[string]interface{}) (string, error) {
+
+	if len(env) == 0 {
+		return dockerfile, nil
+	}
+
 	envString := "ENV"
 	for k, v := range env {
 		if envKeyValid(k) {
