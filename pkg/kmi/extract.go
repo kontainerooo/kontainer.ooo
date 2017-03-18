@@ -341,6 +341,14 @@ func GetFrontend(src interface{}, dst *FrontendArray) error {
 	return nil
 }
 
+func GetDockerfile(p string, kc *Content) (string, error) {
+	b, err := kc.GetFile(p)
+	if err != nil {
+		return "", err
+	}
+	return string(*b), nil
+}
+
 // GetData is used to fill a KMI struct based on a Content struct
 func GetData(kC *Content, k *KMI) error {
 	m := &moduleJSON{}
@@ -353,8 +361,12 @@ func GetData(kC *Content, k *KMI) error {
 	k.Version = m.Version
 	k.Description = m.Description
 	k.Type = int(m.Type)
-	k.Dockerfile = m.Dockerfile
 	k.Container = m.Container
+
+	k.Dockerfile, err = GetDockerfile(m.Dockerfile, kC)
+	if err != nil {
+		return err
+	}
 
 	intRestriction := make(map[reflect.Kind]bool)
 	intRestriction[reflect.Int] = true
