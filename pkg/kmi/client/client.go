@@ -22,7 +22,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *kmi.Endpoints {
 	{
 		AddKMIEndpoint = grpctransport.NewClient(
 			conn,
-			"kmiService",
+			"KMIService",
 			"AddKMI",
 			EncodeGRPCAddKMIRequest,
 			DecodeGRPCAddKMIResponse,
@@ -34,7 +34,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *kmi.Endpoints {
 	{
 		RemoveKMIEndpoint = grpctransport.NewClient(
 			conn,
-			"kmiService",
+			"KMIService",
 			"RemoveKMI",
 			EncodeGRPCRemoveKMIRequest,
 			DecodeGRPCRemoveKMIResponse,
@@ -46,7 +46,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *kmi.Endpoints {
 	{
 		GetKMIEndpoint = grpctransport.NewClient(
 			conn,
-			"kmiService",
+			"KMIService",
 			"GetKMI",
 			EncodeGRPCGetKMIRequest,
 			DecodeGRPCGetKMIResponse,
@@ -58,7 +58,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *kmi.Endpoints {
 	{
 		KMIEndpoint = grpctransport.NewClient(
 			conn,
-			"kmiService",
+			"KMIService",
 			"KMI",
 			EncodeGRPCKMIRequest,
 			DecodeGRPCKMIResponse,
