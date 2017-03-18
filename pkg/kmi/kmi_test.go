@@ -170,9 +170,10 @@ var _ = Describe("KMI", func() {
 				Ω(err).Should(HaveOccurred())
 			})
 
-			It("Should return an error if commands json is corrupt", func() {
+			It("Should return an error if dockerfile is corrupt", func() {
 				module := []byte(`{
 	        "cmd": "./cmd.json",
+          "dockerfile": "./Dockerfile",
 	        "env": "./env.json",
           "frontend": "./frontend.json",
 	        "interfaces": "./if.json",
@@ -181,6 +182,13 @@ var _ = Describe("KMI", func() {
           "resources": "resources.json"
 	        }`)
 				content.AddFile("./", "module.json", &module)
+				err := kmi.GetData(content, &kmi.KMI{})
+				Ω(err).Should(HaveOccurred())
+			})
+
+			It("Should return an error if commands json is corrupt", func() {
+				data := []byte("")
+				content.AddFile("./", "Dockerfile", &data)
 				err := kmi.GetData(content, &kmi.KMI{})
 				Ω(err).Should(HaveOccurred())
 			})
