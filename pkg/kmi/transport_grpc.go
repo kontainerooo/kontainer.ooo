@@ -82,12 +82,52 @@ func (s *grpcServer) KMI(ctx oldcontext.Context, req *pb.KMIRequest) (*pb.KMIRes
 	return res.(*pb.KMIResponse), nil
 }
 
-func transformIntoPBKMI(kmi interface{}) *pb.KMI {
-	return kmi.(*pb.KMI)
+func convertPBFrontendModule(f *FrontendModule) *pb.FrontendModule {
+	return &pb.FrontendModule{
+		Template:   f.Template,
+		Parameters: f.Parameters.ToStringMap(),
+	}
 }
 
-func transformIntoPBKMDI(kmdi interface{}) []*pb.KMDI {
-	return kmdi.([]*pb.KMDI)
+func convertPBFrontendModuleArray(f FrontendArray) []*pb.FrontendModule {
+	a := make([]*pb.FrontendModule, len(f))
+	for i, m := range f {
+		a[i] = convertPBFrontendModule(m)
+	}
+	return a
+}
+
+func convertPBKMDI(k KMDI) *pb.KMDI {
+	return &pb.KMDI{
+		ID:          uint32(k.ID),
+		Name:        k.Name,
+		Version:     k.Version,
+		Description: k.Description,
+	}
+}
+
+func convertPBKMI(k *KMI) *pb.KMI {
+	return &pb.KMI{
+		KMDI:        convertPBKMDI(k.KMDI),
+		Dockerfile:  k.Dockerfile,
+		Container:   k.Container,
+		Commands:    k.Commands.ToStringMap(),
+		Environment: k.Environment.ToStringMap(),
+		Frontend:    convertPBFrontendModuleArray(k.Frontend),
+		Imports:     k.Imports,
+		Interfaces:  k.Interfaces.ToStringMap(),
+		Mounts:      k.Mounts,
+		Variables:   k.Variables,
+		Resources:   k.Resources.ToStringMap(),
+	}
+}
+
+func convertPBKMDIArray(k *[]KMDI) []*pb.KMDI {
+	a := make([]*pb.KMDI, len(*k))
+	for i, d := range *k {
+		a[i] = convertPBKMDI(d)
+	}
+	return a
 }
 
 // DecodeGRPCAddKMIRequest is a transport/grpc.DecodeRequestFunc that converts a
@@ -153,7 +193,7 @@ func EncodeGRPCGetKMIResponse(_ context.Context, response interface{}) (interfac
 	res := response.(GetKMIResponse)
 	gRPCRes := &pb.GetKMIResponse{}
 	if res.KMI != nil {
-		gRPCRes.Kmi = transformIntoPBKMI(res.KMI)
+		gRPCRes.Kmi = convertPBKMI(res.KMI)
 	}
 	if res.Error != nil {
 		gRPCRes.Error = res.Error.Error()
@@ -167,7 +207,7 @@ func EncodeGRPCKMIResponse(_ context.Context, response interface{}) (interface{}
 	res := response.(KMIResponse)
 	gRPCRes := &pb.KMIResponse{}
 	if res.KMDI != nil {
-		gRPCRes.Kmdi = transformIntoPBKMDI(res.KMDI)
+		gRPCRes.Kmdi = convertPBKMDIArray(res.KMDI)
 	}
 	if res.Error != nil {
 		gRPCRes.Error = res.Error.Error()
