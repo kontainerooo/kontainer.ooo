@@ -181,11 +181,9 @@ func createBuildContext(path string, dockerfileContent string) (io.Reader, error
 	defer f.Close()
 
 	var excludes []string
-	if err == nil {
-		excludes, err = dockerignore.ReadAll(f)
-		if err != nil {
-			return nil, err
-		}
+	excludes, err = dockerignore.ReadAll(f)
+	if err != nil {
+		return nil, err
 	}
 
 	if err := build.ValidateContextDirectory(path, excludes); err != nil {
@@ -204,65 +202,68 @@ func createBuildContext(path string, dockerfileContent string) (io.Reader, error
 	}
 
 	// Add custom dockerfile to tar archive
-	buildCtx, err = addDockerfileToTar(buildCtx, dockerfileContent)
+	buildCtxReader, err := addDockerfileToTar(buildCtx, dockerfileContent)
 	if err != nil {
 		return nil, err
 	}
 
-	return buildCtx, nil
+	return buildCtxReader, nil
 }
 
-func addDockerfileToTar(inputTar io.ReadCloser, dockerfileContent string) (io.ReadCloser, error) {
-	pipeReader, pipeWriter := io.Pipe()
-	tw := tar.NewWriter(pipeWriter)
+func addDockerfileToTar(inputTar io.ReadCloser, dockerfileContent string) (io.Reader, error) {
+	// pipeReader, pipeWriter := io.Pipe()
+	buf := new(bytes.Buffer)
+	tw := tar.NewWriter(buf)
 
 	// Open current archive for reading
 	tr := tar.NewReader(inputTar)
 
-	go func() {
-		for {
-			hdr, err := tr.Next()
+	defer inputTar.Close()
 
-			// End of archive
-			if err == io.EOF {
-				// Write dockerfile to tar
-				dockerfileBytes := []byte(dockerfileContent)
-				hdr = &tar.Header{
-					Name: "Dockerfile",
-					Size: int64(len(dockerfileBytes)),
-				}
+	for {
 
-				if err := tw.WriteHeader(hdr); err != nil {
-					return
-				}
+		hdr, err := tr.Next()
 
-				if _, err := tw.Write(dockerfileBytes); err != nil {
-					return
-				}
-
-				tw.Close()
-				return
+		// End of archive
+		if err == io.EOF {
+			// Write dockerfile to tar
+			dockerfileBytes := []byte(dockerfileContent)
+			hdr = &tar.Header{
+				Name: "Dockerfile",
+				Mode: 0600,
+				Size: int64(len(dockerfileBytes)),
 			}
 
-			if err != nil {
-				return
-			}
-
-			// Copy header from file
 			if err := tw.WriteHeader(hdr); err != nil {
-				return
+				return nil, err
 			}
 
-			// Copy contents of file
-			content := io.Reader(tr)
-			if _, err := io.Copy(tw, content); err != nil {
-				return
+			if _, err := tw.Write(dockerfileBytes); err != nil {
+				return nil, err
 			}
 
+			tw.Close()
+			return buf, nil
 		}
-	}()
 
-	return pipeReader, nil
+		if err != nil {
+			return nil, err
+		}
+
+		// Copy header from file
+		err = tw.WriteHeader(hdr)
+		if err != nil {
+			return nil, err
+		}
+
+		// Copy contents of file
+		content := io.Reader(tr)
+		_, err = io.Copy(tw, content)
+		if err != nil {
+			return nil, err
+		}
+
+	}
 }
 
 func addEnvToDockerfile(dockerfile string, env map[string]interface{}) (string, error) {

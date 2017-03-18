@@ -157,7 +157,7 @@ var _ = Describe("Customercontainer", func() {
 		os.Create("container-test/.dockerignore")
 
 		AfterSuite(func() {
-			os.Remove("container-test")
+			os.RemoveAll("container-test")
 		})
 
 		It("Should create an image", func() {
