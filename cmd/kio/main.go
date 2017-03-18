@@ -56,8 +56,8 @@ func main() {
 		Transport: &http.Transport{},
 	}
 
-	defaultHeaders := map[string]string{"User-Agent": "engine-api-cli-1.0"}
-	dcli, err := client.NewClient(dockerHost, "", clientTransport, defaultHeaders)
+	defaultHeaders := map[string]string{}
+	dcli, err := client.NewClient(dockerHost, "1.26", clientTransport, defaultHeaders)
 	if err != nil {
 		panic(err)
 	}
@@ -153,7 +153,6 @@ func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger,
 
 func startWebsocketTransport(errc chan error, logger log.Logger, wsAddr string, ue user.Endpoints, ke kmi.Endpoints, cle containerlifecycle.Endpoints, cce customercontainer.Endpoints) {
 	logger = log.With(logger, "transport", "ws")
-
 	s := ws.NewServer(ws.BasicHandler{}, logger)
 
 	userService := user.MakeWebsocketService(ue)
@@ -287,10 +286,17 @@ func makeCustomerContainerServiceEndpoints(s customercontainer.Service) customer
 
 	}
 
+	var CreateDockerImageEndpoint endpoint.Endpoint
+	{
+		CreateDockerImageEndpoint = customercontainer.MakeCreateDockerImageEndpoint(s)
+
+	}
+
 	return customercontainer.Endpoints{
-		CreateContainerEndpoint: CreateContainerEndpoint,
-		EditContainerEndpoint:   EditContainerEndpoint,
-		RemoveContainerEndpoint: RemoveContainerEndpoint,
-		InstancesEndpoint:       InstancesEndpoint,
+		CreateContainerEndpoint:   CreateContainerEndpoint,
+		EditContainerEndpoint:     EditContainerEndpoint,
+		RemoveContainerEndpoint:   RemoveContainerEndpoint,
+		InstancesEndpoint:         InstancesEndpoint,
+		CreateDockerImageEndpoint: CreateDockerImageEndpoint,
 	}
 }
