@@ -116,8 +116,8 @@ type CreateDockerImageResponse struct {
 	Error error
 }
 
-// CreateDockerImageEndpoint creates a gokit endpoint which invokes CreateDockerImage
-func CreateDockerImageEndpoint(s Service) endpoint.Endpoint {
+// MakeCreateDockerImageEndpoint creates a gokit endpoint which invokes CreateDockerImage
+func MakeCreateDockerImageEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateDockerImageRequest)
 		err := s.CreateDockerImage(req.Refid, req.KmiID)
