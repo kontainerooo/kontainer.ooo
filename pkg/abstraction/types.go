@@ -55,9 +55,10 @@ func (j *JSON) Scan(src interface{}) error {
 func NewJSONFromMap(m map[string]string) JSON {
 	j := make(JSON)
 	for k, v := range m {
-		i, err := strconv.ParseInt(k, 10, 0)
+		i, err := strconv.ParseInt(v, 10, 0)
 		if err != nil {
 			j[k] = v
+			continue
 		}
 		j[k] = int(i)
 	}
