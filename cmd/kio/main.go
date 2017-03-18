@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"google.golang.org/grpc"
 
@@ -21,6 +22,7 @@ import (
 	"github.com/ttdennis/kontainer.io/pkg/containerlifecycle"
 	"github.com/ttdennis/kontainer.io/pkg/customercontainer"
 	"github.com/ttdennis/kontainer.io/pkg/kmi"
+	kmiClient "github.com/ttdennis/kontainer.io/pkg/kmi/client"
 	"github.com/ttdennis/kontainer.io/pkg/pb"
 	"github.com/ttdennis/kontainer.io/pkg/user"
 	ws "github.com/ttdennis/kontainer.io/pkg/websocket"
@@ -102,6 +104,16 @@ func main() {
 	go startGRPCTransport(ctx, errc, logger, grpcAddr, userEndpoints, kmiEndpoints, clsEndpoints, ccEndpoint)
 
 	go startWebsocketTransport(errc, logger, wsAddr, userEndpoints, kmiEndpoints, clsEndpoints, ccEndpoint)
+
+	conn, err := grpc.Dial(grpcAddr, grpc.WithInsecure(), grpc.WithTimeout(time.Second))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v", err)
+		os.Exit(1)
+	}
+	defer conn.Close()
+	ke := kmiClient.New(conn, logger)
+
+	customercontainerService.AddKMIClient(ke)
 
 	// Interrupt handler.
 	go func() {
