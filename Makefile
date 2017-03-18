@@ -11,11 +11,14 @@ PROTOC_OPTS="-Imessages/"
 
 all: fe proto be all-scripts
 
-fe:
+fe: fe-test
 	cd ./frontend && npm install && $(ANGULAR_CLI) build
 
 fe-watch:
 	cd ./frontend && $(ANGULAR_CLI) build --watch
+
+fe-test:
+	cd ./frontend && karma start karma.conf.js --single-run
 
 all-scripts:
 	$(MAKE) -C ./scripts
