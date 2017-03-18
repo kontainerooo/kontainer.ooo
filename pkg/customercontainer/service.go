@@ -39,10 +39,14 @@ type Service interface {
 
 	// CreateDockerImage creates a Docker image from a given KMI
 	CreateDockerImage(refid int, kmi kmi.KMI) error
+
+	// AddKMIClient adds the kmi Endpoints to the service
+	AddKMIClient(ke *kmi.Endpoints)
 }
 
 type service struct {
-	dcli abstraction.DCli
+	dcli      abstraction.DCli
+	kmiClient *kmi.Endpoints
 }
 
 // imageExists checks if a docker image exists.
@@ -168,6 +172,10 @@ func (s *service) CreateDockerImage(refid int, kmi kmi.KMI) error {
 		Labels:         labels,
 	})
 	return nil
+}
+
+func (s *service) AddKMIClient(ke *kmi.Endpoints) {
+	s.kmiClient = ke
 }
 
 func createBuildContext(path string, dockerfileContent string) (io.Reader, error) {
