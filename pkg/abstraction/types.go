@@ -59,3 +59,16 @@ func (j *JSON) Scan(value interface{}) error {
 
 	return nil
 }
+
+// NewJSONFromMap creates a new JSON given a string->string map
+func NewJSONFromMap(m map[string]string) JSON {
+	j := make(JSON)
+	for k, v := range m {
+		i, err := strconv.ParseInt(k, 10, 0)
+		if err != nil {
+			j[k] = v
+		}
+		j[k] = int(i)
+	}
+	return j
+}
