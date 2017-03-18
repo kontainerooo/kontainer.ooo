@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"math/rand"
 	"strings"
 
@@ -160,6 +161,11 @@ func (d *MockDCli) ImageInspectWithRaw(ctx context.Context, imageID string) (typ
 	}
 
 	return types.ImageInspect{}, nil, fmt.Errorf("Image does not exist")
+}
+
+// ImageBuild builds a mock image
+func (d *MockDCli) ImageBuild(ctx context.Context, buildContext io.Reader, options types.ImageBuildOptions) (types.ImageBuildResponse, error) {
+	return types.ImageBuildResponse{}, nil
 }
 
 // IsErrImageNotFound returns true if the error means the image was not found
