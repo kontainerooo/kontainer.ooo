@@ -18,13 +18,14 @@ type KMDI struct {
 	Type        int
 }
 
-type frontendModule struct {
-	template   string
-	parameters abstraction.JSON `sql:"type:jsonb"`
+// FrontendModule contains a template and its parameters
+type FrontendModule struct {
+	Template   string
+	Parameters abstraction.JSON `sql:"type:jsonb"`
 }
 
 // FrontendArray represents a frontendModule Array
-type FrontendArray []frontendModule
+type FrontendArray []*FrontendModule
 
 // Scan implements the sql.Scanner interface.
 func (f *FrontendArray) Scan(src interface{}) error {
