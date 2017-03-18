@@ -47,3 +47,12 @@ message InstancesRequest {
 message InstancesResponse {
     repeated string Instances = 1;
 }
+
+message CreateDockerImageRequest {
+    uint32 Refid = 1;
+    uint32 KmiID = 2;
+}
+
+message CreateDockerImageResponse {
+    string Error = 1;
+}
