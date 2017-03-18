@@ -4,11 +4,26 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 )
 
 // JSON is a json abstraction
 type JSON map[string]interface{}
+
+// ToStringMap returns a string map with the contents of the json
+func (j JSON) ToStringMap() map[string]string {
+	m := make(map[string]string)
+	for k, v := range j {
+		switch v.(type) {
+		case string:
+			m[k] = v.(string)
+		case int:
+			m[k] = fmt.Sprintf("%d", v.(int))
+		}
+	}
+	return m
+}
 
 // Value get value of JSON
 func (j JSON) Value() (driver.Value, error) {
