@@ -22,6 +22,7 @@ import (
 	"github.com/docker/docker/cli/command/image/build"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/jsonmessage"
+	"github.com/go-kit/kit/log"
 	"github.com/ttdennis/kontainer.io/pkg/abstraction"
 	"github.com/ttdennis/kontainer.io/pkg/kmi"
 )
@@ -45,11 +46,15 @@ type Service interface {
 
 	// AddKMIClient adds the kmi Endpoints to the service
 	AddKMIClient(ke *kmi.Endpoints)
+
+	// AddLogger provides a logger to the service
+	AddLogger(l log.Logger)
 }
 
 type service struct {
 	dcli      abstraction.DCli
 	kmiClient *kmi.Endpoints
+	logger    log.Logger
 }
 
 // imageExists checks if a docker image exists.
@@ -176,7 +181,7 @@ func (s *service) CreateDockerImage(refid int, kmiID uint) (string, error) {
 		return "", err
 	}
 
-	err = jsonmessage.DisplayJSONMessagesStream(res.Body, buildBuf, 1, true, nil)
+	err = jsonmessage.DisplayJSONMessagesStream(res.Body, buildBuf, 1, false, nil)
 
 	if err != nil {
 		if jerr, ok := err.(*jsonmessage.JSONError); ok {
@@ -188,15 +193,20 @@ func (s *service) CreateDockerImage(refid int, kmiID uint) (string, error) {
 	}
 
 	// Response is sha1:IMAGE_ID
-	imageID := strings.Split(string(buildBuf.Bytes()), ":")[1]
+	answer := strings.Split(string(buildBuf.Bytes()), ":")
+	imageID := strings.Replace(answer[1], "\n", "", -1)
 
-	fmt.Printf("Image ID: %s", imageID)
+	s.logger.Log("msg", "Created image", "ImageID", imageID)
 
 	return imageID, nil
 }
 
 func (s *service) AddKMIClient(ke *kmi.Endpoints) {
 	s.kmiClient = ke
+}
+
+func (s *service) AddLogger(l log.Logger) {
+	s.logger = l
 }
 
 func generateBuildOptions(kmi *kmi.KMI, userID int) types.ImageBuildOptions {
