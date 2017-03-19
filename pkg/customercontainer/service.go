@@ -21,6 +21,7 @@ import (
 	"github.com/docker/docker/builder/dockerignore"
 	"github.com/docker/docker/cli/command/image/build"
 	"github.com/docker/docker/pkg/archive"
+	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/ttdennis/kontainer.io/pkg/abstraction"
 	"github.com/ttdennis/kontainer.io/pkg/kmi"
 )
@@ -40,7 +41,7 @@ type Service interface {
 	Instances(refid int) []string
 
 	// CreateDockerImage creates a Docker image from a given KMI
-	CreateDockerImage(refid int, kmiID uint) error
+	CreateDockerImage(refid int, kmiID uint) (string, error)
 
 	// AddKMIClient adds the kmi Endpoints to the service
 	AddKMIClient(ke *kmi.Endpoints)
@@ -144,10 +145,12 @@ func (s *service) Instances(refid int) []string {
 	return containerList
 }
 
-func (s *service) CreateDockerImage(refid int, kmiID uint) error {
+func (s *service) CreateDockerImage(refid int, kmiID uint) (string, error) {
+
+	buildBuf := bytes.NewBuffer(nil)
 
 	if s.kmiClient == nil {
-		return errors.New("No KMI client")
+		return "", errors.New("No KMI client")
 	}
 
 	kmiResponse, _ := s.kmiClient.GetKMIEndpoint(context.Background(), &kmi.GetKMIRequest{
@@ -158,37 +161,38 @@ func (s *service) CreateDockerImage(refid int, kmiID uint) error {
 
 	dockerfile, err := addEnvToDockerfile(kmi.Dockerfile, kmi.Environment)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	buildContext, err := createBuildContext(kmi.Container, dockerfile)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	buildOptions := generateBuildOptions(kmi, refid)
 
 	res, err := s.dcli.ImageBuild(context.Background(), buildContext, buildOptions)
+	if err != nil {
+		return "", err
+	}
 
-	fmt.Println(err)
-	fmt.Println(res.OSType)
+	err = jsonmessage.DisplayJSONMessagesStream(res.Body, buildBuf, 1, true, nil)
 
-	for {
-		b := make([]byte, 512)
-		info, err := res.Body.Read(b)
-
-		fmt.Printf("Info: %d, err: %s\n%s\n", info, err, string(b))
-
-		if err == io.EOF {
-			break
+	if err != nil {
+		if jerr, ok := err.(*jsonmessage.JSONError); ok {
+			if jerr.Code == 0 {
+				jerr.Code = 1
+			}
+			return "", fmt.Errorf("%s", jerr.Message)
 		}
 	}
 
-	if err != nil {
-		return err
-	}
+	// Response is sha1:IMAGE_ID
+	imageID := strings.Split(string(buildBuf.Bytes()), ":")[1]
 
-	return nil
+	fmt.Printf("Image ID: %s", imageID)
+
+	return imageID, nil
 }
 
 func (s *service) AddKMIClient(ke *kmi.Endpoints) {
@@ -225,7 +229,7 @@ func generateBuildOptions(kmi *kmi.KMI, userID int) types.ImageBuildOptions {
 
 	return types.ImageBuildOptions{
 		Tags:           tags,
-		SuppressOutput: false,
+		SuppressOutput: true,
 		NoCache:        true,
 		Remove:         false,
 		ForceRemove:    false,

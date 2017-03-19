@@ -188,6 +188,7 @@ func EncodeGRPCCreateDockerImageResponse(_ context.Context, response interface{}
 	gRPCRes := &pb.CreateDockerImageResponse{}
 	if res.Error != nil {
 		gRPCRes.Error = res.Error.Error()
+		gRPCRes.ID = res.ID
 	}
 	return gRPCRes, nil
 }
