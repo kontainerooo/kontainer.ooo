@@ -43,7 +43,7 @@ func (f *FrontendArray) Scan(src interface{}) error {
 }
 
 func (f *FrontendArray) scanBytes(src []byte) error {
-	return GetFrontend(src, f)
+	return json.Unmarshal(src, f)
 }
 
 // Value implements the driver.Valuer interface.

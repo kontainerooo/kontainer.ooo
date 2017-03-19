@@ -125,6 +125,16 @@ func DecodeGRPCInstancesRequest(_ context.Context, grpcReq interface{}) (interfa
 	}, nil
 }
 
+// DecodeGRPCCreateDockerImageRequest is a transport/grpc.DecodeRequestFunc that converts a
+// gRPC CreateDockerImage request to a messages/customercontainer.proto-domain CreateDockerImage request.
+func DecodeGRPCCreateDockerImageRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
+	req := grpcReq.(*pb.CreateDockerImageRequest)
+	return CreateDockerImageRequest{
+		Refid: int(req.Refid),
+		KmiID: uint(req.KmiID),
+	}, nil
+}
+
 // EncodeGRPCCreateContainerResponse is a transport/grpc.EncodeRequestFunc that converts a
 // messages/customercontainer.proto-domain createcontainer response to a gRPC CreateContainer response.
 func EncodeGRPCCreateContainerResponse(_ context.Context, response interface{}) (interface{}, error) {
@@ -167,6 +177,18 @@ func EncodeGRPCInstancesResponse(_ context.Context, response interface{}) (inter
 	res := response.(InstancesResponse)
 	gRPCRes := &pb.InstancesResponse{
 		Instances: res.Instances,
+	}
+	return gRPCRes, nil
+}
+
+// EncodeGRPCCreateDockerImageResponse is a transport/grpc.EncodeRequestFunc that converts a
+// messages/customercontainer.proto-domain instances response to a gRPC CreateDockerImage response.
+func EncodeGRPCCreateDockerImageResponse(_ context.Context, response interface{}) (interface{}, error) {
+	res := response.(CreateDockerImageResponse)
+	gRPCRes := &pb.CreateDockerImageResponse{}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+		gRPCRes.ID = res.ID
 	}
 	return gRPCRes, nil
 }
