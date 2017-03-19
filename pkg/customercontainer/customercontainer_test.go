@@ -162,10 +162,15 @@ var _ = Describe("Customercontainer", func() {
 
 		mockKMIEndpoints := testutils.NewMockKMIEndpoints(log.NewNopLogger(), *mockKMI)
 
-		cc.AddKMIClient(mockKMIEndpoints)
-
 		AfterSuite(func() {
 			os.RemoveAll("container-test")
+		})
+
+		It("Should error when there is no KMI client", func() {
+			_, err := cc.CreateDockerImage(123, 0)
+			Ω(err).Should(HaveOccurred())
+
+			cc.AddKMIClient(mockKMIEndpoints)
 		})
 
 		It("Should create an image", func() {
