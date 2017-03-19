@@ -25,7 +25,8 @@
       "CreateContainer": "CRT",
       "EditContainer": "EDT",
       "RemoveContainer": "REM",
-      "Instances": "ALL"
+      "Instances": "ALL",
+      "CreateDockerImage": "CDI"
     }
   },
   "containerlifecycle": {

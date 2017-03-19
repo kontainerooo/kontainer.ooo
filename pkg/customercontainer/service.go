@@ -6,11 +6,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -19,6 +21,8 @@ import (
 	"github.com/docker/docker/builder/dockerignore"
 	"github.com/docker/docker/cli/command/image/build"
 	"github.com/docker/docker/pkg/archive"
+	"github.com/docker/docker/pkg/jsonmessage"
+	"github.com/go-kit/kit/log"
 	"github.com/ttdennis/kontainer.io/pkg/abstraction"
 	"github.com/ttdennis/kontainer.io/pkg/kmi"
 )
@@ -38,11 +42,19 @@ type Service interface {
 	Instances(refid int) []string
 
 	// CreateDockerImage creates a Docker image from a given KMI
-	CreateDockerImage(refid int, kmi kmi.KMI) error
+	CreateDockerImage(refid int, kmiID uint) (string, error)
+
+	// AddKMIClient adds the kmi Endpoints to the service
+	AddKMIClient(ke *kmi.Endpoints)
+
+	// AddLogger provides a logger to the service
+	AddLogger(l log.Logger)
 }
 
 type service struct {
-	dcli abstraction.DCli
+	dcli      abstraction.DCli
+	kmiClient *kmi.Endpoints
+	logger    log.Logger
 }
 
 // imageExists checks if a docker image exists.
@@ -138,36 +150,116 @@ func (s *service) Instances(refid int) []string {
 	return containerList
 }
 
-func (s *service) CreateDockerImage(refid int, kmi kmi.KMI) error {
-	labels := make(map[string]string)
-	labels["user"] = string(refid)
+func (s *service) CreateDockerImage(refid int, kmiID uint) (string, error) {
+
+	buildBuf := bytes.NewBuffer(nil)
+
+	if s.kmiClient == nil {
+		return "", errors.New("No KMI client")
+	}
+
+	kmiResponse, err := s.kmiClient.GetKMIEndpoint(context.Background(), &kmi.GetKMIRequest{
+		ID: kmiID,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	kmi := kmiResponse.(*kmi.GetKMIResponse).KMI
+
+	imageTag := fmt.Sprintf("kio/%s:%d", strings.ToLower(kmi.Name), refid)
+	_, _, err = s.dcli.ImageInspectWithRaw(context.Background(), imageTag)
+
+	if !s.dcli.IsErrImageNotFound(err) {
+		return "", err
+	}
 
 	dockerfile, err := addEnvToDockerfile(kmi.Dockerfile, kmi.Environment)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	buildContext, err := createBuildContext(kmi.Container, dockerfile)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	s.dcli.ImageBuild(context.Background(), buildContext, types.ImageBuildOptions{
-		Tags: []string{
-			fmt.Sprintf("%d-%s", refid, kmi.Name),
-		},
-		SuppressOutput: false,
+	buildOptions := generateBuildOptions(kmi, refid, imageTag)
+
+	res, err := s.dcli.ImageBuild(context.Background(), buildContext, buildOptions)
+	if err != nil {
+		return "", err
+	}
+
+	err = jsonmessage.DisplayJSONMessagesStream(res.Body, buildBuf, 1, false, nil)
+
+	if err != nil {
+		if jerr, ok := err.(*jsonmessage.JSONError); ok {
+			if jerr.Code == 0 {
+				jerr.Code = 1
+			}
+			return "", fmt.Errorf("%s", jerr.Message)
+		}
+	}
+
+	// Response is sha1:IMAGE_ID
+	answer := strings.Split(string(buildBuf.Bytes()), ":")
+	imageID := strings.Replace(answer[1], "\n", "", -1)
+
+	s.logger.Log("msg", "Created image", "ImageID", imageID)
+
+	return imageID, nil
+}
+
+func (s *service) AddKMIClient(ke *kmi.Endpoints) {
+	s.kmiClient = ke
+}
+
+func (s *service) AddLogger(l log.Logger) {
+	s.logger = l
+}
+
+func generateBuildOptions(kmi *kmi.KMI, userID int, imageTag string) types.ImageBuildOptions {
+	var (
+		cpus string
+		mem  int64
+		swap int64
+	)
+	labels := make(map[string]string)
+	labels["user"] = string(userID)
+
+	tags := []string{
+		imageTag,
+	}
+
+	intCpus, ok := kmi.Resources["cpus"]
+	if ok {
+		cpus = strconv.FormatInt(int64(intCpus.(int)), 10)
+	}
+
+	intMem, ok := kmi.Resources["mem"]
+	if ok {
+		mem = int64(intMem.(int))
+	}
+
+	intSwap, ok := kmi.Resources["swap"]
+	if ok {
+		swap = int64(intSwap.(int))
+	}
+
+	return types.ImageBuildOptions{
+		Tags:           tags,
+		SuppressOutput: true,
 		NoCache:        true,
 		Remove:         false,
 		ForceRemove:    false,
 		PullParent:     false,
-		CPUSetCPUs:     kmi.Resources["cpus"].(string),
-		Memory:         int64(kmi.Resources["mem"].(int)),
-		MemorySwap:     int64(kmi.Resources["swap"].(int)),
-		Dockerfile:     dockerfile,
+		CPUSetCPUs:     cpus,
+		Memory:         mem,
+		MemorySwap:     swap,
+		Dockerfile:     "./Dockerfile",
 		Labels:         labels,
-	})
-	return nil
+	}
 }
 
 func createBuildContext(path string, dockerfileContent string) (io.Reader, error) {
@@ -181,9 +273,11 @@ func createBuildContext(path string, dockerfileContent string) (io.Reader, error
 	defer f.Close()
 
 	var excludes []string
-	excludes, err = dockerignore.ReadAll(f)
-	if err != nil {
-		return nil, err
+	if err == nil {
+		excludes, err = dockerignore.ReadAll(f)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if err := build.ValidateContextDirectory(path, excludes); err != nil {
@@ -267,13 +361,18 @@ func addDockerfileToTar(inputTar io.ReadCloser, dockerfileContent string) (io.Re
 }
 
 func addEnvToDockerfile(dockerfile string, env map[string]interface{}) (string, error) {
+
+	if len(env) == 0 {
+		return dockerfile, nil
+	}
+
 	envString := "ENV"
 	for k, v := range env {
 		if envKeyValid(k) {
 			// To optimize performance all ENVs are put into one line
 			// so that docker only needs to create one container layer for
 			// all environment variables
-			envString = fmt.Sprintf("%s %s=\"%s\"", envString, k, envValueEscape(v.(string)))
+			envString = fmt.Sprintf("%s %s=\"%s\"", envString, k, envValueEscape(string(v.(int))))
 		} else {
 			return "", fmt.Errorf("Invalid ENV key (%s)", k)
 		}
