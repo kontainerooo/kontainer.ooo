@@ -158,11 +158,21 @@ func (s *service) CreateDockerImage(refid int, kmiID uint) (string, error) {
 		return "", errors.New("No KMI client")
 	}
 
-	kmiResponse, _ := s.kmiClient.GetKMIEndpoint(context.Background(), &kmi.GetKMIRequest{
+	kmiResponse, err := s.kmiClient.GetKMIEndpoint(context.Background(), &kmi.GetKMIRequest{
 		ID: kmiID,
 	})
+	if err != nil {
+		return "", err
+	}
 
 	kmi := kmiResponse.(*kmi.GetKMIResponse).KMI
+
+	imageTag := fmt.Sprintf("kio/%s:%d", strings.ToLower(kmi.Name), refid)
+	_, _, err = s.dcli.ImageInspectWithRaw(context.Background(), imageTag)
+
+	if !s.dcli.IsErrImageNotFound(err) {
+		return "", err
+	}
 
 	dockerfile, err := addEnvToDockerfile(kmi.Dockerfile, kmi.Environment)
 	if err != nil {
@@ -174,7 +184,7 @@ func (s *service) CreateDockerImage(refid int, kmiID uint) (string, error) {
 		return "", err
 	}
 
-	buildOptions := generateBuildOptions(kmi, refid)
+	buildOptions := generateBuildOptions(kmi, refid, imageTag)
 
 	res, err := s.dcli.ImageBuild(context.Background(), buildContext, buildOptions)
 	if err != nil {
@@ -209,7 +219,7 @@ func (s *service) AddLogger(l log.Logger) {
 	s.logger = l
 }
 
-func generateBuildOptions(kmi *kmi.KMI, userID int) types.ImageBuildOptions {
+func generateBuildOptions(kmi *kmi.KMI, userID int, imageTag string) types.ImageBuildOptions {
 	var (
 		cpus string
 		mem  int64
@@ -219,7 +229,7 @@ func generateBuildOptions(kmi *kmi.KMI, userID int) types.ImageBuildOptions {
 	labels["user"] = string(userID)
 
 	tags := []string{
-		fmt.Sprintf("kio/%s:%d", strings.ToLower(kmi.Name), userID),
+		imageTag,
 	}
 
 	intCpus, ok := kmi.Resources["cpus"]
@@ -362,7 +372,7 @@ func addEnvToDockerfile(dockerfile string, env map[string]interface{}) (string, 
 			// To optimize performance all ENVs are put into one line
 			// so that docker only needs to create one container layer for
 			// all environment variables
-			envString = fmt.Sprintf("%s %s=\"%s\"", envString, k, envValueEscape(v.(string)))
+			envString = fmt.Sprintf("%s %s=\"%s\"", envString, k, envValueEscape(string(v.(int))))
 		} else {
 			return "", fmt.Errorf("Invalid ENV key (%s)", k)
 		}
