@@ -54,5 +54,6 @@ message CreateDockerImageRequest {
 }
 
 message CreateDockerImageResponse {
-    string Error = 1;
+    string ID = 1;
+    string Error = 2;
 }

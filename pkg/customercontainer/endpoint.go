@@ -113,6 +113,7 @@ type CreateDockerImageRequest struct {
 
 // CreateDockerImageResponse is the response struct for the CreateDockerImageEndpoint
 type CreateDockerImageResponse struct {
+	ID    string
 	Error error
 }
 
@@ -120,9 +121,10 @@ type CreateDockerImageResponse struct {
 func MakeCreateDockerImageEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateDockerImageRequest)
-		err := s.CreateDockerImage(req.Refid, req.KmiID)
+		id, err := s.CreateDockerImage(req.Refid, req.KmiID)
 		return CreateDockerImageResponse{
 			Error: err,
+			ID:    id,
 		}, nil
 	}
 }
