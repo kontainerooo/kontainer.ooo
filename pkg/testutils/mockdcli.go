@@ -1,6 +1,7 @@
 package testutils
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -20,6 +21,12 @@ var (
 	// ErrAlreadyRunning is returned, if a container which should be started is already running
 	ErrAlreadyRunning = errors.New("container already running")
 )
+
+type nopCloser struct {
+	io.Reader
+}
+
+func (nopCloser) Close() error { return nil }
 
 // MockDCli simulates a docker client for testing purposes
 type MockDCli struct {
@@ -165,7 +172,9 @@ func (d *MockDCli) ImageInspectWithRaw(ctx context.Context, imageID string) (typ
 
 // ImageBuild builds a mock image
 func (d *MockDCli) ImageBuild(ctx context.Context, buildContext io.Reader, options types.ImageBuildOptions) (types.ImageBuildResponse, error) {
-	return types.ImageBuildResponse{}, nil
+	return types.ImageBuildResponse{
+		Body: nopCloser{bytes.NewBufferString("{\"stream\":\"sha1:1234\"}")},
+	}, nil
 }
 
 // IsErrImageNotFound returns true if the error means the image was not found
