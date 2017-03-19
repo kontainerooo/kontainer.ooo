@@ -114,6 +114,7 @@ func main() {
 	ke := kmiClient.New(conn, logger)
 
 	customercontainerService.AddKMIClient(ke)
+	customercontainerService.AddLogger(logger)
 
 	// Interrupt handler.
 	go func() {
