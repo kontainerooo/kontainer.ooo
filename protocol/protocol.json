@@ -1,0 +1,39 @@
+{
+  "user": {
+    "id": "USR",
+    "methods": {
+      "CreateUser": "CRT",
+      "EditUser": "EDT",
+      "ChangeUsername": "CHU",
+      "DeleteUser": "DLT",
+      "ResetPassword": "RST",
+      "GetUser": "GET"
+    }
+  },
+  "kmi": {
+    "id": "KMI",
+    "methods": {
+      "AddKMI": "ADD",
+      "RemoveKMI": "REM",
+      "GetKMI": "GET",
+      "KMI": "ALL"
+    }
+  },
+  "customercontainer": {
+    "id": "CCS",
+    "methods": {
+      "CreateContainer": "CRT",
+      "EditContainer": "EDT",
+      "RemoveContainer": "REM",
+      "Instances": "ALL"
+    }
+  },
+  "containerlifecycle": {
+    "id": "CLS",
+    "methods": {
+      "StartContainer": "SCN",
+      "StartCommand": "SCM",
+      "StopContainer": "STP"
+    }
+  }
+}
