@@ -4,7 +4,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
 )
 
@@ -19,7 +18,9 @@ func (j JSON) ToStringMap() map[string]string {
 		case string:
 			m[k] = v.(string)
 		case int:
-			m[k] = fmt.Sprintf("%d", v.(int))
+			m[k] = strconv.FormatInt(v.(int64), 10)
+		case float64:
+			m[k] = strconv.FormatFloat(v.(float64), 'f', -1, 64)
 		}
 	}
 	return m
