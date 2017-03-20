@@ -1,10 +1,10 @@
-# kontainer.io
+# kontainer.ooo
 
 |Master|Develop|
 |---|---|
-|[![Build Status](https://travis-ci.com/ttdennis/kontainer.io.svg?token=pB7oDfqnVGNEsecqRD8R&branch=master)](https://travis-ci.com/ttdennis/kontainer.io)|[![Build Status](https://travis-ci.com/ttdennis/kontainer.io.svg?token=pB7oDfqnVGNEsecqRD8R&branch=develop)](https://travis-ci.comttdDennis/kontainer.io)|
+|[![Build Status](https://travis-ci.org/kontainerooo/kontainer.ooo.svg?token=pB7oDfqnVGNEsecqRD8R&branch=master)](https://travis-ci.com/kontainerooo/kontainer.ooo)|[![Build Status](https://travis-ci.org/kontainerooo/kontainer.ooo.svg?token=pB7oDfqnVGNEsecqRD8R&branch=develop)](https://travis-ci.com/kontainerooo/kontainer.ooo)|
 
-## Building kontainer.io (*in progress*)
+## Building kontainer.ooo (*in progress*)
 The build consists of mainly two build processes.
 
 1. Building the go backend
