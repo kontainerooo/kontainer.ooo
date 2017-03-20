@@ -3,14 +3,9 @@ package network
 
 // Networks stores the networks belonging to a user
 type Networks struct {
-	UserID   uint
-	Networks []ID
-}
-
-// ID stores network's names and their respective IDs
-type ID struct {
-	Name string
-	ID   string
+	UserID      uint
+	NetworkID   string
+	NetworkName string
 }
 
 // Config describes configuration options for Networks
