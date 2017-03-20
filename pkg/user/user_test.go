@@ -3,8 +3,8 @@ package user_test
 import (
 	"context"
 
-	"github.com/ttdennis/kontainer.io/pkg/testutils"
-	"github.com/ttdennis/kontainer.io/pkg/user"
+	"github.com/kontainerooo/kontainer.ooo/pkg/testutils"
+	"github.com/kontainerooo/kontainer.ooo/pkg/user"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

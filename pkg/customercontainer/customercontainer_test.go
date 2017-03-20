@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	"github.com/go-kit/kit/log"
+	"github.com/kontainerooo/kontainer.ooo/pkg/customercontainer"
+	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
+	"github.com/kontainerooo/kontainer.ooo/pkg/testutils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/ttdennis/kontainer.io/pkg/customercontainer"
-	"github.com/ttdennis/kontainer.io/pkg/kmi"
-	"github.com/ttdennis/kontainer.io/pkg/testutils"
 )
 
 var _ = Describe("Customercontainer", func() {

@@ -4,8 +4,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/ttdennis/kontainer.io/pkg/network"
-	"github.com/ttdennis/kontainer.io/pkg/testutils"
+	"github.com/kontainerooo/kontainer.ooo/pkg/network"
+	"github.com/kontainerooo/kontainer.ooo/pkg/testutils"
 )
 
 var _ = Describe("Network", func() {
