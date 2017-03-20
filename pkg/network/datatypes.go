@@ -4,7 +4,7 @@ package network
 // Networks stores the networks belonging to a user
 type Networks struct {
 	UserID      uint
-	NetworkID   string
+	NetworkID   string `gorm:"primary_key"`
 	NetworkName string
 }
 
