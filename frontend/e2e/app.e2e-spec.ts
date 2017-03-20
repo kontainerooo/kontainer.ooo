@@ -1,10 +1,10 @@
-import { Kontainer.IoPage } from './app.po';
+import { kroPage } from './app.po';
 
-describe('kontainer.io App', function() {
-  let page: Kontainer.IoPage;
+describe('kontainer.ooo App', function() {
+  let page: kroPage;
 
   beforeEach(() => {
-    page = new Kontainer.IoPage();
+    page = new kroPage();
   });
 
   it('should display message saying app works', () => {
