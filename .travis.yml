@@ -14,7 +14,7 @@ before_install:
 
 install:
     - if [ ${TRAVIS_BRANCH:0:3} = "be/" ]; then
-        curl -Lo protoc.zip https://github.com/google/protobuf/releases/download/v3.2.0/protoc-3.2.0-linux-x86_64.zip;
+        curl -Lo protoc.zip https://github.com/google/protobuf/releases/download/v3.0.0/protoc-3.0.0-linux-x86_64.zip;
         unzip protoc.zip -d $HOME;
         go get -u github.com/golang/protobuf/{proto,protoc-gen-go};
       elif  [ ${TRAVIS_BRANCH:0:3} = "fe/" ]; then
@@ -28,7 +28,7 @@ install:
       elif [ ${TRAVIS_BRANCH:0:4} = "doc/" ]; then
         echo "Docs - nothing to do.";
       else
-        curl -Lo protoc.zip https://github.com/google/protobuf/releases/download/v3.2.0/protoc-3.2.0-linux-x86_64.zip;
+        curl -Lo protoc.zip https://github.com/google/protobuf/releases/download/v3.0.0/protoc-3.0.0-linux-x86_64.zip;
         unzip protoc.zip -d $HOME;
         go get -u github.com/golang/protobuf/{proto,protoc-gen-go};
         sudo apt-get update;
