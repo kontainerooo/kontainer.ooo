@@ -10,9 +10,9 @@ import (
 	"github.com/lib/pq"
 	"google.golang.org/grpc"
 
-	"github.com/ttdennis/kontainer.io/pkg/abstraction"
-	"github.com/ttdennis/kontainer.io/pkg/kmi"
-	"github.com/ttdennis/kontainer.io/pkg/pb"
+	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
+	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
+	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
 )
 
 // New creates a set of endpoints based on a gRPC connection

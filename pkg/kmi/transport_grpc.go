@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	grpctransport "github.com/go-kit/kit/transport/grpc"
-	"github.com/ttdennis/kontainer.io/pkg/pb"
+	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
 	oldcontext "golang.org/x/net/context"
 )
 
