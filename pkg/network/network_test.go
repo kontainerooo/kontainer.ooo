@@ -80,5 +80,17 @@ var _ = Describe("Network", func() {
 
 			Ω(err).ShouldNot(HaveOccurred())
 		})
+
+		It("Should error when network cannot be removed", func() {
+			name, _, _ := networkService.CreateNetwork(123, &network.Config{
+				Driver: "bridge",
+			})
+
+			dcli.SetError()
+
+			err := networkService.RemoveNetworkByName(123, name)
+
+			Ω(err).Should(HaveOccurred())
+		})
 	})
 })
