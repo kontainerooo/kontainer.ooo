@@ -2,7 +2,7 @@
 
 |Master|Develop|
 |---|---|
-|[![Build Status](https://travis-ci.org/kontainerooo/kontainer.ooo.svg?token=pB7oDfqnVGNEsecqRD8R&branch=master)](https://travis-ci.com/kontainerooo/kontainer.ooo)|[![Build Status](https://travis-ci.org/kontainerooo/kontainer.ooo.svg?token=pB7oDfqnVGNEsecqRD8R&branch=develop)](https://travis-ci.com/kontainerooo/kontainer.ooo)|
+|[![Build Status](https://travis-ci.org/kontainerooo/kontainer.ooo.svg?token=pB7oDfqnVGNEsecqRD8R&branch=master)](https://travis-ci.org/kontainerooo/kontainer.ooo)|[![Build Status](https://travis-ci.org/kontainerooo/kontainer.ooo.svg?token=pB7oDfqnVGNEsecqRD8R&branch=develop)](https://travis-ci.org/kontainerooo/kontainer.ooo)|
 
 ## Building kontainer.ooo (*in progress*)
 The build consists of mainly two build processes.
