@@ -2,8 +2,12 @@
 package network
 
 import (
+	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"log"
 
+	"github.com/docker/docker/api/types"
 	"github.com/ttdennis/kontainer.io/pkg/abstraction"
 )
 
@@ -28,14 +32,55 @@ type Service interface {
 	RemovePortFromContainer(refid int, srcContainerID string, port uint32, destContainerID string) error
 }
 
+type dbAdapter interface {
+	abstraction.DBAdapter
+	AutoMigrate(...interface{}) error
+	Where(interface{}, ...interface{}) error
+	First(interface{}, ...interface{}) error
+	Find(interface{}, ...interface{}) error
+	Create(interface{}) error
+	Delete(interface{}, ...interface{}) error
+}
+
 type service struct {
 	dcli   abstraction.DCli
+	db     dbAdapter
 	logger log.Logger
 }
 
+func (s *service) InitializeDatabases() error {
+	return s.db.AutoMigrate(&Networks{})
+}
+
 func (s *service) CreateNetwork(refid int, cfg *Config) (name string, id string, err error) {
-	// TODO: implement
-	return "", "", nil
+
+	// Generate a 128 byte unique name
+	b := make([]byte, 128)
+	_, err = rand.Read(b)
+	if err != nil {
+		return "", "", err
+	}
+	name = base64.URLEncoding.EncodeToString(b)
+
+	res, err := s.dcli.NetworkCreate(context.Background(), name, types.NetworkCreate{
+		Driver: cfg.Driver,
+	})
+	if err != nil {
+		return "", "", err
+	}
+
+	nw := Networks{
+		UserID:      uint(refid),
+		NetworkName: name,
+		NetworkID:   res.ID,
+	}
+
+	err = s.db.Create(nw)
+	if err != nil {
+		return "", "", nil
+	}
+
+	return name, res.ID, nil
 }
 
 func (s *service) RemoveNetworkByName(refid int, name string) error {
@@ -64,8 +109,16 @@ func (s *service) RemovePortFromContainer(refid int, srcContainerID string, port
 }
 
 // NewService creates a new network service
-func NewService(dcli abstraction.DCli) Service {
-	return &service{
+func NewService(dcli abstraction.DCli, db dbAdapter) (Service, error) {
+	s := &service{
 		dcli: dcli,
+		db:   db,
 	}
+
+	err := s.InitializeDatabases()
+	if err != nil {
+		return s, err
+	}
+
+	return s, nil
 }
