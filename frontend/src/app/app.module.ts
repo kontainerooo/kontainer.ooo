@@ -3,6 +3,7 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpModule } from '@angular/http';
 import { MaterialModule } from '@angular/material';
+import { DashboardModule } from './page-wrappers/dashboard/dashboard.module';
 import { RouterModule, Routes } from '@angular/router';
 import 'hammerjs';
 
@@ -15,6 +16,8 @@ import { SidebarNavigationComponent } from './sidebar-navigation/sidebar-navigat
 import { DashboardToolbarComponent } from './dashboard-toolbar/dashboard-toolbar.component';
 import { AccountComponent } from './sidebar-navigation/account/account.component';
 import { AvatarComponent } from './sidebar-navigation/account/avatar/avatar.component';
+import { SettingsComponent } from './pages/user/settings/settings.component';
+import { KioCardFullWidthDirective } from './directives/kio-card.directive';
 
 const appRoutes: Routes = [
   {
@@ -27,10 +30,6 @@ const appRoutes: Routes = [
   //   component: HeroListComponent,
   //   data: { title: 'Heroes List' }
   // },
-  {
-    path: 'dashboard',
-    component: DashboardComponent
-  },
   {
     path: '',
     redirectTo: '/dashboard',
@@ -52,14 +51,17 @@ const appRoutes: Routes = [
     SidebarNavigationComponent,
     DashboardToolbarComponent,
     AccountComponent,
-    AvatarComponent
+    AvatarComponent,
+    SettingsComponent,
+    KioCardFullWidthDirective
   ],
   imports: [
     BrowserModule,
     FormsModule,
     HttpModule,
     MaterialModule.forRoot(),
-    RouterModule.forRoot(appRoutes)
+    RouterModule.forRoot(appRoutes),
+    DashboardModule
   ],
   providers: [],
   bootstrap: [AppComponent]
