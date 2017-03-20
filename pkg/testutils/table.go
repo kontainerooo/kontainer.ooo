@@ -108,10 +108,11 @@ func (t *table) find(field string, value interface{}) (reflect.Value, error) {
 	return result, nil
 }
 
-func (t *table) delete(id uint64) error {
+func (t *table) delete(id reflect.Value) error {
+	idInterface := id.Interface()
 	for i, row := range t.rows {
-		v := reflect.ValueOf(row).Elem().FieldByName("ID").Uint()
-		if v == id {
+		v := reflect.ValueOf(row).Elem().FieldByName(t.PrimaryKey)
+		if v.Interface() == idInterface {
 			t.rows = append(t.rows[:i], t.rows[i+1:]...)
 			return nil
 		}
