@@ -9,3 +9,11 @@ html, body, material-app, kio-root {
     margin: 0;
     padding: 0;
 }
+
+// Directives
+
+md-card, mat-card {
+    &.kio-card-full-width {
+        width: 50%;
+    }
+}
