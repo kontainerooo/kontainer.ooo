@@ -186,6 +186,11 @@ func (d *MockDCli) IsErrImageNotFound(err error) bool {
 	return false
 }
 
+// NetworkCreate creates a new mock network
+func (d *MockDCli) NetworkCreate(ctx context.Context, name string, options types.NetworkCreate) (types.NetworkCreateResponse, error) {
+	return types.NetworkCreateResponse{}, nil
+}
+
 // NewMockDCli returns a new instance of MockDCli
 func NewMockDCli() *MockDCli {
 	return &MockDCli{
