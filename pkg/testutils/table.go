@@ -31,10 +31,11 @@ func (t *table) getRef() reflect.Type {
 
 func (t *table) copy() *table {
 	nt := &table{
-		Name:  t.Name,
-		ref:   t.ref,
-		idx:   t.idx,
-		count: t.count,
+		Name:       t.Name,
+		PrimaryKey: t.PrimaryKey,
+		ref:        t.ref,
+		idx:        t.idx,
+		count:      t.count,
 	}
 
 	for _, r := range t.rows {
