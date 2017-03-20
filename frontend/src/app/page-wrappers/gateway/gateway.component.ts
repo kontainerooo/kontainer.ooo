@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'kio-gateway',
+  selector: 'kro-gateway',
   templateUrl: './gateway.component.html',
   styleUrls: ['./gateway.component.scss']
 })
