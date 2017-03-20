@@ -199,10 +199,11 @@ func (m *MockDB) Delete(value interface{}, where ...interface{}) error {
 	if m.produceError() {
 		return ErrDBFailure
 	}
-	id := reflect.ValueOf(value).Elem().FieldByName("ID").Uint()
-	if id != 0 {
-		ref := reflect.TypeOf(value).Elem()
-		name := ref.String()
+	ref := reflect.TypeOf(value).Elem()
+	name := ref.String()
+	table := m.tables[name]
+	id := reflect.ValueOf(value).Elem().FieldByName(table.PrimaryKey)
+	if id != RNil {
 		return m.tables[name].delete(id)
 	}
 	return ErrDBFailure
