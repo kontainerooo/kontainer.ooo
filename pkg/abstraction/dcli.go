@@ -24,6 +24,7 @@ type DCli interface {
 	ImageBuild(ctx context.Context, buildContext io.Reader, options types.ImageBuildOptions) (types.ImageBuildResponse, error)
 	IsErrImageNotFound(err error) bool
 	NetworkCreate(ctx context.Context, name string, options types.NetworkCreate) (types.NetworkCreateResponse, error)
+	NetworkRemove(ctx context.Context, networkID string) error
 }
 
 type dcliAbstract struct {
@@ -73,6 +74,10 @@ func (d dcliAbstract) IsErrImageNotFound(err error) bool {
 
 func (d dcliAbstract) NetworkCreate(ctx context.Context, name string, options types.NetworkCreate) (types.NetworkCreateResponse, error) {
 	return d.cli.NetworkCreate(ctx, name, options)
+}
+
+func (d dcliAbstract) NetworkRemove(ctx context.Context, networkID string) error {
+	return d.cli.NetworkRemove(ctx, networkID)
 }
 
 // NewDCLI returns an new Wrapper instance
