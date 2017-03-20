@@ -4,15 +4,17 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 )
 
 // Table simulates a Table in the MockDb
 type table struct {
-	Name  string
-	rows  []interface{}
-	ref   reflect.Type
-	idx   bool
-	count uint
+	Name       string
+	PrimaryKey string
+	rows       []interface{}
+	ref        reflect.Type
+	idx        bool
+	count      uint
 }
 
 func (t *table) String() string {
@@ -29,10 +31,11 @@ func (t *table) getRef() reflect.Type {
 
 func (t *table) copy() *table {
 	nt := &table{
-		Name:  t.Name,
-		ref:   t.ref,
-		idx:   t.idx,
-		count: t.count,
+		Name:       t.Name,
+		PrimaryKey: t.PrimaryKey,
+		ref:        t.ref,
+		idx:        t.idx,
+		count:      t.count,
 	}
 
 	for _, r := range t.rows {
@@ -106,10 +109,11 @@ func (t *table) find(field string, value interface{}) (reflect.Value, error) {
 	return result, nil
 }
 
-func (t *table) delete(id uint64) error {
+func (t *table) delete(id reflect.Value) error {
+	idInterface := id.Interface()
 	for i, row := range t.rows {
-		v := reflect.ValueOf(row).Elem().FieldByName("ID").Uint()
-		if v == id {
+		v := reflect.ValueOf(row).Elem().FieldByName(t.PrimaryKey)
+		if v.Interface() == idInterface {
 			t.rows = append(t.rows[:i], t.rows[i+1:]...)
 			return nil
 		}
@@ -118,10 +122,38 @@ func (t *table) delete(id uint64) error {
 }
 
 func newTable(ref reflect.Type, name string) *table {
-	_, found := ref.FieldByName("ID")
+	var (
+		idx     bool
+		primary string
+	)
+	f, found := ref.FieldByName("ID")
+	if found {
+		primary = "ID"
+		if f.Type.Kind() == reflect.Uint {
+			idx = true
+		}
+	} else {
+		primaryRegExp := regexp.MustCompile("primary_key")
+		for i := 0; i < ref.NumField(); i++ {
+			f := ref.Field(i)
+			v, ok := f.Tag.Lookup("gorm")
+			if ok {
+				isPrimary := primaryRegExp.MatchString(v)
+				if isPrimary {
+					primary = f.Name
+					if f.Type.Kind() == reflect.Uint {
+						idx = true
+					}
+					break
+				}
+			}
+		}
+	}
+
 	return &table{
-		Name: name,
-		ref:  ref,
-		idx:  found,
+		Name:       name,
+		PrimaryKey: primary,
+		ref:        ref,
+		idx:        idx,
 	}
 }
