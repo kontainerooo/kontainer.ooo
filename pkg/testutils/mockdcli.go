@@ -212,8 +212,7 @@ func (d *MockDCli) NetworkCreate(ctx context.Context, name string, options types
 
 // NetworkRemove removes a mock network
 func (d *MockDCli) NetworkRemove(ctx context.Context, networkID string) error {
-	_, ok := d.networks[networkID]
-	if d.produceError() || !ok {
+	if d.produceError() {
 		return ErrClientError
 	}
 
