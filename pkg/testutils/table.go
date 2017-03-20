@@ -4,15 +4,17 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 )
 
 // Table simulates a Table in the MockDb
 type table struct {
-	Name  string
-	rows  []interface{}
-	ref   reflect.Type
-	idx   bool
-	count uint
+	Name       string
+	PrimaryKey string
+	rows       []interface{}
+	ref        reflect.Type
+	idx        bool
+	count      uint
 }
 
 func (t *table) String() string {
@@ -118,10 +120,38 @@ func (t *table) delete(id uint64) error {
 }
 
 func newTable(ref reflect.Type, name string) *table {
-	_, found := ref.FieldByName("ID")
+	var (
+		idx     bool
+		primary string
+	)
+	f, found := ref.FieldByName("ID")
+	if found {
+		primary = "ID"
+		if f.Type.Kind() == reflect.Uint {
+			idx = true
+		}
+	} else {
+		primaryRegExp := regexp.MustCompile("primary_key")
+		for i := 0; i < ref.NumField(); i++ {
+			f := ref.Field(i)
+			v, ok := f.Tag.Lookup("gorm")
+			if ok {
+				isPrimary := primaryRegExp.MatchString(v)
+				if isPrimary {
+					primary = f.Name
+					if f.Type.Kind() == reflect.Uint {
+						idx = true
+					}
+					break
+				}
+			}
+		}
+	}
+
 	return &table{
-		Name: name,
-		ref:  ref,
-		idx:  found,
+		Name:       name,
+		PrimaryKey: primary,
+		ref:        ref,
+		idx:        idx,
 	}
 }
