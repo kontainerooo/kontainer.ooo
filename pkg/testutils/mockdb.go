@@ -26,6 +26,27 @@ type result struct {
 	values reflect.Value
 }
 
+func (r *result) intersect(res reflect.Value) bool {
+	hasElements := false
+	_r := reflect.MakeSlice(r.values.Type(), 0, 0)
+	resSlice := res.Slice(0, res.Len())
+	rSlice := r.values.Slice(0, r.values.Len())
+
+	for i := 0; i < resSlice.Len(); i++ {
+		element := resSlice.Index(i)
+		for j := 0; j < rSlice.Len(); j++ {
+			if element.Interface() == rSlice.Index(j).Interface() {
+				hasElements = true
+				_r = reflect.Append(_r, element)
+				break
+			}
+		}
+	}
+
+	r.values = _r
+	return hasElements
+}
+
 // MockDB simulates a database for testing purposes
 type MockDB struct {
 	Error      error
@@ -109,27 +130,78 @@ func (m *MockDB) Where(query interface{}, args ...interface{}) error {
 	if m.produceError() {
 		return ErrDBFailure
 	}
+
+	// reset value and multiValue
 	m.value = RNil
 	m.multiValue = nil
 
-	s := strings.Split(query.(string), " ")
-	field := strings.Title(s[0])
-	for _, table := range m.tables {
-		if table.checkForField(field) {
-			res, err := table.find(field, args[0])
-			if err != nil {
-				m.value = RNil
-				m.multiValue = nil
-				return err
+	// split query at "AND"
+	and := strings.Split(query.(string), " AND ")
+
+	// search for results for each part connected with and
+	for i, part := range and {
+		// get field name out of query
+		s := strings.Split(part, " ")
+		field := strings.Title(s[0])
+
+		// init result array
+		mValue := []*result{}
+
+		// iterate available tables
+		for _, table := range m.tables {
+			if table.checkForField(field) {
+				// get a slice of rows matching the query
+				res, err := table.find(field, args[i])
+				if err != nil {
+					m.multiValue = nil
+					return err
+				}
+				// update result array if the result isn't empty
+				if res != reflect.ValueOf(nil) {
+					mValue = append(mValue, &result{
+						table:  table.Name,
+						values: res,
+					})
+				}
 			}
-			if res != reflect.ValueOf(nil) {
-				m.multiValue = append(m.multiValue, &result{
-					table:  table.Name,
-					values: res,
-				})
+		}
+
+		if i == 0 {
+			// if nothing is found stop and return
+			if mValue == nil {
+				return nil
+			}
+
+			// else set the multiValue property of the mockDB
+			m.multiValue = mValue
+		} else {
+			// after the first iteration the results have to be intersected
+			// to store only the ones which match all parts of the query
+			for i, existingResult := range m.multiValue {
+				intersect := false
+				for _, res := range mValue {
+					if existingResult.table == res.table {
+						// intersect result values if table is in both result arrays
+						// return value of intersect() is true if there is something left in the values slice
+						intersect = existingResult.intersect(res.values)
+						break
+					}
+				}
+				if !intersect {
+					// remove table from the multiValue property if it is not part of the new result array
+					m.multiValue = append(m.multiValue[:i], m.multiValue[i+1:]...)
+
+					// if nothing is left reset everything and return
+					if len(m.multiValue) == 0 {
+						m.multiValue = nil
+						return nil
+					}
+				}
 			}
 		}
 	}
+
+	// if there is only one result in multiValue this can be set as the result value (mockDB.value)
 	if len(m.multiValue) == 1 {
 		m.value = m.multiValue[0].values
 	}
@@ -199,10 +271,11 @@ func (m *MockDB) Delete(value interface{}, where ...interface{}) error {
 	if m.produceError() {
 		return ErrDBFailure
 	}
-	id := reflect.ValueOf(value).Elem().FieldByName("ID").Uint()
-	if id != 0 {
-		ref := reflect.TypeOf(value).Elem()
-		name := ref.String()
+	ref := reflect.TypeOf(value).Elem()
+	name := ref.String()
+	table := m.tables[name]
+	id := reflect.ValueOf(value).Elem().FieldByName(table.PrimaryKey)
+	if id != RNil {
 		return m.tables[name].delete(id)
 	}
 	return ErrDBFailure
