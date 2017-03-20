@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"net"
 	"net/http"
@@ -24,6 +25,7 @@ import (
 	"github.com/ttdennis/kontainer.io/pkg/kmi"
 	kmiClient "github.com/ttdennis/kontainer.io/pkg/kmi/client"
 	"github.com/ttdennis/kontainer.io/pkg/pb"
+	"github.com/ttdennis/kontainer.io/pkg/testutils"
 	"github.com/ttdennis/kontainer.io/pkg/user"
 	ws "github.com/ttdennis/kontainer.io/pkg/websocket"
 )
@@ -31,10 +33,20 @@ import (
 func main() {
 
 	var (
-		grpcAddr   = ":8082"
-		wsAddr     = ":8081"
-		dockerHost = "http://127.0.0.1:2375"
+		grpcAddr    = ":8082"
+		wsAddr      = ":8081"
+		dockerHost  = "http://127.0.0.1:2375"
+		isMock      bool
+		dbWrapper   abstraction.DB
+		dcliWrapper abstraction.DCli
 	)
+
+	/* The kio binary can now be given a flag called `--mock`. With this
+	 *  option the mock database and mock docker client is used. This is
+	 *  in order to simplify testing without a docker daemon and database
+	 *  connection. This might later be removed. */
+	flag.BoolVar(&isMock, "mock", false, "Determines if a mock DB and docker client should be used.")
+	flag.Parse()
 
 	var logger log.Logger
 	{
@@ -45,56 +57,56 @@ func main() {
 	logger.Log("msg", "hello")
 	defer logger.Log("msg", "goodbye")
 
-	db, err := gorm.Open("postgres", "host=postgres user=postgres sslmode=disable")
-	if err != nil {
-		panic(err)
+	if isMock {
+		dbWrapper = testutils.NewMockDB()
+	} else {
+		db, err := gorm.Open("postgres", "host=postgres user=postgres sslmode=disable")
+		if err != nil {
+			panic(err)
+		}
+		defer db.Close()
+		dbWrapper = abstraction.NewDB(db)
 	}
-	defer db.Close()
-	dbWrapper := abstraction.NewDB(db)
 
 	clientTransport := &http.Client{
 		Transport: &http.Transport{},
 	}
 
-	defaultHeaders := map[string]string{}
-	dcli, err := client.NewClient(dockerHost, "1.26", clientTransport, defaultHeaders)
-	if err != nil {
-		panic(err)
-	}
-	dcliWrapper := abstraction.NewDCLI(dcli)
-
-	var userService user.Service
-	{
-		userService, err = user.NewService(dbWrapper)
+	if isMock {
+		dcliWrapper = testutils.NewMockDCli()
+	} else {
+		defaultHeaders := map[string]string{}
+		dcli, err := client.NewClient(dockerHost, "1.26", clientTransport, defaultHeaders)
 		if err != nil {
 			panic(err)
 		}
-		userService = user.NewTransactionBasedService(userService)
+		dcliWrapper = abstraction.NewDCLI(dcli)
 	}
+
+	var userService user.Service
+	userService, err := user.NewService(dbWrapper)
+	if err != nil {
+		panic(err)
+	}
+	userService = user.NewTransactionBasedService(userService)
 
 	userEndpoints := makeUserServiceEndpoints(userService)
 
 	var kmiService kmi.Service
-	{
-		kmiService, err = kmi.NewService(dbWrapper)
-		if err != nil {
-			panic(err)
-		}
+	kmiService, err = kmi.NewService(dbWrapper)
+	if err != nil {
+		panic(err)
 	}
 
 	kmiEndpoints := makeKMIServiceEndpoints(kmiService)
 
 	var containerlifecycleService containerlifecycle.Service
-	{
-		containerlifecycleService = containerlifecycle.NewService(dcliWrapper)
-	}
+	containerlifecycleService = containerlifecycle.NewService(dcliWrapper)
 
 	clsEndpoints := makeCLServiceEndpoints(containerlifecycleService)
 
 	var customercontainerService customercontainer.Service
-	{
-		customercontainerService = customercontainer.NewService(dcliWrapper)
-	}
+	customercontainerService = customercontainer.NewService(dcliWrapper)
 
 	ccEndpoint := makeCustomerContainerServiceEndpoints(customercontainerService)
 
