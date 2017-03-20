@@ -217,9 +217,14 @@ func (d *MockDCli) NetworkRemove(ctx context.Context, networkID string) error {
 		return ErrClientError
 	}
 
-	delete(d.networks, networkID)
+	for k, v := range d.networks {
+		if v == networkID {
+			delete(d.networks, k)
+			return nil
+		}
+	}
 
-	return nil
+	return errors.New("Network not found")
 }
 
 // NewMockDCli returns a new instance of MockDCli

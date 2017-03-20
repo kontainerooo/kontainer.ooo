@@ -78,7 +78,7 @@ func (s *service) CreateNetwork(refid int, cfg *Config) (name string, id string,
 	err = s.db.Create(&nw)
 	if err != nil {
 		// Try to remove the actual network on db error
-		s.dcli.NetworkRemove(context.Background(), name)
+		s.dcli.NetworkRemove(context.Background(), res.ID)
 		return "", "", err
 	}
 
