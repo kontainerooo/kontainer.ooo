@@ -17,7 +17,7 @@ type Service interface {
 	CreateNetwork(refid int, cfg *Config) (name string, id string, err error)
 
 	// RemoveNetwork removes a network with a given name
-	RemoveNetworkByName(refid int, name string) error
+	RemoveNetworkByName(refid uint, name string) error
 
 	// AddContainerToNetwork joins a given container to a given network
 	AddContainerToNetwork(refid int, name string, containerID string) error
@@ -37,7 +37,6 @@ type dbAdapter interface {
 	AutoMigrate(...interface{}) error
 	Where(interface{}, ...interface{}) error
 	First(interface{}, ...interface{}) error
-	Find(interface{}, ...interface{}) error
 	Create(interface{}) error
 	Delete(interface{}, ...interface{}) error
 }
@@ -85,8 +84,29 @@ func (s *service) CreateNetwork(refid int, cfg *Config) (name string, id string,
 	return name, res.ID, nil
 }
 
-func (s *service) RemoveNetworkByName(refid int, name string) error {
-	// TODO: implement
+func (s *service) RemoveNetworkByName(refid uint, name string) error {
+	nw := Networks{}
+
+	err := s.db.Where("UserID = ? AND NetworkName = ?", refid, name)
+	if err != nil {
+		return err
+	}
+
+	err = s.db.First(&nw)
+	if err != nil {
+		return err
+	}
+
+	err = s.dcli.NetworkRemove(context.Background(), nw.NetworkID)
+	if err != nil {
+		return err
+	}
+
+	err = s.db.Delete(&nw)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

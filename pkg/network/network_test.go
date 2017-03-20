@@ -66,4 +66,19 @@ var _ = Describe("Network", func() {
 			Ω(len(dcli.GetNetworks())).Should(Equal(1))
 		})
 	})
+
+	Describe("Remove Network", func() {
+		dcli := testutils.NewMockDCli()
+		db := testutils.NewMockDB()
+		networkService, _ := network.NewService(dcli, db)
+		It("Should remove a network", func() {
+			name, _, _ := networkService.CreateNetwork(123, &network.Config{
+				Driver: "bridge",
+			})
+
+			err := networkService.RemoveNetworkByName(123, name)
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+	})
 })
