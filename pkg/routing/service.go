@@ -12,8 +12,11 @@ type Service interface {
 	// Insert a new configuration into the DB, write to a file, update the router
 	CreateRouterConfig(r *RouterConfig) error
 
-	// Edit an existing configuration by id, update file and router
+	// Edit an existing configuration by refID and name, update file and router
 	EditRouterConfig(refID uint, name string, r *RouterConfig) error
+
+	// Get an existing configuration by refID and name
+	GetRouterConfig(refID uint, name string, r *RouterConfig) error
 
 	// Remove a configuration by id, remove file, update router
 	RemoveRouterConfig(id uint) error
@@ -38,6 +41,7 @@ type dbAdapter interface {
 	abstraction.DBAdapter
 	AutoMigrate(...interface{}) error
 	Where(interface{}, ...interface{}) error
+	First(interface{}, ...interface{}) error
 	Create(interface{}) error
 	Update(interface{}, ...interface{}) error
 }
@@ -71,7 +75,7 @@ func (s *service) EditRouterConfig(refID uint, name string, r *RouterConfig) err
 	}
 
 	s.db.Begin()
-	err := s.db.Where("RefID = ? AND Name = ?", r.RefID, r.Name)
+	err := s.db.Where("RefID = ? AND Name = ?", refID, name)
 	if err != nil {
 		s.db.Rollback()
 		return err
@@ -82,6 +86,24 @@ func (s *service) EditRouterConfig(refID uint, name string, r *RouterConfig) err
 		s.db.Rollback()
 		return err
 	}
+	s.db.Commit()
+	return nil
+}
+
+func (s *service) GetRouterConfig(refID uint, name string, r *RouterConfig) error {
+	s.db.Begin()
+	err := s.db.Where("RefID = ? AND Name = ?", refID, name)
+	if err != nil {
+		s.db.Rollback()
+		return err
+	}
+
+	err = s.db.First(r)
+	if err != nil {
+		s.db.Rollback()
+		return err
+	}
+
 	s.db.Commit()
 	return nil
 }

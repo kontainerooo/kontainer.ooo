@@ -54,33 +54,65 @@ var _ = Describe("Routing", func() {
 		db := testutils.NewMockDB()
 		routingService, _ := routing.NewService(db)
 		It("Should change Router Config", func() {
-			refID, name := uint(0), "test"
+			refID, name := uint(1), "test"
 			routingService.CreateRouterConfig(&routing.RouterConfig{
 				RefID: refID,
 				Name:  name,
 			})
 
-			name = "test2"
+			newName := "test2"
 			err := routingService.EditRouterConfig(refID, name, &routing.RouterConfig{
-				Name: name,
+				Name: newName,
 			})
 			Ω(err).ShouldNot(HaveOccurred())
+
+			conf := &routing.RouterConfig{}
+			routingService.GetRouterConfig(refID, newName, conf)
+			Expect(conf.Name).To(BeEquivalentTo(newName))
 		})
 
 		It("Should prevent from changing the refID", func() {
-			err := routingService.EditRouterConfig(0, "test2", &routing.RouterConfig{
-				RefID: 1,
+			err := routingService.EditRouterConfig(1, "test2", &routing.RouterConfig{
+				RefID: 2,
 			})
 			Ω(err).Should(HaveOccurred())
 		})
 
 		It("Should return error on db failure", func() {
 			db.SetError(1)
-			err := routingService.EditRouterConfig(0, "", &routing.RouterConfig{})
+			err := routingService.EditRouterConfig(1, "", &routing.RouterConfig{})
 			Ω(err).Should(HaveOccurred())
 
 			db.SetError(2)
-			err = routingService.EditRouterConfig(0, "", &routing.RouterConfig{})
+			err = routingService.EditRouterConfig(1, "", &routing.RouterConfig{})
+			Ω(err).Should(HaveOccurred())
+		})
+	})
+
+	Describe("GetRouterConfig", func() {
+		db := testutils.NewMockDB()
+		routingService, _ := routing.NewService(db)
+		It("Should fill RouterConfig struct", func() {
+			refID, name := uint(1), "test"
+			routingService.CreateRouterConfig(&routing.RouterConfig{
+				RefID: refID,
+				Name:  name,
+			})
+
+			conf := &routing.RouterConfig{}
+			err := routingService.GetRouterConfig(refID, name, conf)
+			Ω(err).ShouldNot(HaveOccurred())
+			Expect(conf.Name).To(BeEquivalentTo(name))
+		})
+
+		It("Should return error if ID does not exist", func() {
+			err := routingService.GetRouterConfig(28, "", &routing.RouterConfig{})
+			Ω(err).Should(BeEquivalentTo(testutils.ErrNotFound))
+		})
+
+		It("Should return error on db failure", func() {
+			db.SetError(1)
+			err := routingService.GetRouterConfig(1, "", &routing.RouterConfig{})
 			Ω(err).Should(HaveOccurred())
 		})
 	})
