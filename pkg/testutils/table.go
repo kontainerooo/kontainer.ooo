@@ -10,10 +10,10 @@ import (
 // Table simulates a Table in the MockDb
 type table struct {
 	Name       string
-	PrimaryKey string
+	PrimaryKey []string
 	rows       []interface{}
 	ref        reflect.Type
-	idx        bool
+	idx        []string
 	count      uint
 }
 
@@ -73,12 +73,13 @@ func (t *table) insert(row interface{}) error {
 	}
 
 	t.count++
-	if t.idx {
+	for _, k := range t.idx {
 		s := reflect.ValueOf(row).Elem()
-		idField := s.FieldByName("ID")
+		idField := s.FieldByName(k)
 		value := reflect.ValueOf(t.count)
 		idField.Set(value)
 	}
+
 	t.rows = append(t.rows, row)
 	return nil
 }
@@ -109,11 +110,16 @@ func (t *table) find(field string, value interface{}) (reflect.Value, error) {
 	return result, nil
 }
 
-func (t *table) delete(id reflect.Value) error {
-	idInterface := id.Interface()
+func (t *table) delete(ids map[string]reflect.Value) error {
 	for i, row := range t.rows {
-		v := reflect.ValueOf(row).Elem().FieldByName(t.PrimaryKey)
-		if v.Interface() == idInterface {
+		match := true
+		for k, v := range ids {
+			if v.Interface() != reflect.ValueOf(row).Elem().FieldByName(k).Interface() {
+				match = false
+				break
+			}
+		}
+		if match {
 			t.rows = append(t.rows[:i], t.rows[i+1:]...)
 			return nil
 		}
@@ -123,28 +129,31 @@ func (t *table) delete(id reflect.Value) error {
 
 func newTable(ref reflect.Type, name string) *table {
 	var (
-		idx     bool
-		primary string
+		idx     []string
+		primary []string
 	)
-	f, found := ref.FieldByName("ID")
+
+	idTag := "ID"
+	f, found := ref.FieldByName(idTag)
 	if found {
-		primary = "ID"
+		primary = append(primary, idTag)
 		if f.Type.Kind() == reflect.Uint {
-			idx = true
+			idx = append(idx, idTag)
 		}
-	} else {
-		primaryRegExp := regexp.MustCompile("primary_key")
-		for i := 0; i < ref.NumField(); i++ {
-			f := ref.Field(i)
-			v, ok := f.Tag.Lookup("gorm")
-			if ok {
-				isPrimary := primaryRegExp.MatchString(v)
-				if isPrimary {
-					primary = f.Name
-					if f.Type.Kind() == reflect.Uint {
-						idx = true
-					}
-					break
+	}
+
+	primaryRegExp := regexp.MustCompile("primary_key")
+	refRegExp := regexp.MustCompile("Ref")
+
+	for i := 0; i < ref.NumField(); i++ {
+		f := ref.Field(i)
+		v, ok := f.Tag.Lookup("gorm")
+		if ok {
+			isPrimary := primaryRegExp.MatchString(v)
+			if isPrimary {
+				primary = append(primary, f.Name)
+				if f.Type.Kind() == reflect.Uint && !refRegExp.MatchString(f.Name) {
+					idx = append(idx, f.Name)
 				}
 			}
 		}
