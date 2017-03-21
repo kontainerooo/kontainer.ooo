@@ -1,11 +1,15 @@
 package routing
 
-import "github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
+import (
+	"fmt"
+
+	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
+)
 
 // The Service interface describes the functions necessary for kontainer.ooo routing service
 type Service interface {
 	// Insert a new configuration into the DB, write to a file, update the router
-	CreateRouterConfig(r *RouterConfig) (uint, error)
+	CreateRouterConfig(r *RouterConfig) error
 
 	// Edit an existing configuration by id, update file and router
 	EditRouterConfig(id uint, r *RouterConfig) error
@@ -32,6 +36,8 @@ type Service interface {
 type dbAdapter interface {
 	abstraction.DBAdapter
 	AutoMigrate(...interface{}) error
+	Where(interface{}, ...interface{}) error
+	Create(interface{}) error
 }
 
 type service struct {
@@ -42,9 +48,19 @@ func (s service) InitializeDatabases() error {
 	return s.db.AutoMigrate(&RouterConfig{})
 }
 
-func (s *service) CreateRouterConfig(r *RouterConfig) (uint, error) {
-	// TODO: implement
-	return 0, nil
+func (s *service) CreateRouterConfig(r *RouterConfig) error {
+	s.db.Where("RefID = ? AND Name = ?", r.RefID, r.Name)
+	res := s.db.GetValue()
+	if res != nil && res != (&RouterConfig{}) {
+		return fmt.Errorf("config with name %s for user %d already exists", r.Name, r.RefID)
+	}
+
+	err := s.db.Create(r)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *service) EditRouterConfig(id uint, r *RouterConfig) error {
