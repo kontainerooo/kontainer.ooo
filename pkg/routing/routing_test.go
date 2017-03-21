@@ -116,4 +116,34 @@ var _ = Describe("Routing", func() {
 			Ω(err).Should(HaveOccurred())
 		})
 	})
+
+	Describe("DeleteRouterconfig", func() {
+		db := testutils.NewMockDB()
+		routingService, _ := routing.NewService(db)
+		It("Should remove RouterConfig from DB", func() {
+			refID, name := uint(1), "test"
+			routingService.CreateRouterConfig(&routing.RouterConfig{
+				RefID: refID,
+				Name:  name,
+			})
+			err := routingService.RemoveRouterConfig(refID, name)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should return error on db failure", func() {
+			refID, name := uint(1), "test"
+			routingService.CreateRouterConfig(&routing.RouterConfig{
+				RefID: refID,
+				Name:  name,
+			})
+			db.SetError(1)
+			err := routingService.RemoveRouterConfig(refID, name)
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Should return error if refID and/or name are not set", func() {
+			err := routingService.RemoveRouterConfig(0, "")
+			Ω(err).Should(HaveOccurred())
+		})
+	})
 })
