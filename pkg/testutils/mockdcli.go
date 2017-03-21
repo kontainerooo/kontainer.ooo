@@ -36,7 +36,12 @@ type MockDCli struct {
 	err             bool
 	idNotExist      bool
 	dockerIsOffline bool
-	networks        map[string]string
+	networks        map[string]mockNetwork
+}
+
+type mockNetwork struct {
+	name       string
+	containers []string
 }
 
 // SetError sets the err property of MockDCli to be true, causing the next instruction to return an error
@@ -64,7 +69,11 @@ func (d *MockDCli) produceError() bool {
 
 // GetNetworks returns available networks
 func (d *MockDCli) GetNetworks() map[string]string {
-	return d.networks
+	nwMap := make(map[string]string)
+	for k, v := range d.networks {
+		nwMap[k] = v.name
+	}
+	return nwMap
 }
 
 // IsRunning checks if a mocked container is running
@@ -203,7 +212,9 @@ func (d *MockDCli) NetworkCreate(ctx context.Context, name string, options types
 	}
 
 	id := fmt.Sprintf("%d", rand.Int())
-	d.networks[name] = id
+	d.networks[name] = mockNetwork{
+		name: id,
+	}
 
 	return types.NetworkCreateResponse{
 		ID: id,
@@ -217,7 +228,7 @@ func (d *MockDCli) NetworkRemove(ctx context.Context, networkID string) error {
 	}
 
 	for k, v := range d.networks {
-		if v == networkID {
+		if v.name == networkID {
 			delete(d.networks, k)
 			return nil
 		}
@@ -226,12 +237,33 @@ func (d *MockDCli) NetworkRemove(ctx context.Context, networkID string) error {
 	return errors.New("Network not found")
 }
 
+// NetworkConnect connects a container to a mock network
+func (d *MockDCli) NetworkConnect(ctx context.Context, networkID, containerID string, config *network.EndpointSettings) error {
+	_, ok := d.networks[networkID]
+	if d.produceError() {
+		return ErrClientError
+	}
+
+	if !ok {
+		return errors.New("Network not found")
+	}
+
+	c := d.networks[networkID].containers
+	c = append(c, containerID)
+	d.networks[networkID] = mockNetwork{
+		name:       d.networks[networkID].name,
+		containers: c,
+	}
+
+	return nil
+}
+
 // NewMockDCli returns a new instance of MockDCli
 func NewMockDCli() *MockDCli {
 	return &MockDCli{
 		running:    make(map[string]bool),
 		containers: make(map[string]types.Container),
 		images:     make(map[string]bool),
-		networks:   make(map[string]string),
+		networks:   make(map[string]mockNetwork),
 	}
 }
