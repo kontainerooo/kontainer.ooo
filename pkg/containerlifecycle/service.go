@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	dockerTypes "github.com/docker/docker/api/types"
-	"github.com/ttdennis/kontainer.io/pkg/abstraction"
+	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 )
 
 // Service is awesome

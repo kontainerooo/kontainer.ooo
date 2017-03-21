@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/go-kit/kit/log"
-	"github.com/ttdennis/kontainer.io/pkg/kmi"
+	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
 )
 
 // MockKMIClient simulates a kmi client for testing purposes

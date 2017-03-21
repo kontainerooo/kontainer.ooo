@@ -3,8 +3,8 @@ package containerlifecycle_test
 import (
 	"context"
 
-	"github.com/ttdennis/kontainer.io/pkg/containerlifecycle"
-	"github.com/ttdennis/kontainer.io/pkg/testutils"
+	"github.com/kontainerooo/kontainer.ooo/pkg/containerlifecycle"
+	"github.com/kontainerooo/kontainer.ooo/pkg/testutils"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
