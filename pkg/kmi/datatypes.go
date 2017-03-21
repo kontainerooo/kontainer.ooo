@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 	"github.com/lib/pq"
-	"github.com/ttdennis/kontainer.io/pkg/abstraction"
 )
 
 // The KMDI struct contains the displaying information for the frontend

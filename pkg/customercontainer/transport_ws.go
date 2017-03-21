@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/ttdennis/kontainer.io/pkg/pb"
-	ws "github.com/ttdennis/kontainer.io/pkg/websocket"
+	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
+	ws "github.com/kontainerooo/kontainer.ooo/pkg/websocket"
 )
 
 // MakeWebsocketService makes a set of customercontainer Endpoints available as a websocket Service

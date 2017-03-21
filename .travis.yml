@@ -7,7 +7,6 @@ env:
     - TRAVIS_NODE_VERSION="stable"
 
 before_install:
-    - git config --global url."git@github.com:".insteadOf "https://github.com/"
     - export CHROME_BIN=chromium-browser
     - export DISPLAY=:99.0
     - export PATH=$HOME/bin:$PATH
@@ -15,7 +14,7 @@ before_install:
 
 install:
     - if [ ${TRAVIS_BRANCH:0:3} = "be/" ]; then
-        curl -Lo protoc.zip https://github.com/google/protobuf/releases/download/v3.2.0/protoc-3.2.0-linux-x86_64.zip;
+        curl -Lo protoc.zip https://github.com/google/protobuf/releases/download/v3.0.0/protoc-3.0.0-linux-x86_64.zip;
         unzip protoc.zip -d $HOME;
         go get -u github.com/golang/protobuf/{proto,protoc-gen-go};
       elif  [ ${TRAVIS_BRANCH:0:3} = "fe/" ]; then
@@ -29,7 +28,7 @@ install:
       elif [ ${TRAVIS_BRANCH:0:4} = "doc/" ]; then
         echo "Docs - nothing to do.";
       else
-        curl -Lo protoc.zip https://github.com/google/protobuf/releases/download/v3.2.0/protoc-3.2.0-linux-x86_64.zip;
+        curl -Lo protoc.zip https://github.com/google/protobuf/releases/download/v3.0.0/protoc-3.0.0-linux-x86_64.zip;
         unzip protoc.zip -d $HOME;
         go get -u github.com/golang/protobuf/{proto,protoc-gen-go};
         sudo apt-get update;
@@ -54,7 +53,7 @@ before_script:
 script:
     # Build frontend or backend independently based on branch name
     - if [ ${TRAVIS_BRANCH:0:3} = "be/" ]; then
-        make be;
+        make proto && make be;
       elif [ ${TRAVIS_BRANCH:0:3} = "fe/" ]; then
         make fe-test;
       elif [ ${TRAVIS_BRANCH:0:4} = "doc/" ]; then

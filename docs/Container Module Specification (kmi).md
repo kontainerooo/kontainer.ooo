@@ -65,10 +65,10 @@ The `mounts` key specifies directories relative to the `container` directory tha
 ```
 
 ### `variables.json`
-The `variables` key defines "variables" that can be used inside and outside the container. Basically they are files that are mounted in `/var/kio/variables` inside the container. The array contains paths that contain these "variable files".
+The `variables` key defines "variables" that can be used inside and outside the container. Basically they are files that are mounted in `/var/kro/variables` inside the container. The array contains paths that contain these "variable files".
 ```javascript
 [
-    // Example: /variables ~> everything from container/variables is mounted to /var/kio/variables inside the container
+    // Example: /variables ~> everything from container/variables is mounted to /var/kro/variables inside the container
     "path/to/vars"
 ]
 ```
