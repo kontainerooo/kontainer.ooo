@@ -19,7 +19,7 @@ type Service interface {
 	GetRouterConfig(refID uint, name string, r *RouterConfig) error
 
 	// Remove a configuration by id, remove file, update router
-	RemoveRouterConfig(id uint) error
+	RemoveRouterConfig(refID uint, name string) error
 
 	// Add a location rule to a configuration by id, update file and router
 	AddLocationRule(id uint, lr *LocationRule) (int, error)
@@ -44,6 +44,7 @@ type dbAdapter interface {
 	First(interface{}, ...interface{}) error
 	Create(interface{}) error
 	Update(interface{}, ...interface{}) error
+	Delete(interface{}, ...interface{}) error
 }
 
 type service struct {
@@ -108,9 +109,15 @@ func (s *service) GetRouterConfig(refID uint, name string, r *RouterConfig) erro
 	return nil
 }
 
-func (s *service) RemoveRouterConfig(id uint) error {
-	// TODO: implement
-	return nil
+func (s *service) RemoveRouterConfig(refID uint, name string) error {
+	if refID == 0 || name == "" {
+		return errors.New("refID and name have to be set")
+	}
+
+	return s.db.Delete(&RouterConfig{
+		RefID: refID,
+		Name:  name,
+	})
 }
 
 func (s *service) AddLocationRule(id uint, lr *LocationRule) (int, error) {
