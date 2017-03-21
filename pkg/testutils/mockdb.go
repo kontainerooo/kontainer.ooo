@@ -271,12 +271,17 @@ func (m *MockDB) Delete(value interface{}, where ...interface{}) error {
 	if m.produceError() {
 		return ErrDBFailure
 	}
+	ids := make(map[string]reflect.Value)
+
 	ref := reflect.TypeOf(value).Elem()
 	name := ref.String()
 	table := m.tables[name]
-	id := reflect.ValueOf(value).Elem().FieldByName(table.PrimaryKey)
-	if id != RNil {
-		return m.tables[name].delete(id)
+	for _, k := range table.PrimaryKey {
+		ids[k] = reflect.ValueOf(value).Elem().FieldByName(k)
+	}
+
+	if len(ids) != 0 {
+		return m.tables[name].delete(ids)
 	}
 	return ErrDBFailure
 }
