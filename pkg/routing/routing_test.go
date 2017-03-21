@@ -49,4 +49,39 @@ var _ = Describe("Routing", func() {
 			Ω(err).Should(HaveOccurred())
 		})
 	})
+
+	Describe("Edit Router Config", func() {
+		db := testutils.NewMockDB()
+		routingService, _ := routing.NewService(db)
+		It("Should change Router Config", func() {
+			refID, name := uint(0), "test"
+			routingService.CreateRouterConfig(&routing.RouterConfig{
+				RefID: refID,
+				Name:  name,
+			})
+
+			name = "test2"
+			err := routingService.EditRouterConfig(refID, name, &routing.RouterConfig{
+				Name: name,
+			})
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should prevent from changing the refID", func() {
+			err := routingService.EditRouterConfig(0, "test2", &routing.RouterConfig{
+				RefID: 1,
+			})
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Should return error on db failure", func() {
+			db.SetError(1)
+			err := routingService.EditRouterConfig(0, "", &routing.RouterConfig{})
+			Ω(err).Should(HaveOccurred())
+
+			db.SetError(2)
+			err = routingService.EditRouterConfig(0, "", &routing.RouterConfig{})
+			Ω(err).Should(HaveOccurred())
+		})
+	})
 })

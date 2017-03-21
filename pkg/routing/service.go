@@ -1,6 +1,7 @@
 package routing
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
@@ -12,7 +13,7 @@ type Service interface {
 	CreateRouterConfig(r *RouterConfig) error
 
 	// Edit an existing configuration by id, update file and router
-	EditRouterConfig(id uint, r *RouterConfig) error
+	EditRouterConfig(refID uint, name string, r *RouterConfig) error
 
 	// Remove a configuration by id, remove file, update router
 	RemoveRouterConfig(id uint) error
@@ -38,6 +39,7 @@ type dbAdapter interface {
 	AutoMigrate(...interface{}) error
 	Where(interface{}, ...interface{}) error
 	Create(interface{}) error
+	Update(interface{}, ...interface{}) error
 }
 
 type service struct {
@@ -63,8 +65,24 @@ func (s *service) CreateRouterConfig(r *RouterConfig) error {
 	return nil
 }
 
-func (s *service) EditRouterConfig(id uint, r *RouterConfig) error {
-	// TODO: implement
+func (s *service) EditRouterConfig(refID uint, name string, r *RouterConfig) error {
+	if r.RefID != 0 && refID != r.RefID {
+		return errors.New("can not change reference id")
+	}
+
+	s.db.Begin()
+	err := s.db.Where("RefID = ? AND Name = ?", r.RefID, r.Name)
+	if err != nil {
+		s.db.Rollback()
+		return err
+	}
+
+	err = s.db.Update(&RouterConfig{}, r)
+	if err != nil {
+		s.db.Rollback()
+		return err
+	}
+	s.db.Commit()
 	return nil
 }
 
