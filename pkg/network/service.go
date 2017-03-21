@@ -5,9 +5,11 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"log"
 
 	"github.com/docker/docker/api/types"
+	networkTypes "github.com/docker/docker/api/types/network"
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 )
 
@@ -111,7 +113,27 @@ func (s *service) RemoveNetworkByName(refid uint, name string) error {
 }
 
 func (s *service) AddContainerToNetwork(refid int, name string, containerID string) error {
-	// TODO: implement
+	nw := Networks{}
+
+	err := s.db.Where("UserID = ? AND NetworkName = ?", refid, name)
+	if err != nil {
+		return err
+	}
+
+	err = s.db.First(&nw)
+	if err != nil {
+		return err
+	}
+
+	if nw.NetworkID != "" {
+		err = s.dcli.NetworkConnect(context.Background(), nw.NetworkID, containerID, &networkTypes.EndpointSettings{})
+		if err != nil {
+			return err
+		}
+	} else {
+		return errors.New("Network not found")
+	}
+
 	return nil
 }
 
