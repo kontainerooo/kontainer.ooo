@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
 	"log"
 
 	"github.com/docker/docker/api/types"
@@ -16,22 +15,22 @@ import (
 // Service NetworkService
 type Service interface {
 	// CreateNetwork creates a new network for a given user and returns its ID and name
-	CreateNetwork(refid int, cfg *Config) (name string, id string, err error)
+	CreateNetwork(refid uint, cfg *Config) (name string, id string, err error)
 
 	// RemoveNetwork removes a network with a given name
 	RemoveNetworkByName(refid uint, name string) error
 
 	// AddContainerToNetwork joins a given container to a given network
-	AddContainerToNetwork(refid int, name string, containerID string) error
+	AddContainerToNetwork(refid uint, name string, containerID string) error
 
 	// RemoveContainerFromNetwork removes a container from a given network
-	RemoveContainerFromNetwork(refid int, name string, containerID string) error
+	RemoveContainerFromNetwork(refid uint, name string, containerID string) error
 
 	// ExposePortToContainer exposes a port from one container to another
-	ExposePortToContainer(refid int, srcContainerID string, port uint32, destContainerID string) error
+	ExposePortToContainer(refid uint, srcContainerID string, port uint32, destContainerID string) error
 
 	// RemovePortFromContainer removes an exposed port from a container
-	RemovePortFromContainer(refid int, srcContainerID string, port uint32, destContainerID string) error
+	RemovePortFromContainer(refid uint, srcContainerID string, port uint32, destContainerID string) error
 }
 
 type dbAdapter interface {
@@ -41,6 +40,7 @@ type dbAdapter interface {
 	First(interface{}, ...interface{}) error
 	Create(interface{}) error
 	Delete(interface{}, ...interface{}) error
+	PrintTables()
 }
 
 type service struct {
@@ -53,10 +53,10 @@ func (s *service) InitializeDatabases() error {
 	return s.db.AutoMigrate(&Networks{})
 }
 
-func (s *service) CreateNetwork(refid int, cfg *Config) (name string, id string, err error) {
+func (s *service) CreateNetwork(refid uint, cfg *Config) (name string, id string, err error) {
 
-	// Generate a 128 byte unique name
-	b := make([]byte, 128)
+	// Generate a 64 byte unique name
+	b := make([]byte, 64)
 	_, err = rand.Read(b)
 	if err != nil {
 		return "", "", err
@@ -112,7 +112,7 @@ func (s *service) RemoveNetworkByName(refid uint, name string) error {
 	return nil
 }
 
-func (s *service) AddContainerToNetwork(refid int, name string, containerID string) error {
+func (s *service) AddContainerToNetwork(refid uint, name string, containerID string) error {
 	nw := Networks{}
 
 	err := s.db.Where("UserID = ? AND NetworkName = ?", refid, name)
@@ -130,24 +130,22 @@ func (s *service) AddContainerToNetwork(refid int, name string, containerID stri
 		if err != nil {
 			return err
 		}
-	} else {
-		return errors.New("Network not found")
 	}
 
 	return nil
 }
 
-func (s *service) RemoveContainerFromNetwork(refid int, name string, containerID string) error {
+func (s *service) RemoveContainerFromNetwork(refid uint, name string, containerID string) error {
 	// TODO: implement
 	return nil
 }
 
-func (s *service) ExposePortToContainer(refid int, srcContainerID string, port uint32, destContainerID string) error {
+func (s *service) ExposePortToContainer(refid uint, srcContainerID string, port uint32, destContainerID string) error {
 	// TODO: implement
 	return nil
 }
 
-func (s *service) RemovePortFromContainer(refid int, srcContainerID string, port uint32, destContainerID string) error {
+func (s *service) RemovePortFromContainer(refid uint, srcContainerID string, port uint32, destContainerID string) error {
 	// TODO: implement
 	return nil
 }

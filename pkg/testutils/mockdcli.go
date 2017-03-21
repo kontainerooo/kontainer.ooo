@@ -40,7 +40,7 @@ type MockDCli struct {
 }
 
 type mockNetwork struct {
-	name       string
+	ID         string
 	containers []string
 }
 
@@ -71,7 +71,7 @@ func (d *MockDCli) produceError() bool {
 func (d *MockDCli) GetNetworks() map[string]string {
 	nwMap := make(map[string]string)
 	for k, v := range d.networks {
-		nwMap[k] = v.name
+		nwMap[k] = v.ID
 	}
 	return nwMap
 }
@@ -213,7 +213,7 @@ func (d *MockDCli) NetworkCreate(ctx context.Context, name string, options types
 
 	id := fmt.Sprintf("%d", rand.Int())
 	d.networks[name] = mockNetwork{
-		name: id,
+		ID: id,
 	}
 
 	return types.NetworkCreateResponse{
@@ -228,7 +228,7 @@ func (d *MockDCli) NetworkRemove(ctx context.Context, networkID string) error {
 	}
 
 	for k, v := range d.networks {
-		if v.name == networkID {
+		if v.ID == networkID {
 			delete(d.networks, k)
 			return nil
 		}
@@ -239,23 +239,21 @@ func (d *MockDCli) NetworkRemove(ctx context.Context, networkID string) error {
 
 // NetworkConnect connects a container to a mock network
 func (d *MockDCli) NetworkConnect(ctx context.Context, networkID, containerID string, config *network.EndpointSettings) error {
-	_, ok := d.networks[networkID]
 	if d.produceError() {
 		return ErrClientError
 	}
 
-	if !ok {
-		return errors.New("Network not found")
+	for k, v := range d.networks {
+		if v.ID == networkID {
+			d.networks[k] = mockNetwork{
+				ID:         networkID,
+				containers: append(d.networks[k].containers, containerID),
+			}
+			return nil
+		}
 	}
 
-	c := d.networks[networkID].containers
-	c = append(c, containerID)
-	d.networks[networkID] = mockNetwork{
-		name:       d.networks[networkID].name,
-		containers: c,
-	}
-
-	return nil
+	return errors.New("Network not found")
 }
 
 // NewMockDCli returns a new instance of MockDCli
