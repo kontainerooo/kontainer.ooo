@@ -12,6 +12,14 @@ import (
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 )
 
+var (
+	// ErrNetworkNotExist occurs when a network does not exist
+	ErrNetworkNotExist = errors.New("Network does not exist")
+
+	// ErrNetworkAlreadyExists occurs when a network already exists
+	ErrNetworkAlreadyExists = errors.New("Network already exists")
+)
+
 // Service NetworkService
 type Service interface {
 	// CreateNetwork creates a new network for a given user
@@ -77,7 +85,7 @@ func (s *service) CreateNetwork(refid uint, cfg *Config) error {
 	}
 
 	if nw.NetworkID != "" {
-		return errors.New("Network already exists")
+		return ErrNetworkAlreadyExists
 	}
 
 	res, err := s.dcli.NetworkCreate(context.Background(), fmt.Sprintf("%s-%s", string(refid), name), types.NetworkCreate{
@@ -109,17 +117,21 @@ func (s *service) RemoveNetworkByName(refid uint, name string) error {
 		return err
 	}
 
-	err = s.dcli.NetworkRemove(context.Background(), nw.NetworkID)
-	if err != nil {
-		return err
+	if nw.NetworkID != "" {
+		err = s.dcli.NetworkRemove(context.Background(), nw.NetworkID)
+		if err != nil {
+			return err
+		}
+
+		err = s.db.Delete(&nw)
+		if err != nil {
+			return err
+		}
+
+		return nil
 	}
 
-	err = s.db.Delete(&nw)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return ErrNetworkNotExist
 }
 
 func (s *service) AddContainerToNetwork(refid uint, name string, containerID string) error {
@@ -134,7 +146,7 @@ func (s *service) AddContainerToNetwork(refid uint, name string, containerID str
 			return err
 		}
 	} else {
-		return errors.New("Network does not exist")
+		return ErrNetworkNotExist
 	}
 
 	return nil
@@ -151,7 +163,7 @@ func (s *service) RemoveContainerFromNetwork(refid uint, name string, containerI
 			return err
 		}
 	} else {
-		return errors.New("Network does not exist")
+		return ErrNetworkNotExist
 	}
 
 	return nil
