@@ -20,6 +20,9 @@ var (
 
 	// ErrAlreadyRunning is returned, if a container which should be started is already running
 	ErrAlreadyRunning = errors.New("container already running")
+
+	// ErrNetNotFound is returned when a network that is operated on does not exist
+	ErrNetNotFound = errors.New("network not found")
 )
 
 type nopCloser struct {
@@ -234,7 +237,7 @@ func (d *MockDCli) NetworkRemove(ctx context.Context, networkID string) error {
 		}
 	}
 
-	return errors.New("Network not found")
+	return ErrNetNotFound
 }
 
 // NetworkConnect connects a container to a mock network
@@ -253,7 +256,32 @@ func (d *MockDCli) NetworkConnect(ctx context.Context, networkID, containerID st
 		}
 	}
 
-	return errors.New("Network not found")
+	return ErrNetNotFound
+}
+
+// NetworkDisconnect disconnects a container from a mock network
+func (d *MockDCli) NetworkDisconnect(ctx context.Context, networkID, containerID string, force bool) error {
+	if d.produceError() {
+		return ErrClientError
+	}
+
+	for _, v := range d.networks {
+		if v.ID == networkID {
+			// Remove containerID fom array
+			for idx, cont := range v.containers {
+				if cont == containerID {
+					v.containers[idx] = v.containers[len(v.containers)-1]
+					v.containers = v.containers[:len(v.containers)-1]
+
+					return nil
+				}
+
+				return errors.New("container not connected to network")
+			}
+		}
+	}
+
+	return ErrNetNotFound
 }
 
 // NewMockDCli returns a new instance of MockDCli
