@@ -53,6 +53,22 @@ func (s *service) InitializeDatabases() error {
 	return s.db.AutoMigrate(&Networks{})
 }
 
+func (s *service) getNetworkByID(refid uint, name string) (Networks, error) {
+	nw := Networks{}
+
+	err := s.db.Where("UserID = ? AND NetworkName = ?", refid, name)
+	if err != nil {
+		return nw, err
+	}
+
+	err = s.db.First(&nw)
+	if err != nil {
+		return nw, err
+	}
+
+	return nw, nil
+}
+
 func (s *service) CreateNetwork(refid uint, cfg *Config) (name string, id string, err error) {
 
 	// Generate a 64 byte unique name
@@ -87,14 +103,7 @@ func (s *service) CreateNetwork(refid uint, cfg *Config) (name string, id string
 }
 
 func (s *service) RemoveNetworkByName(refid uint, name string) error {
-	nw := Networks{}
-
-	err := s.db.Where("UserID = ? AND NetworkName = ?", refid, name)
-	if err != nil {
-		return err
-	}
-
-	err = s.db.First(&nw)
+	nw, err := s.getNetworkByID(refid, name)
 	if err != nil {
 		return err
 	}
@@ -113,14 +122,7 @@ func (s *service) RemoveNetworkByName(refid uint, name string) error {
 }
 
 func (s *service) AddContainerToNetwork(refid uint, name string, containerID string) error {
-	nw := Networks{}
-
-	err := s.db.Where("UserID = ? AND NetworkName = ?", refid, name)
-	if err != nil {
-		return err
-	}
-
-	err = s.db.First(&nw)
+	nw, err := s.getNetworkByID(refid, name)
 	if err != nil {
 		return err
 	}
@@ -136,7 +138,16 @@ func (s *service) AddContainerToNetwork(refid uint, name string, containerID str
 }
 
 func (s *service) RemoveContainerFromNetwork(refid uint, name string, containerID string) error {
-	// TODO: implement
+	nw, err := s.getNetworkByID(refid, name)
+	if err != nil {
+		return err
+	}
+
+	err = s.dcli.NetworkDisconnect(context.Background(), nw.NetworkID, containerID, true)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -93,6 +93,18 @@ var _ = Describe("Network", func() {
 
 			Ω(err).Should(HaveOccurred())
 		})
+
+		It("Should error when network is not found in db", func() {
+			name, _, _ := networkService.CreateNetwork(123, &network.Config{
+				Driver: "bridge",
+			})
+
+			db.SetError(1)
+
+			err := networkService.RemoveNetworkByName(123, name)
+
+			Ω(err).Should(HaveOccurred())
+		})
 	})
 
 	Describe("Add Container to network", func() {
@@ -129,6 +141,57 @@ var _ = Describe("Network", func() {
 			dcli.SetError()
 
 			err := networkService.AddContainerToNetwork(123, name, containerID)
+
+			Ω(err).Should(HaveOccurred())
+		})
+	})
+
+	Describe("Remove container from network", func() {
+		dcli := testutils.NewMockDCli()
+		db := testutils.NewMockDB()
+		ccs := customercontainer.NewService(dcli)
+		networkService, _ := network.NewService(dcli, db)
+		dcli.CreateMockImage("testimage")
+		containerID, _, _ := ccs.CreateContainer(123, &customercontainer.ContainerConfig{
+			ImageName: "testimage",
+		})
+
+		It("Should remove a container from a network", func() {
+			name, _, _ := networkService.CreateNetwork(123, &network.Config{
+				Driver: "bridge",
+			})
+
+			_ = networkService.AddContainerToNetwork(123, name, containerID)
+
+			err := networkService.RemoveContainerFromNetwork(123, name, containerID)
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should error when container cannot be removed from network", func() {
+			name, _, _ := networkService.CreateNetwork(123, &network.Config{
+				Driver: "bridge",
+			})
+
+			_ = networkService.AddContainerToNetwork(123, name, containerID)
+
+			dcli.SetError()
+
+			err := networkService.RemoveContainerFromNetwork(123, name, containerID)
+
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Should error when network is not found in db", func() {
+			name, _, _ := networkService.CreateNetwork(123, &network.Config{
+				Driver: "bridge",
+			})
+
+			_ = networkService.AddContainerToNetwork(123, name, containerID)
+
+			db.SetError(1)
+
+			err := networkService.RemoveContainerFromNetwork(123, name, containerID)
 
 			Ω(err).Should(HaveOccurred())
 		})
