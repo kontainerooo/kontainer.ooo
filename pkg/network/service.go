@@ -31,6 +31,9 @@ type Service interface {
 
 	// RemovePortFromContainer removes an exposed port from a container
 	RemovePortFromContainer(refid uint, srcContainerID string, port uint32, destContainerID string) error
+
+	// UserHasNetwork checks whether a user has created a network
+	UserHasNetwork(refid uint) bool
 }
 
 type dbAdapter interface {
@@ -158,6 +161,22 @@ func (s *service) ExposePortToContainer(refid uint, srcContainerID string, port 
 func (s *service) RemovePortFromContainer(refid uint, srcContainerID string, port uint32, destContainerID string) error {
 	// TODO: implement
 	return nil
+}
+
+func (s *service) UserHasNetwork(refid uint) bool {
+	nw := Networks{}
+
+	err := s.db.Where("UserID = ?", refid)
+	if err != nil {
+		return false
+	}
+
+	err = s.db.First(&nw)
+	if err != nil {
+		return false
+	}
+
+	return true
 }
 
 // NewService creates a new network service
