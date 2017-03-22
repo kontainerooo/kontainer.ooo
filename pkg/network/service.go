@@ -40,7 +40,6 @@ type dbAdapter interface {
 	First(interface{}, ...interface{}) error
 	Create(interface{}) error
 	Delete(interface{}, ...interface{}) error
-	PrintTables()
 }
 
 type service struct {
