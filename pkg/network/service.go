@@ -8,28 +8,29 @@ import (
 	"log"
 
 	"github.com/docker/docker/api/types"
+	networkTypes "github.com/docker/docker/api/types/network"
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 )
 
 // Service NetworkService
 type Service interface {
 	// CreateNetwork creates a new network for a given user and returns its ID and name
-	CreateNetwork(refid int, cfg *Config) (name string, id string, err error)
+	CreateNetwork(refid uint, cfg *Config) (name string, id string, err error)
 
 	// RemoveNetwork removes a network with a given name
 	RemoveNetworkByName(refid uint, name string) error
 
 	// AddContainerToNetwork joins a given container to a given network
-	AddContainerToNetwork(refid int, name string, containerID string) error
+	AddContainerToNetwork(refid uint, name string, containerID string) error
 
 	// RemoveContainerFromNetwork removes a container from a given network
-	RemoveContainerFromNetwork(refid int, name string, containerID string) error
+	RemoveContainerFromNetwork(refid uint, name string, containerID string) error
 
 	// ExposePortToContainer exposes a port from one container to another
-	ExposePortToContainer(refid int, srcContainerID string, port uint32, destContainerID string) error
+	ExposePortToContainer(refid uint, srcContainerID string, port uint32, destContainerID string) error
 
 	// RemovePortFromContainer removes an exposed port from a container
-	RemovePortFromContainer(refid int, srcContainerID string, port uint32, destContainerID string) error
+	RemovePortFromContainer(refid uint, srcContainerID string, port uint32, destContainerID string) error
 }
 
 type dbAdapter interface {
@@ -51,10 +52,26 @@ func (s *service) InitializeDatabases() error {
 	return s.db.AutoMigrate(&Networks{})
 }
 
-func (s *service) CreateNetwork(refid int, cfg *Config) (name string, id string, err error) {
+func (s *service) getNetworkByID(refid uint, name string) (Networks, error) {
+	nw := Networks{}
 
-	// Generate a 128 byte unique name
-	b := make([]byte, 128)
+	err := s.db.Where("UserID = ? AND NetworkName = ?", refid, name)
+	if err != nil {
+		return nw, err
+	}
+
+	err = s.db.First(&nw)
+	if err != nil {
+		return nw, err
+	}
+
+	return nw, nil
+}
+
+func (s *service) CreateNetwork(refid uint, cfg *Config) (name string, id string, err error) {
+
+	// Generate a 64 byte unique name
+	b := make([]byte, 64)
 	_, err = rand.Read(b)
 	if err != nil {
 		return "", "", err
@@ -85,14 +102,7 @@ func (s *service) CreateNetwork(refid int, cfg *Config) (name string, id string,
 }
 
 func (s *service) RemoveNetworkByName(refid uint, name string) error {
-	nw := Networks{}
-
-	err := s.db.Where("UserID = ? AND NetworkName = ?", refid, name)
-	if err != nil {
-		return err
-	}
-
-	err = s.db.First(&nw)
+	nw, err := s.getNetworkByID(refid, name)
 	if err != nil {
 		return err
 	}
@@ -110,22 +120,42 @@ func (s *service) RemoveNetworkByName(refid uint, name string) error {
 	return nil
 }
 
-func (s *service) AddContainerToNetwork(refid int, name string, containerID string) error {
+func (s *service) AddContainerToNetwork(refid uint, name string, containerID string) error {
+	nw, err := s.getNetworkByID(refid, name)
+	if err != nil {
+		return err
+	}
+
+	if nw.NetworkID != "" {
+		err = s.dcli.NetworkConnect(context.Background(), nw.NetworkID, containerID, &networkTypes.EndpointSettings{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *service) RemoveContainerFromNetwork(refid uint, name string, containerID string) error {
+	nw, err := s.getNetworkByID(refid, name)
+	if err != nil {
+		return err
+	}
+
+	err = s.dcli.NetworkDisconnect(context.Background(), nw.NetworkID, containerID, true)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) ExposePortToContainer(refid uint, srcContainerID string, port uint32, destContainerID string) error {
 	// TODO: implement
 	return nil
 }
 
-func (s *service) RemoveContainerFromNetwork(refid int, name string, containerID string) error {
-	// TODO: implement
-	return nil
-}
-
-func (s *service) ExposePortToContainer(refid int, srcContainerID string, port uint32, destContainerID string) error {
-	// TODO: implement
-	return nil
-}
-
-func (s *service) RemovePortFromContainer(refid int, srcContainerID string, port uint32, destContainerID string) error {
+func (s *service) RemovePortFromContainer(refid uint, srcContainerID string, port uint32, destContainerID string) error {
 	// TODO: implement
 	return nil
 }
