@@ -50,11 +50,21 @@ var _ = Describe("Network", func() {
 			Ω(len(dcli.GetNetworks())).Should(Equal(1))
 		})
 
-		It("Should receive a database error", func() {
+		It("Should receive a database error on retrieving", func() {
 			db.SetError(1)
 			err := networkService.CreateNetwork(123, &network.Config{
 				Driver: "bridge",
 				Name:   "network3",
+			})
+
+			Ω(err).Should(HaveOccurred())
+			Ω(len(dcli.GetNetworks())).Should(Equal(1))
+		})
+
+		It("Should fail when network already exists", func() {
+			err := networkService.CreateNetwork(123, &network.Config{
+				Driver: "bridge",
+				Name:   "network1",
 			})
 
 			Ω(err).Should(HaveOccurred())
@@ -102,6 +112,12 @@ var _ = Describe("Network", func() {
 
 			Ω(err).Should(HaveOccurred())
 		})
+
+		It("Should error when network does not exist", func() {
+			err := networkService.RemoveNetworkByName(123, "sdf")
+
+			Ω(err).Should(HaveOccurred())
+		})
 	})
 
 	Describe("Add Container to network", func() {
@@ -140,6 +156,19 @@ var _ = Describe("Network", func() {
 			dcli.SetError()
 
 			err := networkService.AddContainerToNetwork(123, "network2", containerID)
+
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Should fail on db error", func() {
+			_ = networkService.CreateNetwork(123, &network.Config{
+				Driver: "bridge",
+				Name:   "network3",
+			})
+
+			db.SetError(1)
+
+			err := networkService.AddContainerToNetwork(123, "network3", containerID)
 
 			Ω(err).Should(HaveOccurred())
 		})
@@ -194,6 +223,12 @@ var _ = Describe("Network", func() {
 			db.SetError(1)
 
 			err := networkService.RemoveContainerFromNetwork(123, "network3", containerID)
+
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Should error when network does not exist", func() {
+			err := networkService.RemoveContainerFromNetwork(123, "network4", containerID)
 
 			Ω(err).Should(HaveOccurred())
 		})
