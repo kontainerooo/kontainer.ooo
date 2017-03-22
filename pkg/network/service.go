@@ -3,6 +3,7 @@ package network
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -62,10 +63,7 @@ func (s *service) getNetworkByName(refid uint, name string) (Networks, error) {
 		return nw, err
 	}
 
-	err = s.db.First(&nw)
-	if err != nil {
-		return nw, err
-	}
+	s.db.First(&nw)
 
 	return nw, nil
 }
@@ -73,9 +71,13 @@ func (s *service) getNetworkByName(refid uint, name string) (Networks, error) {
 func (s *service) CreateNetwork(refid uint, cfg *Config) error {
 	name := cfg.Name
 
-	_, err := s.getNetworkByName(refid, name)
+	nw, err := s.getNetworkByName(refid, name)
 	if err != nil {
 		return err
+	}
+
+	if nw.NetworkID != "" {
+		return errors.New("Network already exists")
 	}
 
 	res, err := s.dcli.NetworkCreate(context.Background(), fmt.Sprintf("%s-%s", string(refid), name), types.NetworkCreate{
@@ -85,7 +87,7 @@ func (s *service) CreateNetwork(refid uint, cfg *Config) error {
 		return err
 	}
 
-	nw := Networks{
+	nw = Networks{
 		UserID:      uint(refid),
 		NetworkName: name,
 		NetworkID:   res.ID,
@@ -131,6 +133,8 @@ func (s *service) AddContainerToNetwork(refid uint, name string, containerID str
 		if err != nil {
 			return err
 		}
+	} else {
+		return errors.New("Network does not exist")
 	}
 
 	return nil
@@ -141,10 +145,13 @@ func (s *service) RemoveContainerFromNetwork(refid uint, name string, containerI
 	if err != nil {
 		return err
 	}
-
-	err = s.dcli.NetworkDisconnect(context.Background(), nw.NetworkID, containerID, true)
-	if err != nil {
-		return err
+	if nw.NetworkID != "" {
+		err = s.dcli.NetworkDisconnect(context.Background(), nw.NetworkID, containerID, true)
+		if err != nil {
+			return err
+		}
+	} else {
+		return errors.New("Network does not exist")
 	}
 
 	return nil
