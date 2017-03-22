@@ -3,8 +3,7 @@ package network
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
+	"fmt"
 	"log"
 
 	"github.com/docker/docker/api/types"
@@ -14,8 +13,8 @@ import (
 
 // Service NetworkService
 type Service interface {
-	// CreateNetwork creates a new network for a given user and returns its ID and name
-	CreateNetwork(refid uint, cfg *Config) (name string, id string, err error)
+	// CreateNetwork creates a new network for a given user
+	CreateNetwork(refid uint, cfg *Config) error
 
 	// RemoveNetwork removes a network with a given name
 	RemoveNetworkByName(refid uint, name string) error
@@ -71,21 +70,19 @@ func (s *service) getNetworkByName(refid uint, name string) (Networks, error) {
 	return nw, nil
 }
 
-func (s *service) CreateNetwork(refid uint, cfg *Config) (name string, id string, err error) {
+func (s *service) CreateNetwork(refid uint, cfg *Config) error {
+	name := cfg.Name
 
-	// Generate a 64 byte unique name
-	b := make([]byte, 64)
-	_, err = rand.Read(b)
+	_, err := s.getNetworkByName(refid, name)
 	if err != nil {
-		return "", "", err
+		return err
 	}
-	name = base64.URLEncoding.EncodeToString(b)
 
-	res, err := s.dcli.NetworkCreate(context.Background(), name, types.NetworkCreate{
+	res, err := s.dcli.NetworkCreate(context.Background(), fmt.Sprintf("%s-%s", string(refid), name), types.NetworkCreate{
 		Driver: cfg.Driver,
 	})
 	if err != nil {
-		return "", "", err
+		return err
 	}
 
 	nw := Networks{
@@ -98,10 +95,10 @@ func (s *service) CreateNetwork(refid uint, cfg *Config) (name string, id string
 	if err != nil {
 		// Try to remove the actual network on db error
 		s.dcli.NetworkRemove(context.Background(), res.ID)
-		return "", "", err
+		return err
 	}
 
-	return name, res.ID, nil
+	return nil
 }
 
 func (s *service) RemoveNetworkByName(refid uint, name string) error {
