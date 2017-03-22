@@ -1,4 +1,4 @@
-package iptables_test
+package firewall_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestIptables(t *testing.T) {
+func TestFirewall(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Iptables Suite")
+	RunSpecs(t, "Firewall Suite")
 }

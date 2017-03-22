@@ -1,5 +1,5 @@
-// Package iptables handles the firewall and forwarding configuration
-package iptables
+// Package firewall handles the firewall and forwarding configuration
+package firewall
 
 // Service IPTablesService
 type Service interface {
@@ -63,7 +63,7 @@ func (s *service) RemoveRedirectPort(ip string, src uint32, dst uint32) error {
 	return nil
 }
 
-// NewService creates a new iptables service
+// NewService creates a new firewall service
 func NewService() Service {
 	return &service{}
 }
