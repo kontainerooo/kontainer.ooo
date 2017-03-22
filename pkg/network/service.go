@@ -55,7 +55,7 @@ func (s *service) InitializeDatabases() error {
 	return s.db.AutoMigrate(&Networks{})
 }
 
-func (s *service) getNetworkByID(refid uint, name string) (Networks, error) {
+func (s *service) getNetworkByName(refid uint, name string) (Networks, error) {
 	nw := Networks{}
 
 	err := s.db.Where("UserID = ? AND NetworkName = ?", refid, name)
@@ -105,7 +105,7 @@ func (s *service) CreateNetwork(refid uint, cfg *Config) (name string, id string
 }
 
 func (s *service) RemoveNetworkByName(refid uint, name string) error {
-	nw, err := s.getNetworkByID(refid, name)
+	nw, err := s.getNetworkByName(refid, name)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (s *service) RemoveNetworkByName(refid uint, name string) error {
 }
 
 func (s *service) AddContainerToNetwork(refid uint, name string, containerID string) error {
-	nw, err := s.getNetworkByID(refid, name)
+	nw, err := s.getNetworkByName(refid, name)
 	if err != nil {
 		return err
 	}
@@ -140,7 +140,7 @@ func (s *service) AddContainerToNetwork(refid uint, name string, containerID str
 }
 
 func (s *service) RemoveContainerFromNetwork(refid uint, name string, containerID string) error {
-	nw, err := s.getNetworkByID(refid, name)
+	nw, err := s.getNetworkByName(refid, name)
 	if err != nil {
 		return err
 	}
