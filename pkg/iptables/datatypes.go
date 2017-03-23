@@ -4,6 +4,7 @@ package iptables
 // Rule represents a rule entry in iptables
 type Rule struct {
 	Target          string
+	Chain           string
 	Protocol        string
 	In              string
 	Out             string
