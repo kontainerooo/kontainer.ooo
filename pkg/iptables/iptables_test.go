@@ -152,6 +152,115 @@ var _ = Describe("Iptables", func() {
 		})
 	})
 
+	Describe("Accept rule string", func() {
+		It("Should create an accept rule", func() {
+			r := iptables.Rule{
+				Target:          "ACCEPT",
+				Chain:           "INPUT",
+				Protocol:        "tcp",
+				Destination:     "127.0.0.2",
+				DestinationPort: 80,
+			}
+
+			str, err := r.ToString()
+
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(str).Should(Equal("-A INPUT -j ACCEPT --dst 127.0.0.2 -p tcp --dport 80"))
+		})
+
+		It("Should create an accept rule with input interface", func() {
+			r := iptables.Rule{
+				Target:          "ACCEPT",
+				Chain:           "INPUT",
+				Protocol:        "tcp",
+				Destination:     "127.0.0.2",
+				DestinationPort: 80,
+				In:              "eth0",
+			}
+
+			str, err := r.ToString()
+
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(str).Should(Equal("-A INPUT -j ACCEPT --dst 127.0.0.2 -p tcp --dport 80 -i eth0"))
+		})
+
+		It("Should create an accept rule with output interface", func() {
+			r := iptables.Rule{
+				Target:          "ACCEPT",
+				Chain:           "INPUT",
+				Protocol:        "tcp",
+				Destination:     "127.0.0.2",
+				DestinationPort: 80,
+				Out:             "eth0",
+			}
+
+			str, err := r.ToString()
+
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(str).Should(Equal("-A INPUT -j ACCEPT --dst 127.0.0.2 -p tcp --dport 80 -o eth0"))
+		})
+
+		It("Should create an accept rule with state", func() {
+			r := iptables.Rule{
+				Target:          "ACCEPT",
+				Chain:           "INPUT",
+				Protocol:        "tcp",
+				Destination:     "127.0.0.2",
+				DestinationPort: 80,
+				State:           "RELATED,ESTABLISHED",
+			}
+
+			str, err := r.ToString()
+
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(str).Should(Equal("-A INPUT -j ACCEPT --dst 127.0.0.2 -p tcp --dport 80 -m state --state RELATED,ESTABLISHED"))
+		})
+
+		It("Should error on wrong chain", func() {
+			r := iptables.Rule{
+				Target:          "ACCEPT",
+				Chain:           "PREROUTING",
+				Protocol:        "tcp",
+				Destination:     "127.0.0.2",
+				DestinationPort: 80,
+			}
+
+			str, err := r.ToString()
+
+			Ω(err).Should(HaveOccurred())
+			Ω(str).Should(BeEmpty())
+		})
+
+		It("Should error on missing destination", func() {
+			r := iptables.Rule{
+				Target:          "ACCEPT",
+				Chain:           "INPUT",
+				Protocol:        "tcp",
+				DestinationPort: 80,
+			}
+
+			str, err := r.ToString()
+
+			Ω(err).Should(HaveOccurred())
+			Ω(str).Should(BeEmpty())
+		})
+
+		It("Should error on when destination is not a valid IP", func() {
+			r := iptables.Rule{
+				Target:          "ACCEPT",
+				Chain:           "INPUT",
+				Protocol:        "tcp",
+				Destination:     "google.com",
+				DestinationPort: 80,
+			}
+
+			str, err := r.ToString()
+
+			Ω(err).Should(HaveOccurred())
+			Ω(str).Should(BeEmpty())
+		})
+	})
+
 	iptables.ExecCommand = fakeExecCommand
 	Describe("New Service", func() {
 		It("Should create a new service", func() {
