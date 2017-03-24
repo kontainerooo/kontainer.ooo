@@ -117,6 +117,23 @@ var _ = Describe("Iptables", func() {
 			Ω(str).Should(BeEmpty())
 		})
 
+		It("Should error when destionation is not an ip address", func() {
+			r := iptables.Rule{
+				Target:          "REDIRECT",
+				Chain:           "PREROUTING",
+				Protocol:        "tcp",
+				SourcePort:      8080,
+				Destination:     "google.com",
+				DestinationPort: 80,
+			}
+
+			str, err := r.ToString()
+
+			Ω(err).Should(HaveOccurred())
+			Ω(err).Should(Equal(iptables.ErrIPWrongFormat))
+			Ω(str).Should(BeEmpty())
+		})
+
 		It("Should error on wrong protocol", func() {
 			r := iptables.Rule{
 				Target:          "REDIRECT",

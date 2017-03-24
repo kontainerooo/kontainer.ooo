@@ -4,6 +4,7 @@ package iptables
 import (
 	"errors"
 	"fmt"
+	"regexp"
 )
 
 var (
@@ -25,7 +26,15 @@ var (
 
 	// ErrNoInterfaces occurs when interfaces are required but not provided
 	ErrNoInterfaces = errors.New("No interfaces provided")
+
+	// ErrIPWrongFormat occurs when the supplied IP address or range is malformed
+	ErrIPWrongFormat = errors.New("Malformed IP Address (range)")
 )
+
+func isIP(ip string) bool {
+	r := regexp.MustCompile("((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\\.|$)){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\\/(0|3[0-2]|[1-2][0-9]|[0-9]))?")
+	return r.MatchString(ip)
+}
 
 // ToString returns the string representation of a rule
 func (r *Rule) ToString() (string, error) {
@@ -39,6 +48,9 @@ func (r *Rule) ToString() (string, error) {
 		}
 		if r.Destination == "" {
 			return "", ErrNoDestination
+		}
+		if !isIP(r.Destination) {
+			return "", ErrIPWrongFormat
 		}
 		if !(r.Protocol == "tcp" || r.Protocol == "udp") {
 			return "", ErrWrongProtocol
