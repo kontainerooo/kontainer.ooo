@@ -278,6 +278,36 @@ var _ = Describe("Iptables", func() {
 		})
 	})
 
+	Describe("Rule hash", func() {
+		It("Should return hash of rule", func() {
+			r := iptables.Rule{
+				Target:          "REDIRECT",
+				Chain:           "PREROUTING",
+				Protocol:        "tcp",
+				Destination:     "127.0.0.2",
+				SourcePort:      8080,
+				DestinationPort: 80,
+			}
+
+			hash := r.GetHash()
+			Ω(hash).Should(Equal("dc5ae82240b7db6c9458c34cd81373755046d490ea6e58dec35fba9e2b63f520"))
+		})
+
+		It("Should not return hash on invalid rule", func() {
+			r := iptables.Rule{
+				Target:          "fail",
+				Chain:           "PREROUTING",
+				Protocol:        "tcp",
+				Destination:     "127.0.0.2",
+				SourcePort:      8080,
+				DestinationPort: 80,
+			}
+
+			hash := r.GetHash()
+			Ω(hash).Should(BeEmpty())
+		})
+	})
+
 	iptables.ExecCommand = fakeExecCommand
 	Describe("New Service", func() {
 		It("Should create a new service", func() {

@@ -2,6 +2,7 @@
 package iptables
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"regexp"
@@ -100,4 +101,14 @@ func (r *Rule) ToString() (string, error) {
 	default:
 		return "", ErrTargetUnknown
 	}
+}
+
+// GetHash returns the hash value of a rule
+func (r *Rule) GetHash() string {
+	str, err := r.ToString()
+	if err != nil {
+		return ""
+	}
+	data := []byte(str)
+	return fmt.Sprintf("%x", sha256.Sum256(data))
 }
