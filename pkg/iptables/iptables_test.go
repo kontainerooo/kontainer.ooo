@@ -152,7 +152,7 @@ var _ = Describe("Iptables", func() {
 		})
 	})
 
-	Describe("Accept rule string", func() {
+	Describe("Accept/Drop rule string", func() {
 		It("Should create an accept rule", func() {
 			r := iptables.Rule{
 				Target:          "ACCEPT",
@@ -251,6 +251,23 @@ var _ = Describe("Iptables", func() {
 				Chain:           "INPUT",
 				Protocol:        "tcp",
 				Destination:     "google.com",
+				DestinationPort: 80,
+			}
+
+			str, err := r.ToString()
+
+			Ω(err).Should(HaveOccurred())
+			Ω(str).Should(BeEmpty())
+		})
+	})
+
+	Describe("Unknown rule string", func() {
+		It("Should error on unknown target", func() {
+			r := iptables.Rule{
+				Target:          "Test",
+				Chain:           "INPUT",
+				Protocol:        "tcp",
+				Destination:     "127.0.0.2",
 				DestinationPort: 80,
 			}
 
