@@ -21,6 +21,9 @@ var (
 	// ErrNoDestination occurs when a destination is needed but not provided
 	ErrNoDestination = errors.New("No destination provided")
 
+	// ErrNoDestinationPort occurs when a destination port is needed but not provided
+	ErrNoDestinationPort = errors.New("No destination port provided")
+
 	// ErrWrongProtocol occurs when a protocol is provided that does not fit the target
 	ErrWrongProtocol = errors.New("Wrong protocol")
 
@@ -60,6 +63,40 @@ func (r *Rule) ToString() (string, error) {
 
 		return str, nil
 
+	case "ACCEPT":
+		if !(r.Chain == "INPUT" || r.Chain == "OUTPUT" || r.Chain == "REDIRECT") {
+			return "", ErrWrongChain
+		}
+
+		if r.Destination == "" {
+			return "", ErrNoDestination
+		}
+		if !isIP(r.Destination) {
+			return "", ErrIPWrongFormat
+		}
+		str := fmt.Sprintf("-A %s -j ACCEPT --dst %s", r.Chain, r.Destination)
+
+		if r.Protocol != "" {
+			str = fmt.Sprintf("%s -p %s", str, r.Protocol)
+		}
+
+		if r.DestinationPort != 0 {
+			str = fmt.Sprintf("%s --dport %d", str, r.DestinationPort)
+		}
+
+		if r.In != "" {
+			str = fmt.Sprintf("%s -i %s", str, r.In)
+		}
+
+		if r.Out != "" {
+			str = fmt.Sprintf("%s -o %s", str, r.Out)
+		}
+
+		if r.State != "" {
+			str = fmt.Sprintf("%s -m state --state %s", str, r.State)
+		}
+
+		return str, nil
 	default:
 		return "", ErrTargetUnknown
 	}
