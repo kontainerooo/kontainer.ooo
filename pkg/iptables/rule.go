@@ -63,7 +63,7 @@ func (r *Rule) ToString() (string, error) {
 
 		return str, nil
 
-	case "ACCEPT":
+	case "ACCEPT", "DROP":
 		if !(r.Chain == "INPUT" || r.Chain == "OUTPUT" || r.Chain == "REDIRECT") {
 			return "", ErrWrongChain
 		}
@@ -74,7 +74,7 @@ func (r *Rule) ToString() (string, error) {
 		if !isIP(r.Destination) {
 			return "", ErrIPWrongFormat
 		}
-		str := fmt.Sprintf("-A %s -j ACCEPT --dst %s", r.Chain, r.Destination)
+		str := fmt.Sprintf("-A %s -j %s --dst %s", r.Chain, r.Target, r.Destination)
 
 		if r.Protocol != "" {
 			str = fmt.Sprintf("%s -p %s", str, r.Protocol)
