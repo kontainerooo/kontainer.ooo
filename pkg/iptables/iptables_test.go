@@ -6,7 +6,9 @@ import (
 	"os/exec"
 	"testing"
 
+	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 	"github.com/kontainerooo/kontainer.ooo/pkg/iptables"
+	"github.com/kontainerooo/kontainer.ooo/pkg/testutils"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -33,6 +35,11 @@ func TestHelperProcess(t *testing.T) {
 	}
 }
 
+func simpleNewInet(s string) abstraction.Inet {
+	v, _ := abstraction.NewInet(s)
+	return v
+}
+
 var _ = Describe("Iptables", func() {
 
 	Describe("Redirect rule string", func() {
@@ -41,7 +48,7 @@ var _ = Describe("Iptables", func() {
 				Target:          "REDIRECT",
 				Chain:           "PREROUTING",
 				Protocol:        "tcp",
-				Destination:     "127.0.0.2",
+				Destination:     simpleNewInet("127.0.0.2"),
 				SourcePort:      8080,
 				DestinationPort: 80,
 			}
@@ -57,7 +64,7 @@ var _ = Describe("Iptables", func() {
 				Target:          "REDIRECT",
 				Chain:           "INPUT",
 				Protocol:        "tcp",
-				Destination:     "127.0.0.2",
+				Destination:     simpleNewInet("127.0.0.2"),
 				SourcePort:      8080,
 				DestinationPort: 80,
 			}
@@ -74,7 +81,7 @@ var _ = Describe("Iptables", func() {
 				Target:          "REDIRECT",
 				Chain:           "PREROUTING",
 				Protocol:        "tcp",
-				Destination:     "127.0.0.2",
+				Destination:     simpleNewInet("127.0.0.2"),
 				DestinationPort: 80,
 			}
 
@@ -90,7 +97,7 @@ var _ = Describe("Iptables", func() {
 				Target:      "REDIRECT",
 				Chain:       "PREROUTING",
 				Protocol:    "tcp",
-				Destination: "127.0.0.2",
+				Destination: simpleNewInet("127.0.0.2"),
 				SourcePort:  8080,
 			}
 
@@ -117,30 +124,13 @@ var _ = Describe("Iptables", func() {
 			Ω(str).Should(BeEmpty())
 		})
 
-		It("Should error when destionation is not an ip address", func() {
-			r := iptables.Rule{
-				Target:          "REDIRECT",
-				Chain:           "PREROUTING",
-				Protocol:        "tcp",
-				SourcePort:      8080,
-				Destination:     "google.com",
-				DestinationPort: 80,
-			}
-
-			str, err := r.ToString()
-
-			Ω(err).Should(HaveOccurred())
-			Ω(err).Should(Equal(iptables.ErrIPWrongFormat))
-			Ω(str).Should(BeEmpty())
-		})
-
 		It("Should error on wrong protocol", func() {
 			r := iptables.Rule{
 				Target:          "REDIRECT",
 				Chain:           "PREROUTING",
 				Protocol:        "mia",
 				SourcePort:      8080,
-				Destination:     "127.0.0.2",
+				Destination:     simpleNewInet("127.0.0.2"),
 				DestinationPort: 80,
 			}
 
@@ -158,7 +148,7 @@ var _ = Describe("Iptables", func() {
 				Target:          "ACCEPT",
 				Chain:           "INPUT",
 				Protocol:        "tcp",
-				Destination:     "127.0.0.2",
+				Destination:     simpleNewInet("127.0.0.2"),
 				DestinationPort: 80,
 			}
 
@@ -173,7 +163,7 @@ var _ = Describe("Iptables", func() {
 				Target:          "ACCEPT",
 				Chain:           "INPUT",
 				Protocol:        "tcp",
-				Destination:     "127.0.0.2",
+				Destination:     simpleNewInet("127.0.0.2"),
 				DestinationPort: 80,
 				In:              "eth0",
 			}
@@ -189,7 +179,7 @@ var _ = Describe("Iptables", func() {
 				Target:          "ACCEPT",
 				Chain:           "INPUT",
 				Protocol:        "tcp",
-				Destination:     "127.0.0.2",
+				Destination:     simpleNewInet("127.0.0.2"),
 				DestinationPort: 80,
 				Out:             "eth0",
 			}
@@ -205,7 +195,7 @@ var _ = Describe("Iptables", func() {
 				Target:          "ACCEPT",
 				Chain:           "INPUT",
 				Protocol:        "tcp",
-				Destination:     "127.0.0.2",
+				Destination:     simpleNewInet("127.0.0.2"),
 				DestinationPort: 80,
 				State:           "RELATED,ESTABLISHED",
 			}
@@ -221,7 +211,7 @@ var _ = Describe("Iptables", func() {
 				Target:          "ACCEPT",
 				Chain:           "PREROUTING",
 				Protocol:        "tcp",
-				Destination:     "127.0.0.2",
+				Destination:     simpleNewInet("127.0.0.2"),
 				DestinationPort: 80,
 			}
 
@@ -244,21 +234,6 @@ var _ = Describe("Iptables", func() {
 			Ω(err).Should(HaveOccurred())
 			Ω(str).Should(BeEmpty())
 		})
-
-		It("Should error on when destination is not a valid IP", func() {
-			r := iptables.Rule{
-				Target:          "ACCEPT",
-				Chain:           "INPUT",
-				Protocol:        "tcp",
-				Destination:     "google.com",
-				DestinationPort: 80,
-			}
-
-			str, err := r.ToString()
-
-			Ω(err).Should(HaveOccurred())
-			Ω(str).Should(BeEmpty())
-		})
 	})
 
 	Describe("Unknown rule string", func() {
@@ -267,7 +242,7 @@ var _ = Describe("Iptables", func() {
 				Target:          "Test",
 				Chain:           "INPUT",
 				Protocol:        "tcp",
-				Destination:     "127.0.0.2",
+				Destination:     simpleNewInet("127.0.0.2"),
 				DestinationPort: 80,
 			}
 
@@ -284,7 +259,7 @@ var _ = Describe("Iptables", func() {
 				Target:          "REDIRECT",
 				Chain:           "PREROUTING",
 				Protocol:        "tcp",
-				Destination:     "127.0.0.2",
+				Destination:     simpleNewInet("127.0.0.2"),
 				SourcePort:      8080,
 				DestinationPort: 80,
 			}
@@ -298,7 +273,7 @@ var _ = Describe("Iptables", func() {
 				Target:          "fail",
 				Chain:           "PREROUTING",
 				Protocol:        "tcp",
-				Destination:     "127.0.0.2",
+				Destination:     simpleNewInet("127.0.0.2"),
 				SourcePort:      8080,
 				DestinationPort: 80,
 			}
@@ -311,15 +286,24 @@ var _ = Describe("Iptables", func() {
 	iptables.ExecCommand = fakeExecCommand
 	Describe("New Service", func() {
 		It("Should create a new service", func() {
-			ipts, err := iptables.NewService("iptables")
+			ipts, err := iptables.NewService("iptables", testutils.NewMockDB())
 
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(ipts).ShouldNot(BeNil())
 		})
 
+		It("Should error when database connection fails", func() {
+			db := testutils.NewMockDB()
+			db.SetError(1)
+			ipts, err := iptables.NewService("iptables", db)
+
+			Ω(err).Should(HaveOccurred())
+			Ω(ipts).Should(BeNil())
+		})
+
 		It("Should error when iptables cannot be executed", func() {
 			iptablesIsPresent = 0
-			ipts, err := iptables.NewService("iptables")
+			ipts, err := iptables.NewService("iptables", testutils.NewMockDB())
 
 			Ω(err).Should(HaveOccurred())
 			Ω(ipts).Should(BeNil())
