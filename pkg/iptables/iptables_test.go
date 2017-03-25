@@ -307,6 +307,80 @@ var _ = Describe("Iptables", func() {
 
 			Ω(err).Should(HaveOccurred())
 			Ω(ipts).Should(BeNil())
+			iptablesIsPresent = 1
+		})
+	})
+
+	Describe("Add Rules", func() {
+		It("Should add a rule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.AddRule(123, iptables.Rule{
+				Target:          "REDIRECT",
+				Chain:           "PREROUTING",
+				Protocol:        "tcp",
+				Destination:     simpleNewInet("127.0.0.2"),
+				SourcePort:      8080,
+				DestinationPort: 80,
+			})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should error on invalid rule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.AddRule(123, iptables.Rule{
+				Target:          "FAIL",
+				Chain:           "PREROUTING",
+				Protocol:        "tcp",
+				Destination:     simpleNewInet("127.0.0.2"),
+				SourcePort:      8080,
+				DestinationPort: 80,
+			})
+
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Should error on existing rule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			ipts.AddRule(123, iptables.Rule{
+				Target:          "REDIRECT",
+				Chain:           "PREROUTING",
+				Protocol:        "tcp",
+				Destination:     simpleNewInet("127.0.0.2"),
+				SourcePort:      8080,
+				DestinationPort: 80,
+			})
+
+			err := ipts.AddRule(123, iptables.Rule{
+				Target:          "REDIRECT",
+				Chain:           "PREROUTING",
+				Protocol:        "tcp",
+				Destination:     simpleNewInet("127.0.0.2"),
+				SourcePort:      8080,
+				DestinationPort: 80,
+			})
+
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Should error on iptables execution", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			iptablesIsPresent = 0
+
+			err := ipts.AddRule(123, iptables.Rule{
+				Target:          "REDIRECT",
+				Chain:           "PREROUTING",
+				Protocol:        "tcp",
+				Destination:     simpleNewInet("127.0.0.2"),
+				SourcePort:      8080,
+				DestinationPort: 80,
+			})
+
+			Ω(err).Should(HaveOccurred())
 		})
 	})
 })
