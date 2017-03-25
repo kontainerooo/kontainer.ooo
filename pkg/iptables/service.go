@@ -37,18 +37,52 @@ type service struct {
 	db      dbAdapter
 }
 
+func (s *service) executeIPTableCommand(c string) error {
+	cmd := ExecCommand(s.iptPath, c)
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *service) InitializeDatabases() error {
 	return s.db.AutoMigrate(&iptablesEntry{})
 }
 
-func (s *service) ruleExists(rule Rule) bool {
-	// TODO: implement
+func (s *service) ruleExists(r Rule) bool {
+	s.db.Where("ID = ?", r.GetHash())
+	res := s.db.GetValue()
+	if res != nil {
+		return true
+	}
 	return false
 }
 
 func (s *service) AddRule(refid uint, rule Rule) error {
+	r, err := rule.ToString()
+	if err != nil {
+		return errors.New("Not a valid rule")
+	}
+
 	if s.ruleExists(rule) {
 		return errors.New("Rule already exists")
+	}
+
+	entry := &iptablesEntry{
+		Refid: refid,
+		ID:    rule.GetHash(),
+		Rule:  rule,
+	}
+
+	err = s.executeIPTableCommand(r)
+	if err != nil {
+		return err
+	}
+
+	err = s.db.Create(entry)
+	if err != nil {
+		return err
 	}
 
 	return nil
