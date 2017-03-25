@@ -18,7 +18,7 @@ type Rule struct {
 }
 
 type iptablesEntry struct {
-	ID    uint
-	refid uint
+	ID    string
+	Refid uint
 	Rule
 }
