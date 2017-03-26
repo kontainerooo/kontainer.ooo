@@ -15,7 +15,7 @@ type Service interface {
 	// RemoveRule removes a given iptables rule
 	RemoveRule(id string) error
 	// GetRulesForUser returns a list of all rules for a given user
-	GetRulesForUser(refid uint) []Rule
+	GetRulesForUser(refid uint) ([]Rule, error)
 	// CreateIPTablesBackup creates an iptables backup file
 	CreateIPTablesBackup() string
 	// LoadIPTablesBackup restores iptables from backup file
@@ -28,6 +28,7 @@ type dbAdapter interface {
 	Where(interface{}, ...interface{}) error
 	Create(interface{}) error
 	First(interface{}, ...interface{}) error
+	Find(interface{}, ...interface{}) error
 	Delete(interface{}, ...interface{}) error
 }
 
@@ -117,9 +118,18 @@ func (s *service) RemoveRule(id string) error {
 	return nil
 }
 
-func (s *service) GetRulesForUser(refid uint) []Rule {
-	// TODO: implement
-	return []Rule{}
+func (s *service) GetRulesForUser(refid uint) ([]Rule, error) {
+	rules := []Rule{}
+	ipt := []iptablesEntry{}
+	err := s.db.Find(&ipt)
+	if err != nil {
+		return []Rule{}, err
+	}
+
+	for _, entry := range ipt {
+		rules = append(rules, entry.Rule)
+	}
+	return rules, nil
 }
 
 func (s *service) CreateIPTablesBackup() string {
