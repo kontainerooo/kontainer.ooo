@@ -433,4 +433,39 @@ var _ = Describe("Iptables", func() {
 			Ω(err).Should(HaveOccurred())
 		})
 	})
+
+	Describe("Return a user's rules", func() {
+		It("Should list one rule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+			r := iptables.Rule{
+				Target:          "REDIRECT",
+				Chain:           "PREROUTING",
+				Protocol:        "tcp",
+				Destination:     simpleNewInet("127.0.0.2"),
+				SourcePort:      8080,
+				DestinationPort: 80,
+			}
+			ipts.AddRule(123, r)
+
+			rules, err := ipts.GetRulesForUser(123)
+
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(len(rules)).Should(Equal(1))
+			Ω(rules[0].Target).Should(Equal("REDIRECT"))
+
+			ipts.RemoveRule(r.GetHash())
+		})
+
+		It("Should error on db error", func() {
+			db := testutils.NewMockDB()
+			ipts, _ := iptables.NewService("iptables", db)
+
+			db.SetError(1)
+
+			rules, err := ipts.GetRulesForUser(123)
+
+			Ω(err).Should(HaveOccurred())
+			Ω(len(rules)).Should(Equal(0))
+		})
+	})
 })
