@@ -1,5 +1,6 @@
 syntax = "proto3";
-package pb;
+package customercontainer;
+option go_package = "pb";
 
 service CustomerContainerService {
     rpc CreateContainer (CreateContainerRequest) returns (CreateContainerResponse);
