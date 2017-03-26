@@ -381,6 +381,37 @@ var _ = Describe("Iptables", func() {
 			})
 
 			Ω(err).Should(HaveOccurred())
+
+			iptablesIsPresent = 1
+		})
+	})
+
+	Describe("Delete Rules", func() {
+		hash := ""
+		It("Should delete a rule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+			r := iptables.Rule{
+				Target:          "REDIRECT",
+				Chain:           "PREROUTING",
+				Protocol:        "tcp",
+				Destination:     simpleNewInet("127.0.0.2"),
+				SourcePort:      8080,
+				DestinationPort: 80,
+			}
+
+			ipts.AddRule(123, r)
+
+			hash = r.GetHash()
+			err := ipts.RemoveRule(hash)
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should error on non-existing rule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+			err := ipts.RemoveRule(hash)
+
+			Ω(err).Should(HaveOccurred())
 		})
 	})
 })
