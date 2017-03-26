@@ -146,4 +146,71 @@ var _ = Describe("Routing", func() {
 			Ω(err).Should(HaveOccurred())
 		})
 	})
+
+	Describe("AddLocationRule", func() {
+		db := testutils.NewMockDB()
+		routingService, _ := routing.NewService(db)
+		It("Should add a LocationRule", func() {
+			refID, name := uint(1), "test"
+			routingService.CreateRouterConfig(&routing.RouterConfig{
+				RefID: refID,
+				Name:  name,
+			})
+
+			err := routingService.AddLocationRule(refID, name, &routing.LocationRule{
+				Location: "/",
+			})
+			Ω(err).ShouldNot(HaveOccurred())
+
+			conf := &routing.RouterConfig{}
+			routingService.GetRouterConfig(refID, name, conf)
+			Expect(conf.LocationRules).To(HaveLen(1))
+		})
+
+		It("Should return error if ID does not exist", func() {
+			err := routingService.AddLocationRule(28, "", &routing.LocationRule{})
+			Ω(err).Should(BeEquivalentTo(testutils.ErrNotFound))
+		})
+
+		It("Should return error on db failure", func() {
+			db.SetError(1)
+			err := routingService.AddLocationRule(1, "", &routing.LocationRule{})
+			Ω(err).Should(HaveOccurred())
+		})
+	})
+
+	Describe("RemoveLocationRule", func() {
+		db := testutils.NewMockDB()
+		routingService, _ := routing.NewService(db)
+		It("Should add a LocationRule", func() {
+			refID, name := uint(1), "test"
+			routingService.CreateRouterConfig(&routing.RouterConfig{
+				RefID: refID,
+				Name:  name,
+				LocationRules: routing.LocationRules{
+					&routing.LocationRule{
+						Location: "/",
+					},
+				},
+			})
+
+			err := routingService.RemoveLocationRule(refID, name, 0)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			conf := &routing.RouterConfig{}
+			routingService.GetRouterConfig(refID, name, conf)
+			Expect(conf.LocationRules).To(HaveLen(0))
+		})
+
+		It("Should return error if ID does not exist", func() {
+			err := routingService.RemoveLocationRule(28, "", 28)
+			Ω(err).Should(BeEquivalentTo(testutils.ErrNotFound))
+		})
+
+		It("Should return error on db failure", func() {
+			db.SetError(1)
+			err := routingService.RemoveLocationRule(1, "", 0)
+			Ω(err).Should(HaveOccurred())
+		})
+	})
 })

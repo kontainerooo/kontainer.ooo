@@ -127,6 +127,98 @@ func (t *table) delete(ids map[string]reflect.Value) error {
 	return ErrNotFound
 }
 
+func (t *table) appendToArray(query reflect.Value, target string, value interface{}) error {
+	if query.Type() != t.ref {
+		return errors.New("wrong query type")
+	}
+
+	key := t.PrimaryKey[0]
+	res, err := t.find(key, query.FieldByName(key).Interface())
+	if err != nil {
+		return err
+	}
+	if res == RNil {
+		return ErrNotFound
+	}
+
+	length := res.Len()
+
+	for id, k := range t.PrimaryKey {
+		if id == 0 {
+			continue
+		}
+
+		for i := 0; i < length; i++ {
+			r := res.Index(i).Elem()
+			if r.FieldByName(k).Interface() == query.FieldByName(k).Interface() {
+				continue
+			}
+			if length == 1 {
+				return errors.New("row not found")
+			}
+			res = reflect.AppendSlice(res.Slice(0, i), res.Slice(i+1, length))
+			length--
+		}
+	}
+
+	row := res.Index(0).Elem()
+	f := row.FieldByName(target)
+
+	if f.Kind() != reflect.Slice {
+		return errors.New("target is no slice")
+	}
+
+	f.Set(reflect.Append(f, reflect.ValueOf(value)))
+
+	return nil
+}
+
+func (t *table) removeFromArray(query reflect.Value, target string, index int) error {
+	if query.Type() != t.ref {
+		return errors.New("wrong query type")
+	}
+
+	key := t.PrimaryKey[0]
+	res, err := t.find(key, query.FieldByName(key).Interface())
+	if err != nil {
+		return err
+	}
+	if res == RNil {
+		return ErrNotFound
+	}
+
+	length := res.Len()
+
+	for id, k := range t.PrimaryKey {
+		if id == 0 {
+			continue
+		}
+
+		for i := 0; i < length; i++ {
+			r := res.Index(i).Elem()
+			if r.FieldByName(k).Interface() == query.FieldByName(k).Interface() {
+				continue
+			}
+			if length == 1 {
+				return errors.New("row not found")
+			}
+			res = reflect.AppendSlice(res.Slice(0, i), res.Slice(i+1, length))
+			length--
+		}
+	}
+
+	row := res.Index(0).Elem()
+	f := row.FieldByName(target)
+
+	if f.Kind() != reflect.Slice {
+		return errors.New("target is no slice")
+	}
+
+	f.Set(reflect.AppendSlice(f.Slice(0, index), f.Slice(index+1, f.Len())))
+
+	return nil
+}
+
 func newTable(ref reflect.Type, name string) *table {
 	var (
 		idx     []string
