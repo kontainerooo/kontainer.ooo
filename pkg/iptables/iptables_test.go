@@ -45,6 +45,7 @@ var _ = Describe("Iptables", func() {
 	Describe("Redirect rule string", func() {
 		It("Should create REDIRECT rule", func() {
 			r := iptables.Rule{
+				Operation:       "-A",
 				Target:          "REDIRECT",
 				Chain:           "PREROUTING",
 				Protocol:        "tcp",
@@ -138,6 +139,24 @@ var _ = Describe("Iptables", func() {
 
 			Ω(err).Should(HaveOccurred())
 			Ω(err).Should(Equal(iptables.ErrWrongProtocol))
+			Ω(str).Should(BeEmpty())
+		})
+
+		It("Should error on invalid operation", func() {
+			r := iptables.Rule{
+				Operation:       "-U",
+				Target:          "REDIRECT",
+				Chain:           "PREROUTING",
+				Protocol:        "tcp",
+				SourcePort:      8080,
+				Destination:     simpleNewInet("127.0.0.2"),
+				DestinationPort: 80,
+			}
+
+			str, err := r.ToString()
+
+			Ω(err).Should(HaveOccurred())
+			Ω(err).Should(Equal(iptables.ErrNotValidOperation))
 			Ω(str).Should(BeEmpty())
 		})
 	})
