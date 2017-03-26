@@ -4,8 +4,8 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/ttdennis/kontainer.io/pkg/kmi"
-	"github.com/ttdennis/kontainer.io/pkg/testutils"
+	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
+	"github.com/kontainerooo/kontainer.ooo/pkg/testutils"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

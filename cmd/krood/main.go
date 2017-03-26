@@ -19,15 +19,15 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
-	"github.com/ttdennis/kontainer.io/pkg/abstraction"
-	"github.com/ttdennis/kontainer.io/pkg/containerlifecycle"
-	"github.com/ttdennis/kontainer.io/pkg/customercontainer"
-	"github.com/ttdennis/kontainer.io/pkg/kmi"
-	kmiClient "github.com/ttdennis/kontainer.io/pkg/kmi/client"
-	"github.com/ttdennis/kontainer.io/pkg/pb"
-	"github.com/ttdennis/kontainer.io/pkg/testutils"
-	"github.com/ttdennis/kontainer.io/pkg/user"
-	ws "github.com/ttdennis/kontainer.io/pkg/websocket"
+	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
+	"github.com/kontainerooo/kontainer.ooo/pkg/containerlifecycle"
+	"github.com/kontainerooo/kontainer.ooo/pkg/customercontainer"
+	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
+	kmiClient "github.com/kontainerooo/kontainer.ooo/pkg/kmi/client"
+	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
+	"github.com/kontainerooo/kontainer.ooo/pkg/testutils"
+	"github.com/kontainerooo/kontainer.ooo/pkg/user"
+	ws "github.com/kontainerooo/kontainer.ooo/pkg/websocket"
 )
 
 func main() {
@@ -41,7 +41,7 @@ func main() {
 		dcliWrapper abstraction.DCli
 	)
 
-	/* The kio binary can now be given a flag called `--mock`. With this
+	/* The krood binary can now be given a flag called `--mock`. With this
 	 *  option the mock database and mock docker client is used. This is
 	 *  in order to simplify testing without a docker daemon and database
 	 *  connection. This might later be removed. */

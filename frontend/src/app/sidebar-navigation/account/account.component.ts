@@ -3,7 +3,7 @@ import { Component, Input, OnChanges, ElementRef, Renderer } from '@angular/core
 import { SideNavElement } from '../../interfaces/side-nav-element';
 
 @Component({
-  selector: 'kio-account',
+  selector: 'kro-account',
   templateUrl: './account.component.html',
   styleUrls: ['./account.component.scss']
 })
