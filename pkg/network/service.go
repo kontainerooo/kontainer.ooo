@@ -3,8 +3,8 @@ package network
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
+	"errors"
+	"fmt"
 	"log"
 
 	"github.com/docker/docker/api/types"
@@ -12,10 +12,18 @@ import (
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 )
 
+var (
+	// ErrNetworkNotExist occurs when a network does not exist
+	ErrNetworkNotExist = errors.New("Network does not exist")
+
+	// ErrNetworkAlreadyExists occurs when a network already exists
+	ErrNetworkAlreadyExists = errors.New("Network already exists")
+)
+
 // Service NetworkService
 type Service interface {
-	// CreateNetwork creates a new network for a given user and returns its ID and name
-	CreateNetwork(refid uint, cfg *Config) (name string, id string, err error)
+	// CreateNetwork creates a new network for a given user
+	CreateNetwork(refid uint, cfg *Config) error
 
 	// RemoveNetwork removes a network with a given name
 	RemoveNetworkByName(refid uint, name string) error
@@ -31,6 +39,9 @@ type Service interface {
 
 	// RemovePortFromContainer removes an exposed port from a container
 	RemovePortFromContainer(refid uint, srcContainerID string, port uint32, destContainerID string) error
+
+	// UserHasNetwork checks whether a user has created a network
+	UserHasNetwork(refid uint) bool
 }
 
 type dbAdapter interface {
@@ -52,7 +63,7 @@ func (s *service) InitializeDatabases() error {
 	return s.db.AutoMigrate(&Networks{})
 }
 
-func (s *service) getNetworkByID(refid uint, name string) (Networks, error) {
+func (s *service) getNetworkByName(refid uint, name string) (Networks, error) {
 	nw := Networks{}
 
 	err := s.db.Where("UserID = ? AND NetworkName = ?", refid, name)
@@ -60,32 +71,31 @@ func (s *service) getNetworkByID(refid uint, name string) (Networks, error) {
 		return nw, err
 	}
 
-	err = s.db.First(&nw)
-	if err != nil {
-		return nw, err
-	}
+	s.db.First(&nw)
 
 	return nw, nil
 }
 
-func (s *service) CreateNetwork(refid uint, cfg *Config) (name string, id string, err error) {
+func (s *service) CreateNetwork(refid uint, cfg *Config) error {
+	name := cfg.Name
 
-	// Generate a 64 byte unique name
-	b := make([]byte, 64)
-	_, err = rand.Read(b)
+	nw, err := s.getNetworkByName(refid, name)
 	if err != nil {
-		return "", "", err
+		return err
 	}
-	name = base64.URLEncoding.EncodeToString(b)
 
-	res, err := s.dcli.NetworkCreate(context.Background(), name, types.NetworkCreate{
+	if nw.NetworkID != "" {
+		return ErrNetworkAlreadyExists
+	}
+
+	res, err := s.dcli.NetworkCreate(context.Background(), fmt.Sprintf("%s-%s", string(refid), name), types.NetworkCreate{
 		Driver: cfg.Driver,
 	})
 	if err != nil {
-		return "", "", err
+		return err
 	}
 
-	nw := Networks{
+	nw = Networks{
 		UserID:      uint(refid),
 		NetworkName: name,
 		NetworkID:   res.ID,
@@ -95,33 +105,37 @@ func (s *service) CreateNetwork(refid uint, cfg *Config) (name string, id string
 	if err != nil {
 		// Try to remove the actual network on db error
 		s.dcli.NetworkRemove(context.Background(), res.ID)
-		return "", "", err
-	}
-
-	return name, res.ID, nil
-}
-
-func (s *service) RemoveNetworkByName(refid uint, name string) error {
-	nw, err := s.getNetworkByID(refid, name)
-	if err != nil {
-		return err
-	}
-
-	err = s.dcli.NetworkRemove(context.Background(), nw.NetworkID)
-	if err != nil {
-		return err
-	}
-
-	err = s.db.Delete(&nw)
-	if err != nil {
 		return err
 	}
 
 	return nil
 }
 
+func (s *service) RemoveNetworkByName(refid uint, name string) error {
+	nw, err := s.getNetworkByName(refid, name)
+	if err != nil {
+		return err
+	}
+
+	if nw.NetworkID != "" {
+		err = s.dcli.NetworkRemove(context.Background(), nw.NetworkID)
+		if err != nil {
+			return err
+		}
+
+		err = s.db.Delete(&nw)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	return ErrNetworkNotExist
+}
+
 func (s *service) AddContainerToNetwork(refid uint, name string, containerID string) error {
-	nw, err := s.getNetworkByID(refid, name)
+	nw, err := s.getNetworkByName(refid, name)
 	if err != nil {
 		return err
 	}
@@ -131,20 +145,25 @@ func (s *service) AddContainerToNetwork(refid uint, name string, containerID str
 		if err != nil {
 			return err
 		}
+	} else {
+		return ErrNetworkNotExist
 	}
 
 	return nil
 }
 
 func (s *service) RemoveContainerFromNetwork(refid uint, name string, containerID string) error {
-	nw, err := s.getNetworkByID(refid, name)
+	nw, err := s.getNetworkByName(refid, name)
 	if err != nil {
 		return err
 	}
-
-	err = s.dcli.NetworkDisconnect(context.Background(), nw.NetworkID, containerID, true)
-	if err != nil {
-		return err
+	if nw.NetworkID != "" {
+		err = s.dcli.NetworkDisconnect(context.Background(), nw.NetworkID, containerID, true)
+		if err != nil {
+			return err
+		}
+	} else {
+		return ErrNetworkNotExist
 	}
 
 	return nil
@@ -158,6 +177,22 @@ func (s *service) ExposePortToContainer(refid uint, srcContainerID string, port 
 func (s *service) RemovePortFromContainer(refid uint, srcContainerID string, port uint32, destContainerID string) error {
 	// TODO: implement
 	return nil
+}
+
+func (s *service) UserHasNetwork(refid uint) bool {
+	nw := Networks{}
+
+	err := s.db.Where("UserID = ?", refid)
+	if err != nil {
+		return false
+	}
+
+	err = s.db.First(&nw)
+	if err != nil {
+		return false
+	}
+
+	return true
 }
 
 // NewService creates a new network service
