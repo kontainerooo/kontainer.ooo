@@ -26,10 +26,7 @@ type dbAdapter interface {
 	abstraction.DBAdapter
 	AutoMigrate(...interface{}) error
 	Where(interface{}, ...interface{}) error
-	First(interface{}, ...interface{}) error
-	Find(interface{}, ...interface{}) error
 	Create(interface{}) error
-	Delete(interface{}, ...interface{}) error
 }
 
 type service struct {
@@ -62,7 +59,7 @@ func (s *service) ruleExists(r Rule) bool {
 func (s *service) AddRule(refid uint, rule Rule) error {
 	r, err := rule.ToString()
 	if err != nil {
-		return errors.New("Not a valid rule")
+		return err
 	}
 
 	if s.ruleExists(rule) {
