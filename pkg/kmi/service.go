@@ -4,7 +4,7 @@ package kmi
 import (
 	"fmt"
 
-	"github.com/ttdennis/kontainer.io/pkg/abstraction"
+	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 )
 
 // The Service interface describes the functions necessary for a KMI Service

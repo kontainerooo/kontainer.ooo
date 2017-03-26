@@ -23,8 +23,8 @@ import (
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/go-kit/kit/log"
-	"github.com/ttdennis/kontainer.io/pkg/abstraction"
-	"github.com/ttdennis/kontainer.io/pkg/kmi"
+	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
+	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
 )
 
 // Service Customer Container service
@@ -167,7 +167,7 @@ func (s *service) CreateDockerImage(refid int, kmiID uint) (string, error) {
 
 	kmi := kmiResponse.(*kmi.GetKMIResponse).KMI
 
-	imageTag := fmt.Sprintf("kio/%s:%d", strings.ToLower(kmi.Name), refid)
+	imageTag := fmt.Sprintf("kro/%s:%d", strings.ToLower(kmi.Name), refid)
 	_, _, err = s.dcli.ImageInspectWithRaw(context.Background(), imageTag)
 
 	if !s.dcli.IsErrImageNotFound(err) {
