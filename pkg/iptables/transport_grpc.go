@@ -11,7 +11,7 @@ import (
 )
 
 // MakeGRPCServer makes a set of Endpoints available as a gRPC iptablesServer
-func MakeGRPCServer(ctx context.Context, endpoints Endpoints, logger log.Logger) pb.IPTABLESServiceServer {
+func MakeGRPCServer(ctx context.Context, endpoints Endpoints, logger log.Logger) pb.IPTablesServiceServer {
 	options := []grpctransport.ServerOption{
 		grpctransport.ServerErrorLogger(logger),
 	}
@@ -68,7 +68,17 @@ func (s *grpcServer) GetRulesForUser(ctx oldcontext.Context, req *pb.GetRulesFor
 	return res.(*pb.GetRulesForUserResponse), nil
 }
 
-func convertToNativeRule(r pb.IPTRule) Rule {
+func convertToNativeRule(r pb.IPTRule) (Rule, error) {
+	sourceIP, err := abstraction.NewInet(r.Source)
+	if err != nil {
+		return Rule{}, err
+	}
+
+	destIP, err := abstraction.NewInet(r.Destination)
+	if err != nil {
+		return Rule{}, err
+	}
+
 	return Rule{
 		Operation:       r.Operation,
 		Target:          r.Target,
@@ -76,21 +86,26 @@ func convertToNativeRule(r pb.IPTRule) Rule {
 		Protocol:        r.Protocol,
 		In:              r.In,
 		Out:             r.Out,
-		Source:          abstraction.NewInet(r.Source),
-		Destination:     abstraction.NewInet(Destination),
+		Source:          sourceIP,
+		Destination:     destIP,
 		SourcePort:      uint16(r.SourcePort),
 		DestinationPort: uint16(r.DestinationPort),
 		State:           r.State,
-	}
+	}, nil
 }
 
 // DecodeGRPCAddRuleRequest is a transport/grpc.DecodeRequestFunc that converts a
 // gRPC AddRule request to a messages/iptables.proto-domain addrule request.
 func DecodeGRPCAddRuleRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
 	req := grpcReq.(*pb.AddRuleRequest)
+	rule, err := convertToNativeRule(*req.Rule)
+	if err != nil {
+		return AddRuleRequest{}, err
+	}
+
 	return AddRuleRequest{
 		Refid: uint(req.Refid),
-		Rule:  convertToNativeRule(req.Rule),
+		Rule:  rule,
 	}, nil
 }
 
@@ -108,7 +123,7 @@ func DecodeGRPCRemoveRuleRequest(_ context.Context, grpcReq interface{}) (interf
 func DecodeGRPCGetRulesForUserRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
 	req := grpcReq.(*pb.GetRulesForUserRequest)
 	return GetRulesForUserRequest{
-		Refid: req.Refid,
+		Refid: uint(req.Refid),
 	}, nil
 }
 
@@ -138,7 +153,7 @@ func EncodeGRPCRemoveRuleResponse(_ context.Context, response interface{}) (inte
 // messages/iptables.proto-domain getrulesforuser response to a gRPC GetRulesForUser response.
 func EncodeGRPCGetRulesForUserResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(GetRulesForUserResponse)
-	rules := []pb.IPTRule{}
+	rules := []*pb.IPTRule{}
 
 	gRPCRes := &pb.GetRulesForUserResponse{}
 	if res.Error != nil {
@@ -159,7 +174,7 @@ func EncodeGRPCGetRulesForUserResponse(_ context.Context, response interface{}) 
 			DestinationPort: uint32(v.DestinationPort),
 			State:           v.State,
 		}
-		rules = append(rules, rule)
+		rules = append(rules, &rule)
 	}
 	gRPCRes.Rules = rules
 

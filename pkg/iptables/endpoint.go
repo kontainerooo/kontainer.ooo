@@ -16,7 +16,7 @@ type Endpoints struct {
 // AddRuleRequest is the request struct for the AddRuleEndpoint
 type AddRuleRequest struct {
 	Refid uint
-	Rule  rule
+	Rule  Rule
 }
 
 // AddRuleResponse is the response struct for the AddRuleEndpoint
