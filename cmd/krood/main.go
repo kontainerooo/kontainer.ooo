@@ -300,15 +300,15 @@ func makeIPTServiceEndpoints(s iptables.Service) iptables.Endpoints {
 		RemoveRuleEndpoint = iptables.MakeRemoveRuleEndpoint(s)
 	}
 
-	var GetRulesForUserEndpoint endpoint.Endpoint
+	var GetRulesByRefEndpoint endpoint.Endpoint
 	{
-		GetRulesForUserEndpoint = iptables.MakeGetRulesForUserEndpoint(s)
+		GetRulesByRefEndpoint = iptables.MakeGetRulesByRefEndpoint(s)
 	}
 
 	return iptables.Endpoints{
-		AddRuleEndpoint:         AddRuleEndpoint,
-		RemoveRuleEndpoint:      RemoveRuleEndpoint,
-		GetRulesForUserEndpoint: GetRulesForUserEndpoint,
+		AddRuleEndpoint:       AddRuleEndpoint,
+		RemoveRuleEndpoint:    RemoveRuleEndpoint,
+		GetRulesByRefEndpoint: GetRulesByRefEndpoint,
 	}
 }
 
