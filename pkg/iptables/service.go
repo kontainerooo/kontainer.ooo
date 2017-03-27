@@ -3,7 +3,6 @@ package iptables
 
 import (
 	"errors"
-	"fmt"
 	"os/exec"
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
@@ -63,12 +62,10 @@ func (s *service) ruleExists(r Rule) bool {
 }
 
 func (s *service) CreateChain(name string) error {
-	cmd := fmt.Sprintf("-N %s", name)
-	err := s.executeIPTableCommand(cmd)
-	if err != nil {
-		return err
-	}
-	return nil
+	return s.AddRule("kroo", Rule{
+		Operation: "-N",
+		Name:      name,
+	})
 }
 
 func (s *service) AddRule(refid string, rule Rule) error {

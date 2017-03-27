@@ -106,6 +106,7 @@ func convertToNativeRule(r pb.IPTRule) (Rule, error) {
 		SourcePort:      uint16(r.SourcePort),
 		DestinationPort: uint16(r.DestinationPort),
 		State:           r.State,
+		Name:            r.Name,
 	}, nil
 }
 
@@ -208,6 +209,7 @@ func EncodeGRPCGetRulesByRefResponse(_ context.Context, response interface{}) (i
 			SourcePort:      uint32(v.SourcePort),
 			DestinationPort: uint32(v.DestinationPort),
 			State:           v.State,
+			Name:            v.Name,
 		}
 		rules = append(rules, &rule)
 	}

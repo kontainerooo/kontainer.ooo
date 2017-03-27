@@ -27,7 +27,8 @@ message IPTRule {
     string Destination = 8;
     uint32 SourcePort = 9;
     uint32 DestinationPort = 10;
-    string state = 11;
+    string State = 11;
+    string Name = 12;
 }
 
 message AddRuleRequest {
