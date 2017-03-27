@@ -19,11 +19,14 @@
       "tsconfig": "tsconfig.json",
       "prefix": "kio",
       "styles": [
-        "styles.scss"
+        "styles.scss",
+        "../node_modules/material-design-lite/material.min.css"
       ],
-      "scripts": [],
+      "scripts": [
+        "../node_modules/material-design-lite/material.min.js"
+      ],
       "environments": {
-        "source": "environments/environment.ts",
+        "source": "environments/enironment.ts",
         "dev": "environments/environment.ts",
         "prod": "environments/environment.prod.ts"
       }
