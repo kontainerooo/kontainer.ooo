@@ -74,9 +74,11 @@ func (w *dbWrapper) getTableName(v reflect.Value) string {
 	return gorm.ToDBName(t.Name())
 }
 
-func (w *dbWrapper) generateWhereClause(query *string, v reflect.Value) error {
-	var primary []string
-
+func (w *dbWrapper) generateWhereClause(query *string, v reflect.Value) (*[]interface{}, error) {
+	var (
+		primary       []string
+		primaryValues []interface{}
+	)
 	t := v.Type()
 
 	// Search for primary keys in the reference type
@@ -99,7 +101,7 @@ func (w *dbWrapper) generateWhereClause(query *string, v reflect.Value) error {
 	}
 
 	if len(primary) == 0 {
-		return errors.New("no primary key found")
+		return nil, errors.New("no primary key found")
 	}
 
 	// Set WHERE clause
@@ -112,16 +114,17 @@ func (w *dbWrapper) generateWhereClause(query *string, v reflect.Value) error {
 		key = gorm.ToDBName(key)
 		k := value.Kind()
 		if k == reflect.String {
-			*query = fmt.Sprintf("%s %s='%s'", *query, key, value.String())
+			primaryValues = append(primaryValues, value.String())
+			*query = fmt.Sprintf("%s %s=$%d", *query, key, len(primaryValues)+1)
 		} else if k == reflect.Uint {
 			*query = fmt.Sprintf("%s %s=%d", *query, key, value.Uint())
 		} else {
-			return fmt.Errorf("unexpected %s", k)
+			return nil, fmt.Errorf("unexpected %s", k)
 		}
 
 	}
 
-	return nil
+	return &primaryValues, nil
 }
 
 func (w *dbWrapper) AppendToArray(elem interface{}, target string, value interface{}) error {
@@ -171,7 +174,7 @@ func (w *dbWrapper) AppendToArray(elem interface{}, target string, value interfa
 	// Set Update parameters
 	query = fmt.Sprintf("UPDATE %s SET %s = %s || $1::%s", tableName, target, target, typeCast)
 
-	err := w.generateWhereClause(&query, v)
+	pv, err := w.generateWhereClause(&query, v)
 	if err != nil {
 		return err
 	}
@@ -179,11 +182,11 @@ func (w *dbWrapper) AppendToArray(elem interface{}, target string, value interfa
 	query = fmt.Sprintf("%s RETURNING cardinality(%s) AS index", query, target)
 
 	if w.tx != nil {
-		_, err = w.tx.CommonDB().Exec(query, stringVal)
+		_, err = w.tx.CommonDB().Exec(query, append([]interface{}{stringVal}, *pv...)...)
 		return err
 	}
 
-	_, err = w.db.DB().Exec(query, stringVal)
+	_, err = w.db.DB().Exec(query, append([]interface{}{stringVal}, *pv...)...)
 	return err
 }
 
@@ -206,17 +209,17 @@ func (w *dbWrapper) RemoveFromArray(elem interface{}, target string, index int) 
 
 	query = fmt.Sprintf("UPDATE %s SET %s = array_remove(%s, %s[$1])", tableName, target, target, target)
 
-	err := w.generateWhereClause(&query, v)
+	pv, err := w.generateWhereClause(&query, v)
 	if err != nil {
 		return err
 	}
 
 	if w.tx != nil {
-		_, err = w.tx.CommonDB().Exec(query, index)
+		_, err = w.tx.CommonDB().Exec(query, append([]interface{}{index}, *pv...)...)
 		return err
 	}
 
-	_, err = w.db.DB().Exec(query, index)
+	_, err = w.db.DB().Exec(query, append([]interface{}{index}, *pv...)...)
 	return err
 }
 
