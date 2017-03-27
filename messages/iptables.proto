@@ -1,0 +1,48 @@
+syntax = "proto3";
+package pb;
+
+service IPTablesService {
+    rpc AddRule (AddRuleRequest) returns (AddRuleResponse);
+    rpc RemoveRule (RemoveRuleRequest) returns (RemoveRuleResponse);
+    rpc GetRulesForUser (GetRulesForUserRequest) returns (GetRulesForUserResponse);
+}
+
+message IPTRule {
+    string Operation = 1;
+    string Target = 2;
+    string Chain = 3;
+    string Protocol = 4;
+    string In = 5;
+    string Out = 6;
+    string Source = 7;
+    string Destination = 8;
+    uint32 SourcePort = 9;
+    uint32 DestinationPort = 10;
+    string state = 11;
+}
+
+message AddRuleRequest {
+    uint32 Refid = 1;
+    IPTRule Rule = 2;
+}
+
+message AddRuleResponse {
+    string Error = 1;
+}
+
+message RemoveRuleRequest {
+    string ID = 1;
+}
+
+message RemoveRuleResponse {
+    string Error = 1;
+}
+
+message GetRulesForUserRequest {
+    uint32 Refid = 1;
+}
+
+message GetRulesForUserResponse {
+    repeated IPTRule Rules = 1;
+    string error = 2;
+}
