@@ -3,6 +3,7 @@ package testutils
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/go-kit/kit/log"
 	"github.com/kontainerooo/kontainer.ooo/pkg/iptables"
@@ -47,6 +48,14 @@ func (m *MockIPTClient) AddRuleEndpoint(ctx context.Context, req interface{}) (i
 	return &iptables.AddRuleResponse{
 		Error: nil,
 	}, nil
+}
+
+// ListRuleStrings prints the rules as iptable commands
+func (m *MockIPTClient) ListRuleStrings() {
+	for _, v := range m.cliCommands {
+		str, _ := v.rule.ToString()
+		fmt.Printf("iptables %s\n", str)
+	}
 }
 
 // NewMockIPTClient creates a new MockKMIClient
