@@ -29,19 +29,19 @@ func MakeGRPCServer(ctx context.Context, endpoints Endpoints, logger log.Logger)
 			EncodeGRPCRemoveRuleResponse,
 			options...,
 		),
-		getrulesforuser: grpctransport.NewServer(
-			endpoints.GetRulesForUserEndpoint,
-			DecodeGRPCGetRulesForUserRequest,
-			EncodeGRPCGetRulesForUserResponse,
+		getrulesbyref: grpctransport.NewServer(
+			endpoints.GetRulesByRefEndpoint,
+			DecodeGRPCGetRulesByRefRequest,
+			EncodeGRPCGetRulesByRefResponse,
 			options...,
 		),
 	}
 }
 
 type grpcServer struct {
-	addrule         grpctransport.Handler
-	removerule      grpctransport.Handler
-	getrulesforuser grpctransport.Handler
+	addrule       grpctransport.Handler
+	removerule    grpctransport.Handler
+	getrulesbyref grpctransport.Handler
 }
 
 func (s *grpcServer) AddRule(ctx oldcontext.Context, req *pb.AddRuleRequest) (*pb.AddRuleResponse, error) {
@@ -60,12 +60,12 @@ func (s *grpcServer) RemoveRule(ctx oldcontext.Context, req *pb.RemoveRuleReques
 	return res.(*pb.RemoveRuleResponse), nil
 }
 
-func (s *grpcServer) GetRulesForUser(ctx oldcontext.Context, req *pb.GetRulesForUserRequest) (*pb.GetRulesForUserResponse, error) {
-	_, res, err := s.getrulesforuser.ServeGRPC(ctx, req)
+func (s *grpcServer) GetRulesByRef(ctx oldcontext.Context, req *pb.GetRulesByRefRequest) (*pb.GetRulesByRefResponse, error) {
+	_, res, err := s.getrulesbyref.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return res.(*pb.GetRulesForUserResponse), nil
+	return res.(*pb.GetRulesByRefResponse), nil
 }
 
 func convertToNativeRule(r pb.IPTRule) (Rule, error) {
@@ -104,7 +104,7 @@ func DecodeGRPCAddRuleRequest(_ context.Context, grpcReq interface{}) (interface
 	}
 
 	return AddRuleRequest{
-		Refid: uint(req.Refid),
+		Refid: req.Refid,
 		Rule:  rule,
 	}, nil
 }
@@ -118,12 +118,12 @@ func DecodeGRPCRemoveRuleRequest(_ context.Context, grpcReq interface{}) (interf
 	}, nil
 }
 
-// DecodeGRPCGetRulesForUserRequest is a transport/grpc.DecodeRequestFunc that converts a
-// gRPC GetRulesForUser request to a messages/iptables.proto-domain getrulesforuser request.
-func DecodeGRPCGetRulesForUserRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
-	req := grpcReq.(*pb.GetRulesForUserRequest)
-	return GetRulesForUserRequest{
-		Refid: uint(req.Refid),
+// DecodeGRPCGetRulesByRefRequest is a transport/grpc.DecodeRequestFunc that converts a
+// gRPC GetRulesByRef request to a messages/iptables.proto-domain GetRulesByRef request.
+func DecodeGRPCGetRulesByRefRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
+	req := grpcReq.(*pb.GetRulesByRefRequest)
+	return GetRulesByRefRequest{
+		Refid: req.Refid,
 	}, nil
 }
 
@@ -149,13 +149,13 @@ func EncodeGRPCRemoveRuleResponse(_ context.Context, response interface{}) (inte
 	return gRPCRes, nil
 }
 
-// EncodeGRPCGetRulesForUserResponse is a transport/grpc.EncodeRequestFunc that converts a
-// messages/iptables.proto-domain getrulesforuser response to a gRPC GetRulesForUser response.
-func EncodeGRPCGetRulesForUserResponse(_ context.Context, response interface{}) (interface{}, error) {
-	res := response.(GetRulesForUserResponse)
+// EncodeGRPCGetRulesByRefResponse is a transport/grpc.EncodeRequestFunc that converts a
+// messages/iptables.proto-domain GetRulesByRef response to a gRPC GetRulesByRef response.
+func EncodeGRPCGetRulesByRefResponse(_ context.Context, response interface{}) (interface{}, error) {
+	res := response.(GetRulesByRefResponse)
 	rules := []*pb.IPTRule{}
 
-	gRPCRes := &pb.GetRulesForUserResponse{}
+	gRPCRes := &pb.GetRulesByRefResponse{}
 	if res.Error != nil {
 		gRPCRes.Error = res.Error.Error()
 	}

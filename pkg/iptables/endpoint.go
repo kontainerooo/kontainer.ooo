@@ -8,14 +8,14 @@ import (
 
 // Endpoints is a struct which collects all endpoints for the iptables service
 type Endpoints struct {
-	AddRuleEndpoint         endpoint.Endpoint
-	RemoveRuleEndpoint      endpoint.Endpoint
-	GetRulesForUserEndpoint endpoint.Endpoint
+	AddRuleEndpoint       endpoint.Endpoint
+	RemoveRuleEndpoint    endpoint.Endpoint
+	GetRulesByRefEndpoint endpoint.Endpoint
 }
 
 // AddRuleRequest is the request struct for the AddRuleEndpoint
 type AddRuleRequest struct {
-	Refid uint
+	Refid string
 	Rule  Rule
 }
 
@@ -56,23 +56,23 @@ func MakeRemoveRuleEndpoint(s Service) endpoint.Endpoint {
 	}
 }
 
-// GetRulesForUserRequest is the request struct for the GetRulesForUserEndpoint
-type GetRulesForUserRequest struct {
-	Refid uint
+// GetRulesByRefRequest is the request struct for the GetRulesByRefEndpoint
+type GetRulesByRefRequest struct {
+	Refid string
 }
 
-// GetRulesForUserResponse is the response struct for the GetRulesForUserEndpoint
-type GetRulesForUserResponse struct {
+// GetRulesByRefResponse is the response struct for the GetRulesByRefEndpoint
+type GetRulesByRefResponse struct {
 	Rules []Rule
 	Error error
 }
 
-// MakeGetRulesForUserEndpoint creates a gokit endpoint which invokes GetRulesForUser
-func MakeGetRulesForUserEndpoint(s Service) endpoint.Endpoint {
+// MakeGetRulesByRefEndpoint creates a gokit endpoint which invokes GetRulesByRef
+func MakeGetRulesByRefEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(GetRulesForUserRequest)
-		rules, err := s.GetRulesForUser(req.Refid)
-		return GetRulesForUserResponse{
+		req := request.(GetRulesByRefRequest)
+		rules, err := s.GetRulesByRef(req.Refid)
+		return GetRulesByRefResponse{
 			Rules: rules,
 			Error: err,
 		}, nil
