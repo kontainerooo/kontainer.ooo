@@ -10,10 +10,10 @@ import (
 // Table simulates a Table in the MockDb
 type table struct {
 	Name       string
-	PrimaryKey string
+	PrimaryKey []string
 	rows       []interface{}
 	ref        reflect.Type
-	idx        bool
+	idx        []string
 	count      uint
 }
 
@@ -73,12 +73,13 @@ func (t *table) insert(row interface{}) error {
 	}
 
 	t.count++
-	if t.idx {
+	for _, k := range t.idx {
 		s := reflect.ValueOf(row).Elem()
-		idField := s.FieldByName("ID")
+		idField := s.FieldByName(k)
 		value := reflect.ValueOf(t.count)
 		idField.Set(value)
 	}
+
 	t.rows = append(t.rows, row)
 	return nil
 }
@@ -109,11 +110,16 @@ func (t *table) find(field string, value interface{}) (reflect.Value, error) {
 	return result, nil
 }
 
-func (t *table) delete(id reflect.Value) error {
-	idInterface := id.Interface()
+func (t *table) delete(ids map[string]reflect.Value) error {
 	for i, row := range t.rows {
-		v := reflect.ValueOf(row).Elem().FieldByName(t.PrimaryKey)
-		if v.Interface() == idInterface {
+		match := true
+		for k, v := range ids {
+			if v.Interface() != reflect.ValueOf(row).Elem().FieldByName(k).Interface() {
+				match = false
+				break
+			}
+		}
+		if match {
 			t.rows = append(t.rows[:i], t.rows[i+1:]...)
 			return nil
 		}
@@ -121,30 +127,125 @@ func (t *table) delete(id reflect.Value) error {
 	return ErrNotFound
 }
 
+func (t *table) appendToArray(query reflect.Value, target string, value interface{}) error {
+	if query.Type() != t.ref {
+		return errors.New("wrong query type")
+	}
+
+	key := t.PrimaryKey[0]
+	res, err := t.find(key, query.FieldByName(key).Interface())
+	if err != nil {
+		return err
+	}
+	if res == RNil {
+		return ErrNotFound
+	}
+
+	length := res.Len()
+
+	for id, k := range t.PrimaryKey {
+		if id == 0 {
+			continue
+		}
+
+		for i := 0; i < length; i++ {
+			r := res.Index(i).Elem()
+			if r.FieldByName(k).Interface() == query.FieldByName(k).Interface() {
+				continue
+			}
+			if length == 1 {
+				return errors.New("row not found")
+			}
+			res = reflect.AppendSlice(res.Slice(0, i), res.Slice(i+1, length))
+			length--
+		}
+	}
+
+	row := res.Index(0).Elem()
+	f := row.FieldByName(target)
+
+	if f.Kind() != reflect.Slice {
+		return errors.New("target is no slice")
+	}
+
+	f.Set(reflect.Append(f, reflect.ValueOf(value)))
+
+	return nil
+}
+
+func (t *table) removeFromArray(query reflect.Value, target string, index int) error {
+	if query.Type() != t.ref {
+		return errors.New("wrong query type")
+	}
+
+	key := t.PrimaryKey[0]
+	res, err := t.find(key, query.FieldByName(key).Interface())
+	if err != nil {
+		return err
+	}
+	if res == RNil {
+		return ErrNotFound
+	}
+
+	length := res.Len()
+
+	for id, k := range t.PrimaryKey {
+		if id == 0 {
+			continue
+		}
+
+		for i := 0; i < length; i++ {
+			r := res.Index(i).Elem()
+			if r.FieldByName(k).Interface() == query.FieldByName(k).Interface() {
+				continue
+			}
+			if length == 1 {
+				return errors.New("row not found")
+			}
+			res = reflect.AppendSlice(res.Slice(0, i), res.Slice(i+1, length))
+			length--
+		}
+	}
+
+	row := res.Index(0).Elem()
+	f := row.FieldByName(target)
+
+	if f.Kind() != reflect.Slice {
+		return errors.New("target is no slice")
+	}
+
+	f.Set(reflect.AppendSlice(f.Slice(0, index), f.Slice(index+1, f.Len())))
+
+	return nil
+}
+
 func newTable(ref reflect.Type, name string) *table {
 	var (
-		idx     bool
-		primary string
+		idx     []string
+		primary []string
 	)
-	f, found := ref.FieldByName("ID")
+
+	idTag := "ID"
+	f, found := ref.FieldByName(idTag)
 	if found {
-		primary = "ID"
+		primary = append(primary, idTag)
 		if f.Type.Kind() == reflect.Uint {
-			idx = true
+			idx = append(idx, idTag)
 		}
-	} else {
-		primaryRegExp := regexp.MustCompile("primary_key")
-		for i := 0; i < ref.NumField(); i++ {
-			f := ref.Field(i)
-			v, ok := f.Tag.Lookup("gorm")
-			if ok {
-				isPrimary := primaryRegExp.MatchString(v)
-				if isPrimary {
-					primary = f.Name
-					if f.Type.Kind() == reflect.Uint {
-						idx = true
-					}
-					break
+	}
+
+	primaryRegExp := regexp.MustCompile("primary_key")
+	refRegExp := regexp.MustCompile("Ref")
+
+	for i := 0; i < ref.NumField(); i++ {
+		f := ref.Field(i)
+		v, ok := f.Tag.Lookup("gorm")
+		if ok {
+			isPrimary := primaryRegExp.MatchString(v)
+			if isPrimary {
+				primary = append(primary, f.Name)
+				if f.Type.Kind() == reflect.Uint && !refRegExp.MatchString(f.Name) {
+					idx = append(idx, f.Name)
 				}
 			}
 		}
