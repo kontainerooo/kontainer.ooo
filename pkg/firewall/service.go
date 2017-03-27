@@ -1,11 +1,15 @@
 // Package firewall handles the firewall and forwarding configuration
 package firewall
 
-import "github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
+import (
+	"context"
+
+	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
+	"github.com/kontainerooo/kontainer.ooo/pkg/iptables"
+)
 
 // Service firewall
 type Service interface {
-
 	// InitBridge initializes a bridge network
 	InitBridge(ip abstraction.Inet, netIf string) error
 
@@ -28,7 +32,9 @@ type Service interface {
 	RemoveRedirectPort(ip abstraction.Inet, src uint32, dst uint32) error
 }
 
-type service struct{}
+type service struct {
+	iptClient *iptables.Endpoints
+}
 
 func (s *service) InitBridge(ip abstraction.Inet, netIf string) error {
 	// TODO: implement
@@ -66,6 +72,10 @@ func (s *service) RemoveRedirectPort(ip abstraction.Inet, src uint32, dst uint32
 }
 
 // NewService creates a new firewall service
-func NewService() Service {
-	return &service{}
+func NewService(ipte *iptables.Endpoints) Service {
+	s := &service{
+		iptClient: ipte,
+	}
+
+	return s
 }
