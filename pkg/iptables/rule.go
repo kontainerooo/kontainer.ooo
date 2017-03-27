@@ -118,3 +118,9 @@ func (r *Rule) GetHash() string {
 	data := []byte(str)
 	return fmt.Sprintf("%x", sha256.Sum256(data))
 }
+
+// IsValid determines whether a rule is valid
+func (r *Rule) IsValid() error {
+	_, err := r.ToString()
+	return err
+}
