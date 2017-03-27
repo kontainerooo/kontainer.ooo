@@ -30,8 +30,11 @@ type Service interface {
 	// Chante the listen statement of a configuration by id, update file and router
 	ChangeListenStatement(id uint, ls *ListenStatement) error
 
-	// Change the server name(s) of a configuration by id, update file and router
-	ChangeServerName(id uint, sn []string) error
+	// Add something to the server name of a configuration by id, update file and router
+	AddServerName(RefID uint, name string, sn string) error
+
+	// Add something to the server name of a configuration by id, update file and router
+	RemoveServerName(RefID uint, name string, id int) error
 
 	// Configuration returns all Configurations
 	Configurations() []RouterConfig
@@ -159,8 +162,35 @@ func (s *service) ChangeListenStatement(id uint, ls *ListenStatement) error {
 	return nil
 }
 
-func (s *service) ChangeServerName(id uint, sn []string) error {
-	// TODO: implement
+func (s *service) AddServerName(refID uint, name string, sn string) error {
+	s.db.Begin()
+
+	err := s.db.AppendToArray(&RouterConfig{
+		RefID: refID,
+		Name:  name,
+	}, "ServerName", sn)
+	if err != nil {
+		s.db.Rollback()
+		return err
+	}
+
+	s.db.Commit()
+	return nil
+}
+
+func (s *service) RemoveServerName(refID uint, name string, id int) error {
+	s.db.Begin()
+
+	err := s.db.RemoveFromArray(&RouterConfig{
+		RefID: refID,
+		Name:  name,
+	}, "ServerName", id)
+	if err != nil {
+		s.db.Rollback()
+		return err
+	}
+
+	s.db.Commit()
 	return nil
 }
 
