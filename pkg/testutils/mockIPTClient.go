@@ -16,7 +16,7 @@ type MockIPTClient struct {
 
 type mockEntry struct {
 	rule  iptables.Rule
-	refid uint
+	refid string
 }
 
 // NewMockIPTEndpoints creates a new MockIPTClientEndpoints

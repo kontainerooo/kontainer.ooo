@@ -20,6 +20,6 @@ type Rule struct {
 
 type iptablesEntry struct {
 	ID    string
-	Refid uint
+	Refid string
 	Rule
 }

@@ -344,7 +344,7 @@ var _ = Describe("Iptables", func() {
 		It("Should add a rule", func() {
 			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
 
-			err := ipts.AddRule(123, iptables.Rule{
+			err := ipts.AddRule("br-123", iptables.Rule{
 				Target:          "REDIRECT",
 				Chain:           "PREROUTING",
 				Protocol:        "tcp",
@@ -359,7 +359,7 @@ var _ = Describe("Iptables", func() {
 		It("Should error on invalid rule", func() {
 			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
 
-			err := ipts.AddRule(123, iptables.Rule{
+			err := ipts.AddRule("br-123", iptables.Rule{
 				Target:          "FAIL",
 				Chain:           "PREROUTING",
 				Protocol:        "tcp",
@@ -374,7 +374,7 @@ var _ = Describe("Iptables", func() {
 		It("Should error on existing rule", func() {
 			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
 
-			ipts.AddRule(123, iptables.Rule{
+			ipts.AddRule("br-123", iptables.Rule{
 				Target:          "REDIRECT",
 				Chain:           "PREROUTING",
 				Protocol:        "tcp",
@@ -383,7 +383,7 @@ var _ = Describe("Iptables", func() {
 				DestinationPort: 80,
 			})
 
-			err := ipts.AddRule(123, iptables.Rule{
+			err := ipts.AddRule("br-123", iptables.Rule{
 				Target:          "REDIRECT",
 				Chain:           "PREROUTING",
 				Protocol:        "tcp",
@@ -400,7 +400,7 @@ var _ = Describe("Iptables", func() {
 
 			iptablesIsPresent = 0
 
-			err := ipts.AddRule(123, iptables.Rule{
+			err := ipts.AddRule("br-123", iptables.Rule{
 				Target:          "REDIRECT",
 				Chain:           "PREROUTING",
 				Protocol:        "tcp",
@@ -428,7 +428,7 @@ var _ = Describe("Iptables", func() {
 				DestinationPort: 80,
 			}
 
-			ipts.AddRule(123, r)
+			ipts.AddRule("br-123", r)
 
 			hash = r.GetHash()
 			err := ipts.RemoveRule(hash)
@@ -455,9 +455,9 @@ var _ = Describe("Iptables", func() {
 				SourcePort:      8080,
 				DestinationPort: 80,
 			}
-			ipts.AddRule(123, r)
+			ipts.AddRule("br-123", r)
 
-			rules, err := ipts.GetRulesForUser(123)
+			rules, err := ipts.GetRulesByRef("br-123")
 
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(len(rules)).Should(Equal(1))
@@ -472,7 +472,7 @@ var _ = Describe("Iptables", func() {
 
 			db.SetError(1)
 
-			rules, err := ipts.GetRulesForUser(123)
+			rules, err := ipts.GetRulesByRef("br-123")
 
 			Ω(err).Should(HaveOccurred())
 			Ω(len(rules)).Should(Equal(0))
