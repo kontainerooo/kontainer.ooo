@@ -21,7 +21,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *iptables.Endpoints {
 	{
 		AddRuleEndpoint = grpctransport.NewClient(
 			conn,
-			"iptablesService",
+			"IPTablesService",
 			"AddRule",
 			EncodeGRPCAddRuleRequest,
 			DecodeGRPCAddRuleResponse,
@@ -33,7 +33,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *iptables.Endpoints {
 	{
 		RemoveRuleEndpoint = grpctransport.NewClient(
 			conn,
-			"iptablesService",
+			"IPTablesService",
 			"RemoveRule",
 			EncodeGRPCRemoveRuleRequest,
 			DecodeGRPCRemoveRuleResponse,
@@ -45,7 +45,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *iptables.Endpoints {
 	{
 		GetRulesForUserEndpoint = grpctransport.NewClient(
 			conn,
-			"iptablesService",
+			"IPTablesService",
 			"GetRulesForUser",
 			EncodeGRPCGetRulesForUserRequest,
 			DecodeGRPCGetRulesForUserResponse,
