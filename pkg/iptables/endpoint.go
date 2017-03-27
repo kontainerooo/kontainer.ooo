@@ -8,9 +8,31 @@ import (
 
 // Endpoints is a struct which collects all endpoints for the iptables service
 type Endpoints struct {
+	CreateChainEndpoint     endpoint.Endpoint
 	AddRuleEndpoint         endpoint.Endpoint
 	RemoveRuleEndpoint      endpoint.Endpoint
 	GetRulesForUserEndpoint endpoint.Endpoint
+}
+
+// CreateChainRequest is the request struct for the CreateChainEndpoint
+type CreateChainRequest struct {
+	Name string
+}
+
+// CreateChainResponse is the response struct for the CreateChainEndpoint
+type CreateChainResponse struct {
+	Error error
+}
+
+// MakeCreateChainEndpoint creates a gokit endpoint which invokes CreateChain
+func MakeCreateChainEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(CreateChainRequest)
+		err := s.CreateChain(req.Name)
+		return CreateChainResponse{
+			Error: err,
+		}, nil
+	}
 }
 
 // AddRuleRequest is the request struct for the AddRuleEndpoint

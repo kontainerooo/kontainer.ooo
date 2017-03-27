@@ -2,9 +2,18 @@ syntax = "proto3";
 package pb;
 
 service IPTablesService {
+    rpc CreateChain (CreateChainRequest) returns (CreateChainResponse);
     rpc AddRule (AddRuleRequest) returns (AddRuleResponse);
     rpc RemoveRule (RemoveRuleRequest) returns (RemoveRuleResponse);
     rpc GetRulesForUser (GetRulesForUserRequest) returns (GetRulesForUserResponse);
+}
+
+message CreateChainRequest {
+    string Name = 1;
+}
+
+message CreateChainResponse {
+    string Error = 1;
 }
 
 message IPTRule {

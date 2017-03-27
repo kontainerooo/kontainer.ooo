@@ -290,6 +290,11 @@ func makeCLServiceEndpoints(s containerlifecycle.Service) containerlifecycle.End
 }
 
 func makeIPTServiceEndpoints(s iptables.Service) iptables.Endpoints {
+	var CreateChainEndpoint endpoint.Endpoint
+	{
+		CreateChainEndpoint = iptables.MakeCreateChainEndpoint(s)
+	}
+
 	var AddRuleEndpoint endpoint.Endpoint
 	{
 		AddRuleEndpoint = iptables.MakeAddRuleEndpoint(s)
@@ -306,6 +311,7 @@ func makeIPTServiceEndpoints(s iptables.Service) iptables.Endpoints {
 	}
 
 	return iptables.Endpoints{
+		CreateChainEndpoint:     CreateChainEndpoint,
 		AddRuleEndpoint:         AddRuleEndpoint,
 		RemoveRuleEndpoint:      RemoveRuleEndpoint,
 		GetRulesForUserEndpoint: GetRulesForUserEndpoint,
