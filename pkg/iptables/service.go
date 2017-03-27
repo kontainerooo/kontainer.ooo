@@ -11,11 +11,11 @@ import (
 // Service handles iptables rules
 type Service interface {
 	// AddRule adds a given iptables rule
-	AddRule(refid uint, rule Rule) error
+	AddRule(refid string, rule Rule) error
 	// RemoveRule removes a given iptables rule
-	RemoveRule() error
-	// GetRulesForUser returns a list of all rules for a given user
-	GetRulesForUser(refid uint) []Rule
+	RemoveRule(id string) error
+	// GetRulesByRef returns a list of all rules for a given reference
+	GetRulesByRef(refid string) ([]Rule, error)
 	// CreateIPTablesBackup creates an iptables backup file
 	CreateIPTablesBackup() string
 	// LoadIPTablesBackup restores iptables from backup file
@@ -27,6 +27,9 @@ type dbAdapter interface {
 	AutoMigrate(...interface{}) error
 	Where(interface{}, ...interface{}) error
 	Create(interface{}) error
+	First(interface{}, ...interface{}) error
+	Find(interface{}, ...interface{}) error
+	Delete(interface{}, ...interface{}) error
 }
 
 type service struct {
@@ -56,7 +59,7 @@ func (s *service) ruleExists(r Rule) bool {
 	return false
 }
 
-func (s *service) AddRule(refid uint, rule Rule) error {
+func (s *service) AddRule(refid string, rule Rule) error {
 	r, err := rule.ToString()
 	if err != nil {
 		return err
@@ -85,14 +88,48 @@ func (s *service) AddRule(refid uint, rule Rule) error {
 	return nil
 }
 
-func (s *service) RemoveRule() error {
-	// TODO: implement
+func (s *service) RemoveRule(id string) error {
+	rule := &iptablesEntry{}
+
+	s.db.Where("ID = ?", id)
+	err := s.db.First(rule)
+	if err != nil {
+		return err
+	}
+
+	rule.Operation = "-D"
+	r, err := rule.ToString()
+	if err != nil {
+		return err
+	}
+
+	err = s.executeIPTableCommand(r)
+	if err != nil {
+		return err
+	}
+
+	err = s.db.Delete(&iptablesEntry{
+		ID: id,
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (s *service) GetRulesForUser(refid uint) []Rule {
-	// TODO: implement
-	return []Rule{}
+func (s *service) GetRulesByRef(refid string) ([]Rule, error) {
+	rules := []Rule{}
+	ipt := []iptablesEntry{}
+	err := s.db.Find(&ipt)
+	if err != nil {
+		return []Rule{}, err
+	}
+
+	for _, entry := range ipt {
+		rules = append(rules, entry.Rule)
+	}
+	return rules, nil
 }
 
 func (s *service) CreateIPTablesBackup() string {

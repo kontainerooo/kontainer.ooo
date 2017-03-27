@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"regexp"
 )
 
 var (
@@ -32,10 +33,27 @@ var (
 
 	// ErrIPWrongFormat occurs when the supplied IP address or range is malformed
 	ErrIPWrongFormat = errors.New("Malformed IP Address (range)")
+
+	// ErrNotValidOperation occurs when the operation is not valid
+	ErrNotValidOperation = errors.New("Not a valid operation")
 )
+
+// isValidOperation checks if the supplied operation is valid.
+// Currently supports -I, -A and -D
+func isValidOperation(op string) bool {
+	r := regexp.MustCompile(`-[IAD]`)
+	return r.MatchString(op)
+}
 
 // ToString returns the string representation of a rule
 func (r *Rule) ToString() (string, error) {
+	if r.Operation == "" {
+		r.Operation = "-A"
+	}
+	if !isValidOperation(r.Operation) {
+		return "", ErrNotValidOperation
+	}
+
 	switch r.Target {
 	case "REDIRECT":
 		if r.Chain != "PREROUTING" {
@@ -51,7 +69,7 @@ func (r *Rule) ToString() (string, error) {
 			return "", ErrWrongProtocol
 		}
 
-		str := fmt.Sprintf("-t nat -A PREROUTING --dst %s -p %s --dport %d -j REDIRECT --to-port %d", r.Destination, r.Protocol, r.SourcePort, r.DestinationPort)
+		str := fmt.Sprintf("-t nat %s PREROUTING --dst %s -p %s --dport %d -j REDIRECT --to-port %d", r.Operation, r.Destination, r.Protocol, r.SourcePort, r.DestinationPort)
 
 		return str, nil
 
@@ -63,7 +81,7 @@ func (r *Rule) ToString() (string, error) {
 		if r.Destination == "" {
 			return "", ErrNoDestination
 		}
-		str := fmt.Sprintf("-A %s -j %s --dst %s", r.Chain, r.Target, r.Destination)
+		str := fmt.Sprintf("%s %s -j %s --dst %s", r.Operation, r.Chain, r.Target, r.Destination)
 
 		if r.Protocol != "" {
 			str = fmt.Sprintf("%s -p %s", str, r.Protocol)
