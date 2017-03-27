@@ -71,7 +71,6 @@ export class SocketService {
   }
 
   public decodeMessage(encodedMessage: Uint8Array, pkgWanted: string): object {
-    console.log(encodedMessage);
     const pkgArray: Uint8Array = encodedMessage.slice(0, 3);
     const messageArray: Uint8Array = encodedMessage.slice(3, 6);
     let pkg: string = '';
@@ -80,7 +79,6 @@ export class SocketService {
       pkg += String.fromCharCode(pkgArray[i]);
       message += String.fromCharCode(messageArray[i]);
     }
-    console.log(pkg, message);
     const identifiers: { pkg: string, message: string } = this.opcodeConverter.getIdentifiers(pkg, message);
     if(identifiers.pkg == pkgWanted) {
       return pb[identifiers.pkg][`${identifiers.message}Response`].decode(encodedMessage.slice(6)).toObject();
