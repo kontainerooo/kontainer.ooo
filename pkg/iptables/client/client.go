@@ -53,23 +53,23 @@ func New(conn *grpc.ClientConn, logger log.Logger) *iptables.Endpoints {
 		).Endpoint()
 	}
 
-	var GetRulesForUserEndpoint endpoint.Endpoint
+	var GetRulesByRefEndpoint endpoint.Endpoint
 	{
-		GetRulesForUserEndpoint = grpctransport.NewClient(
+		GetRulesByRefEndpoint = grpctransport.NewClient(
 			conn,
 			"IPTablesService",
-			"GetRulesForUser",
-			EncodeGRPCGetRulesForUserRequest,
-			DecodeGRPCGetRulesForUserResponse,
-			pb.GetRulesForUserResponse{},
+			"GetRulesByRef",
+			EncodeGRPCGetRulesByRefRequest,
+			DecodeGRPCGetRulesByRefResponse,
+			pb.GetRulesByRefResponse{},
 		).Endpoint()
 	}
 
 	return &iptables.Endpoints{
-		CreateChainEndpoint:     CreateChainEndpoint,
-		AddRuleEndpoint:         AddRuleEndpoint,
-		RemoveRuleEndpoint:      RemoveRuleEndpoint,
-		GetRulesForUserEndpoint: GetRulesForUserEndpoint,
+		CreateChainEndpoint:   CreateChainEndpoint,
+		AddRuleEndpoint:       AddRuleEndpoint,
+		RemoveRuleEndpoint:    RemoveRuleEndpoint,
+		GetRulesByRefEndpoint: GetRulesByRefEndpoint,
 	}
 }
 
@@ -127,7 +127,7 @@ func convertToNativeRule(r *pb.IPTRule) (iptables.Rule, error) {
 func EncodeGRPCCreateChainRequest(_ context.Context, request interface{}) (interface{}, error) {
 	req := request.(*iptables.CreateChainRequest)
 	return &pb.CreateChainRequest{
-		Name: req.name,
+		Name: req.Name,
 	}, nil
 }
 
@@ -145,7 +145,7 @@ func DecodeGRPCCreateChainResponse(_ context.Context, grpcResponse interface{}) 
 func EncodeGRPCAddRuleRequest(_ context.Context, request interface{}) (interface{}, error) {
 	req := request.(*iptables.AddRuleRequest)
 	return &pb.AddRuleRequest{
-		Refid: uint32(req.Refid),
+		Refid: req.Refid,
 		Rule:  convertToIPTRule(req.Rule),
 	}, nil
 }
@@ -177,32 +177,32 @@ func DecodeGRPCRemoveRuleResponse(_ context.Context, grpcResponse interface{}) (
 	}, nil
 }
 
-// EncodeGRPCGetRulesForUserRequest is a transport/grpc.EncodeRequestFunc that converts a
-// messages/iptables.proto-domain getrulesforuser request to a gRPC GetRulesForUser request.
-func EncodeGRPCGetRulesForUserRequest(_ context.Context, request interface{}) (interface{}, error) {
-	req := request.(*iptables.GetRulesForUserRequest)
-	return &pb.GetRulesForUserRequest{
-		Refid: uint32(req.Refid),
+// EncodeGRPCGetRulesByRefRequest is a transport/grpc.EncodeRequestFunc that converts a
+// messages/iptables.proto-domain getrulesbyid request to a gRPC GetRulesByRef request.
+func EncodeGRPCGetRulesByRefRequest(_ context.Context, request interface{}) (interface{}, error) {
+	req := request.(*iptables.GetRulesByRefRequest)
+	return &pb.GetRulesByRefRequest{
+		Refid: req.Refid,
 	}, nil
 }
 
-// DecodeGRPCGetRulesForUserResponse is a transport/grpc.DecodeResponseFunc that converts a
-// gRPC GetRulesForUser response to a messages/iptables.proto-domain getrulesforuser response.
-func DecodeGRPCGetRulesForUserResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
-	response := grpcResponse.(*pb.GetRulesForUserResponse)
+// DecodeGRPCGetRulesByRefResponse is a transport/grpc.DecodeResponseFunc that converts a
+// gRPC GetRulesByRef response to a messages/iptables.proto-domain getrulesbyref response.
+func DecodeGRPCGetRulesByRefResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
+	response := grpcResponse.(*pb.GetRulesByRefResponse)
 
 	rules := []iptables.Rule{}
 	for _, v := range response.Rules {
 		rule, err := convertToNativeRule(v)
 		if err != nil {
-			return &iptables.GetRulesForUserResponse{
+			return &iptables.GetRulesByRefResponse{
 				Error: getError(response.Error),
 			}, err
 		}
 		rules = append(rules, rule)
 	}
 
-	return &iptables.GetRulesForUserResponse{
+	return &iptables.GetRulesByRefResponse{
 		Error: getError(response.Error),
 		Rules: rules,
 	}, nil
