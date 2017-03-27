@@ -22,6 +22,7 @@ import (
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 	"github.com/kontainerooo/kontainer.ooo/pkg/containerlifecycle"
 	"github.com/kontainerooo/kontainer.ooo/pkg/customercontainer"
+	"github.com/kontainerooo/kontainer.ooo/pkg/iptables"
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
 	kmiClient "github.com/kontainerooo/kontainer.ooo/pkg/kmi/client"
 	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
@@ -110,10 +111,18 @@ func main() {
 
 	ccEndpoint := makeCustomerContainerServiceEndpoints(customercontainerService)
 
+	var iptablesService iptables.Service
+	iptablesService, err = iptables.NewService("iptables", dbWrapper)
+	if err != nil {
+		panic(err)
+	}
+
+	iptEndpoint := makeIPTServiceEndpoints(iptablesService)
+
 	errc := make(chan error)
 	ctx := context.Background()
 
-	go startGRPCTransport(ctx, errc, logger, grpcAddr, userEndpoints, kmiEndpoints, clsEndpoints, ccEndpoint)
+	go startGRPCTransport(ctx, errc, logger, grpcAddr, userEndpoints, kmiEndpoints, clsEndpoints, ccEndpoint, iptEndpoint)
 
 	go startWebsocketTransport(errc, logger, wsAddr, userEndpoints, kmiEndpoints, clsEndpoints, ccEndpoint)
 
@@ -138,7 +147,7 @@ func main() {
 	logger.Log("exit", <-errc)
 }
 
-func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger, grpcAddr string, ue user.Endpoints, ke kmi.Endpoints, cle containerlifecycle.Endpoints, cce customercontainer.Endpoints) {
+func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger, grpcAddr string, ue user.Endpoints, ke kmi.Endpoints, cle containerlifecycle.Endpoints, cce customercontainer.Endpoints, ipt iptables.Endpoints) {
 	logger = log.With(logger, "transport", "gRPC")
 
 	ln, err := net.Listen("tcp", grpcAddr)
@@ -159,6 +168,9 @@ func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger,
 
 	ccsServer := customercontainer.MakeGRPCServer(ctx, cce, logger)
 	pb.RegisterCustomerContainerServiceServer(s, ccsServer)
+
+	iptServer := iptables.MakeGRPCServer(ctx, ipt, logger)
+	pb.RegisterIPTablesServiceServer(s, iptServer)
 
 	logger.Log("addr", grpcAddr)
 	errc <- s.Serve(ln)
@@ -274,6 +286,29 @@ func makeCLServiceEndpoints(s containerlifecycle.Service) containerlifecycle.End
 		StartContainerEndpoint: StartContainerEndpoint,
 		StartCommandEndpoint:   StartCommandEndpoint,
 		StopContainerEndpoint:  StopContainerEndpoint,
+	}
+}
+
+func makeIPTServiceEndpoints(s iptables.Service) iptables.Endpoints {
+	var AddRuleEndpoint endpoint.Endpoint
+	{
+		AddRuleEndpoint = iptables.MakeAddRuleEndpoint(s)
+	}
+
+	var RemoveRuleEndpoint endpoint.Endpoint
+	{
+		RemoveRuleEndpoint = iptables.MakeRemoveRuleEndpoint(s)
+	}
+
+	var GetRulesByRefEndpoint endpoint.Endpoint
+	{
+		GetRulesByRefEndpoint = iptables.MakeGetRulesByRefEndpoint(s)
+	}
+
+	return iptables.Endpoints{
+		AddRuleEndpoint:       AddRuleEndpoint,
+		RemoveRuleEndpoint:    RemoveRuleEndpoint,
+		GetRulesByRefEndpoint: GetRulesByRefEndpoint,
 	}
 }
 

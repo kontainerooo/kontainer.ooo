@@ -10,5 +10,6 @@ type Networks struct {
 
 // Config describes configuration options for Networks
 type Config struct {
+	Name   string
 	Driver string
 }

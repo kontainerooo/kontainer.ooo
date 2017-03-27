@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"regexp"
 	"strconv"
 )
 
@@ -64,4 +65,17 @@ func NewJSONFromMap(m map[string]string) JSON {
 		j[k] = int(i)
 	}
 	return j
+}
+
+// Inet represents an IP Address with optional subnet mask
+type Inet string
+
+// NewInet creates a new Inet type
+func NewInet(s string) (Inet, error) {
+	r := regexp.MustCompile(`((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\/(0|3[0-2]|[1-2][0-9]|[0-9]))?`)
+	if r.MatchString(s) {
+		return Inet(s), nil
+	}
+
+	return "", errors.New("Not a valid IP Address")
 }
