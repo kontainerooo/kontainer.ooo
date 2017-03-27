@@ -214,6 +214,37 @@ var _ = Describe("Routing", func() {
 		})
 	})
 
+	Describe("Change Listen Statement", func() {
+		db := testutils.NewMockDB()
+		routingService, _ := routing.NewService(db)
+		It("Should change User Config", func() {
+			refID, name, port := uint(1), "test", 80
+			routingService.CreateRouterConfig(&routing.RouterConfig{
+				RefID: refID,
+				Name:  name,
+			})
+
+			err := routingService.ChangeListenStatement(refID, name, &routing.ListenStatement{
+				Port: port,
+			})
+			Ω(err).ShouldNot(HaveOccurred())
+
+			conf := &routing.RouterConfig{}
+			routingService.GetRouterConfig(refID, name, conf)
+			Expect(conf.ListenStatement.Port).To(BeEquivalentTo(port))
+		})
+
+		It("Should return error on db failure", func() {
+			db.SetError(1)
+			err := routingService.ChangeListenStatement(1, "", nil)
+			Ω(err).Should(HaveOccurred())
+
+			db.SetError(2)
+			err = routingService.ChangeListenStatement(1, "", &routing.ListenStatement{})
+			Ω(err).Should(HaveOccurred())
+		})
+	})
+
 	Describe("AddServerName", func() {
 		db := testutils.NewMockDB()
 		routingService, _ := routing.NewService(db)

@@ -28,13 +28,13 @@ type Service interface {
 	RemoveLocationRule(refID uint, name string, lid int) error
 
 	// Chante the listen statement of a configuration by id, update file and router
-	ChangeListenStatement(id uint, ls *ListenStatement) error
+	ChangeListenStatement(refID uint, name string, ls *ListenStatement) error
 
 	// Add something to the server name of a configuration by id, update file and router
-	AddServerName(RefID uint, name string, sn string) error
+	AddServerName(refID uint, name string, sn string) error
 
 	// Add something to the server name of a configuration by id, update file and router
-	RemoveServerName(RefID uint, name string, id int) error
+	RemoveServerName(refID uint, name string, id int) error
 
 	// Configuration returns all Configurations
 	Configurations() []RouterConfig
@@ -157,8 +157,18 @@ func (s *service) RemoveLocationRule(refID uint, name string, lid int) error {
 	return nil
 }
 
-func (s *service) ChangeListenStatement(id uint, ls *ListenStatement) error {
-	// TODO: implement
+func (s *service) ChangeListenStatement(refID uint, name string, ls *ListenStatement) error {
+	err := s.db.Where("RefID = ? AND Name = ?", refID, name)
+	if err != nil {
+		return err
+	}
+
+	err = s.db.Update(&RouterConfig{}, &RouterConfig{
+		ListenStatement: *ls,
+	})
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

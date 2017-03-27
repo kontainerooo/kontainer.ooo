@@ -12,9 +12,9 @@ type inet string
 
 // ListenStatement combines an ipAddress with a port and a keyword
 type ListenStatement struct {
-	ipAddress inet `sql:"type:inet"`
-	port      int
-	keyword   string
+	IPAddress inet `sql:"type:inet"`
+	Port      int
+	Keyword   string
 }
 
 // Scan implements the sql.Scanner interface.
