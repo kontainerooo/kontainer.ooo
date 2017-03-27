@@ -218,7 +218,7 @@ var _ = Describe("Routing", func() {
 		db := testutils.NewMockDB()
 		routingService, _ := routing.NewService(db)
 		It("Should change User Config", func() {
-			refID, name, port := uint(1), "test", 80
+			refID, name, port := uint(1), "test", uint16(80)
 			routingService.CreateRouterConfig(&routing.RouterConfig{
 				RefID: refID,
 				Name:  name,
