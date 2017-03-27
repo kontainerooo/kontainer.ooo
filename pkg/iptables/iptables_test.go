@@ -45,6 +45,7 @@ var _ = Describe("Iptables", func() {
 	Describe("Redirect rule string", func() {
 		It("Should create REDIRECT rule", func() {
 			r := iptables.Rule{
+				Operation:       "-A",
 				Target:          "REDIRECT",
 				Chain:           "PREROUTING",
 				Protocol:        "tcp",
@@ -138,6 +139,24 @@ var _ = Describe("Iptables", func() {
 
 			Ω(err).Should(HaveOccurred())
 			Ω(err).Should(Equal(iptables.ErrWrongProtocol))
+			Ω(str).Should(BeEmpty())
+		})
+
+		It("Should error on invalid operation", func() {
+			r := iptables.Rule{
+				Operation:       "-U",
+				Target:          "REDIRECT",
+				Chain:           "PREROUTING",
+				Protocol:        "tcp",
+				SourcePort:      8080,
+				Destination:     simpleNewInet("127.0.0.2"),
+				DestinationPort: 80,
+			}
+
+			str, err := r.ToString()
+
+			Ω(err).Should(HaveOccurred())
+			Ω(err).Should(Equal(iptables.ErrNotValidOperation))
 			Ω(str).Should(BeEmpty())
 		})
 	})
@@ -315,7 +334,7 @@ var _ = Describe("Iptables", func() {
 		It("Should add a rule", func() {
 			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
 
-			err := ipts.AddRule(123, iptables.Rule{
+			err := ipts.AddRule("br-123", iptables.Rule{
 				Target:          "REDIRECT",
 				Chain:           "PREROUTING",
 				Protocol:        "tcp",
@@ -330,7 +349,7 @@ var _ = Describe("Iptables", func() {
 		It("Should error on invalid rule", func() {
 			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
 
-			err := ipts.AddRule(123, iptables.Rule{
+			err := ipts.AddRule("br-123", iptables.Rule{
 				Target:          "FAIL",
 				Chain:           "PREROUTING",
 				Protocol:        "tcp",
@@ -345,7 +364,7 @@ var _ = Describe("Iptables", func() {
 		It("Should error on existing rule", func() {
 			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
 
-			ipts.AddRule(123, iptables.Rule{
+			ipts.AddRule("br-123", iptables.Rule{
 				Target:          "REDIRECT",
 				Chain:           "PREROUTING",
 				Protocol:        "tcp",
@@ -354,7 +373,7 @@ var _ = Describe("Iptables", func() {
 				DestinationPort: 80,
 			})
 
-			err := ipts.AddRule(123, iptables.Rule{
+			err := ipts.AddRule("br-123", iptables.Rule{
 				Target:          "REDIRECT",
 				Chain:           "PREROUTING",
 				Protocol:        "tcp",
@@ -371,7 +390,7 @@ var _ = Describe("Iptables", func() {
 
 			iptablesIsPresent = 0
 
-			err := ipts.AddRule(123, iptables.Rule{
+			err := ipts.AddRule("br-123", iptables.Rule{
 				Target:          "REDIRECT",
 				Chain:           "PREROUTING",
 				Protocol:        "tcp",
@@ -381,6 +400,72 @@ var _ = Describe("Iptables", func() {
 			})
 
 			Ω(err).Should(HaveOccurred())
+
+			iptablesIsPresent = 1
+		})
+	})
+
+	Describe("Delete Rules", func() {
+		hash := ""
+		It("Should delete a rule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+			r := iptables.Rule{
+				Target:          "REDIRECT",
+				Chain:           "PREROUTING",
+				Protocol:        "tcp",
+				Destination:     simpleNewInet("127.0.0.2"),
+				SourcePort:      8080,
+				DestinationPort: 80,
+			}
+
+			ipts.AddRule("br-123", r)
+
+			hash = r.GetHash()
+			err := ipts.RemoveRule(hash)
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should error on non-existing rule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+			err := ipts.RemoveRule(hash)
+
+			Ω(err).Should(HaveOccurred())
+		})
+	})
+
+	Describe("Return a user's rules", func() {
+		It("Should list one rule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+			r := iptables.Rule{
+				Target:          "REDIRECT",
+				Chain:           "PREROUTING",
+				Protocol:        "tcp",
+				Destination:     simpleNewInet("127.0.0.2"),
+				SourcePort:      8080,
+				DestinationPort: 80,
+			}
+			ipts.AddRule("br-123", r)
+
+			rules, err := ipts.GetRulesByRef("br-123")
+
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(len(rules)).Should(Equal(1))
+			Ω(rules[0].Target).Should(Equal("REDIRECT"))
+
+			ipts.RemoveRule(r.GetHash())
+		})
+
+		It("Should error on db error", func() {
+			db := testutils.NewMockDB()
+			ipts, _ := iptables.NewService("iptables", db)
+
+			db.SetError(1)
+
+			rules, err := ipts.GetRulesByRef("br-123")
+
+			Ω(err).Should(HaveOccurred())
+			Ω(len(rules)).Should(Equal(0))
 		})
 	})
 })

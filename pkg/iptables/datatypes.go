@@ -5,6 +5,7 @@ import "github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 
 // Rule represents a rule entry in iptables
 type Rule struct {
+	Operation       string
 	Target          string
 	Chain           string
 	Protocol        string
@@ -19,6 +20,6 @@ type Rule struct {
 
 type iptablesEntry struct {
 	ID    string
-	Refid uint
+	Refid string
 	Rule
 }
