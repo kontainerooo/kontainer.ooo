@@ -213,4 +213,65 @@ var _ = Describe("Routing", func() {
 			Ω(err).Should(HaveOccurred())
 		})
 	})
+
+	Describe("AddServerName", func() {
+		db := testutils.NewMockDB()
+		routingService, _ := routing.NewService(db)
+		It("Should add a ServerName", func() {
+			refID, name := uint(1), "test"
+			routingService.CreateRouterConfig(&routing.RouterConfig{
+				RefID: refID,
+				Name:  name,
+			})
+
+			err := routingService.AddServerName(refID, name, "test")
+			Ω(err).ShouldNot(HaveOccurred())
+
+			conf := &routing.RouterConfig{}
+			routingService.GetRouterConfig(refID, name, conf)
+			Expect(conf.ServerName).To(HaveLen(1))
+		})
+
+		It("Should return error if ID does not exist", func() {
+			err := routingService.AddServerName(28, "", "")
+			Ω(err).Should(BeEquivalentTo(testutils.ErrNotFound))
+		})
+
+		It("Should return error on db failure", func() {
+			db.SetError(1)
+			err := routingService.AddServerName(1, "", "")
+			Ω(err).Should(HaveOccurred())
+		})
+	})
+
+	Describe("RemoveServerName", func() {
+		db := testutils.NewMockDB()
+		routingService, _ := routing.NewService(db)
+		It("Should add a LocationRule", func() {
+			refID, name := uint(1), "test"
+			routingService.CreateRouterConfig(&routing.RouterConfig{
+				RefID:      refID,
+				Name:       name,
+				ServerName: []string{"test"},
+			})
+
+			err := routingService.RemoveServerName(refID, name, 0)
+			Ω(err).ShouldNot(HaveOccurred())
+
+			conf := &routing.RouterConfig{}
+			routingService.GetRouterConfig(refID, name, conf)
+			Expect(conf.LocationRules).To(HaveLen(0))
+		})
+
+		It("Should return error if ID does not exist", func() {
+			err := routingService.RemoveServerName(28, "", 28)
+			Ω(err).Should(BeEquivalentTo(testutils.ErrNotFound))
+		})
+
+		It("Should return error on db failure", func() {
+			db.SetError(1)
+			err := routingService.RemoveServerName(1, "", 0)
+			Ω(err).Should(HaveOccurred())
+		})
+	})
 })
