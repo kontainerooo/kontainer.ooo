@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 	"github.com/lib/pq"
 )
 
@@ -12,8 +13,8 @@ type inet string
 
 // ListenStatement combines an ipAddress with a port and a keyword
 type ListenStatement struct {
-	IPAddress inet `sql:"type:inet"`
-	Port      int
+	IPAddress abstraction.Inet `sql:"type:inet"`
+	Port      uint16
 	Keyword   string
 }
 
