@@ -93,6 +93,7 @@ func convertToIPTRule(r iptables.Rule) *pb.IPTRule {
 		SourcePort:      uint32(r.SourcePort),
 		DestinationPort: uint32(r.DestinationPort),
 		State:           r.State,
+		Name:            r.Name,
 	}
 }
 
@@ -119,6 +120,7 @@ func convertToNativeRule(r *pb.IPTRule) (iptables.Rule, error) {
 		SourcePort:      uint16(r.SourcePort),
 		DestinationPort: uint16(r.DestinationPort),
 		State:           r.State,
+		Name:            r.Name,
 	}, nil
 }
 
