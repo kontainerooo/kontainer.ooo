@@ -38,6 +38,10 @@ testem.log
 # documentation
 /documentation/*
 
+# translated messages
+/src/messages/*
+!/src/messages/.gitkeep
+
 #System Files
 .DS_Store
 Thumbs.db
