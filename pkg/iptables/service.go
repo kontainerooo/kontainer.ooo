@@ -14,11 +14,11 @@ type Service interface {
 	// CreateChain creates a new chain
 	CreateChain(name string) error
 	// AddRule adds a given iptables rule
-	AddRule(refid uint, rule Rule) error
+	AddRule(refid string, rule Rule) error
 	// RemoveRule removes a given iptables rule
 	RemoveRule(id string) error
-	// GetRulesForUser returns a list of all rules for a given user
-	GetRulesForUser(refid uint) ([]Rule, error)
+	// GetRulesByRef returns a list of all rules for a given reference
+	GetRulesByRef(refid string) ([]Rule, error)
 	// CreateIPTablesBackup creates an iptables backup file
 	CreateIPTablesBackup() string
 	// LoadIPTablesBackup restores iptables from backup file
@@ -71,7 +71,7 @@ func (s *service) CreateChain(name string) error {
 	return nil
 }
 
-func (s *service) AddRule(refid uint, rule Rule) error {
+func (s *service) AddRule(refid string, rule Rule) error {
 	r, err := rule.ToString()
 	if err != nil {
 		return err
@@ -130,7 +130,7 @@ func (s *service) RemoveRule(id string) error {
 	return nil
 }
 
-func (s *service) GetRulesForUser(refid uint) ([]Rule, error) {
+func (s *service) GetRulesByRef(refid string) ([]Rule, error) {
 	rules := []Rule{}
 	ipt := []iptablesEntry{}
 	err := s.db.Find(&ipt)

@@ -5,7 +5,7 @@ service IPTablesService {
     rpc CreateChain (CreateChainRequest) returns (CreateChainResponse);
     rpc AddRule (AddRuleRequest) returns (AddRuleResponse);
     rpc RemoveRule (RemoveRuleRequest) returns (RemoveRuleResponse);
-    rpc GetRulesForUser (GetRulesForUserRequest) returns (GetRulesForUserResponse);
+    rpc GetRulesByRef (GetRulesByRefRequest) returns (GetRulesByRefResponse);
 }
 
 message CreateChainRequest {
@@ -31,7 +31,7 @@ message IPTRule {
 }
 
 message AddRuleRequest {
-    uint32 Refid = 1;
+    string Refid = 1;
     IPTRule Rule = 2;
 }
 
@@ -47,11 +47,11 @@ message RemoveRuleResponse {
     string Error = 1;
 }
 
-message GetRulesForUserRequest {
-    uint32 Refid = 1;
+message GetRulesByRefRequest {
+    string Refid = 1;
 }
 
-message GetRulesForUserResponse {
+message GetRulesByRefResponse {
     repeated IPTRule Rules = 1;
     string error = 2;
 }
