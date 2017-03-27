@@ -37,7 +37,7 @@ type Service interface {
 	RemoveServerName(refID uint, name string, id int) error
 
 	// Configuration returns all Configurations
-	Configurations() []RouterConfig
+	Configurations(r *[]RouterConfig)
 }
 
 type dbAdapter interface {
@@ -45,6 +45,7 @@ type dbAdapter interface {
 	AutoMigrate(...interface{}) error
 	Where(interface{}, ...interface{}) error
 	First(interface{}, ...interface{}) error
+	Find(interface{}, ...interface{}) error
 	Create(interface{}) error
 	Update(interface{}, ...interface{}) error
 	Delete(interface{}, ...interface{}) error
@@ -204,9 +205,8 @@ func (s *service) RemoveServerName(refID uint, name string, id int) error {
 	return nil
 }
 
-func (s *service) Configurations() []RouterConfig {
-	// TODO: implement
-	return nil
+func (s *service) Configurations(r *[]RouterConfig) {
+	s.db.Find(r)
 }
 
 // NewService creates a UserService with necessary dependencies.
