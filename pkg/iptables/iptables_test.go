@@ -330,6 +330,16 @@ var _ = Describe("Iptables", func() {
 		})
 	})
 
+	Describe("Create Chain", func() {
+		It("Should create a new chain", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.CreateChain("TEST")
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+	})
+
 	Describe("Add Rules", func() {
 		It("Should add a rule", func() {
 			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())

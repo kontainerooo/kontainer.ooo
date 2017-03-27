@@ -17,6 +17,18 @@ import (
 // New creates a set of endpoints based on a gRPC connection
 func New(conn *grpc.ClientConn, logger log.Logger) *iptables.Endpoints {
 
+	var CreateChainEndpoint endpoint.Endpoint
+	{
+		CreateChainEndpoint = grpctransport.NewClient(
+			conn,
+			"IPTablesService",
+			"CreateChain",
+			EncodeGRPCCreateChainRequest,
+			DecodeGRPCCreateChainResponse,
+			pb.CreateChainResponse{},
+		).Endpoint()
+	}
+
 	var AddRuleEndpoint endpoint.Endpoint
 	{
 		AddRuleEndpoint = grpctransport.NewClient(
@@ -54,6 +66,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *iptables.Endpoints {
 	}
 
 	return &iptables.Endpoints{
+		CreateChainEndpoint:     CreateChainEndpoint,
 		AddRuleEndpoint:         AddRuleEndpoint,
 		RemoveRuleEndpoint:      RemoveRuleEndpoint,
 		GetRulesForUserEndpoint: GetRulesForUserEndpoint,
@@ -106,6 +119,24 @@ func convertToNativeRule(r *pb.IPTRule) (iptables.Rule, error) {
 		SourcePort:      uint16(r.SourcePort),
 		DestinationPort: uint16(r.DestinationPort),
 		State:           r.State,
+	}, nil
+}
+
+// EncodeGRPCCreateChainRequest is a transport/grpc.EncodeRequestFunc that converts a
+// messages/iptables.proto-domain createchain request to a gRPC CreateChain request.
+func EncodeGRPCCreateChainRequest(_ context.Context, request interface{}) (interface{}, error) {
+	req := request.(*iptables.CreateChainRequest)
+	return &pb.CreateChainRequest{
+		Name: req.name,
+	}, nil
+}
+
+// DecodeGRPCCreateChainResponse is a transport/grpc.DecodeResponseFunc that converts a
+// gRPC CreateChain response to a messages/iptables.proto-domain createchain response.
+func DecodeGRPCCreateChainResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
+	response := grpcResponse.(*pb.CreateChainResponse)
+	return &iptables.CreateChainResponse{
+		Error: getError(response.Error),
 	}, nil
 }
 

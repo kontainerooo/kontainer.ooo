@@ -3,6 +3,7 @@ package iptables
 
 import (
 	"errors"
+	"fmt"
 	"os/exec"
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
@@ -10,6 +11,8 @@ import (
 
 // Service handles iptables rules
 type Service interface {
+	// CreateChain creates a new chain
+	CreateChain(name string) error
 	// AddRule adds a given iptables rule
 	AddRule(refid uint, rule Rule) error
 	// RemoveRule removes a given iptables rule
@@ -57,6 +60,15 @@ func (s *service) ruleExists(r Rule) bool {
 		return true
 	}
 	return false
+}
+
+func (s *service) CreateChain(name string) error {
+	cmd := fmt.Sprintf("-N %s", name)
+	err := s.executeIPTableCommand(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *service) AddRule(refid uint, rule Rule) error {

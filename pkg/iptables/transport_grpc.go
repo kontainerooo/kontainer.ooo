@@ -17,6 +17,12 @@ func MakeGRPCServer(ctx context.Context, endpoints Endpoints, logger log.Logger)
 	}
 
 	return &grpcServer{
+		createchain: grpctransport.NewServer(
+			endpoints.CreateChainEndpoint,
+			DecodeGRPCCreateChainRequest,
+			EncodeGRPCCreateChainResponse,
+			options...,
+		),
 		addrule: grpctransport.NewServer(
 			endpoints.AddRuleEndpoint,
 			DecodeGRPCAddRuleRequest,
@@ -39,9 +45,18 @@ func MakeGRPCServer(ctx context.Context, endpoints Endpoints, logger log.Logger)
 }
 
 type grpcServer struct {
+	createchain     grpctransport.Handler
 	addrule         grpctransport.Handler
 	removerule      grpctransport.Handler
 	getrulesforuser grpctransport.Handler
+}
+
+func (s *grpcServer) CreateChain(ctx oldcontext.Context, req *pb.CreateChainRequest) (*pb.CreateChainResponse, error) {
+	_, res, err := s.createchain.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res.(*pb.CreateChainResponse), nil
 }
 
 func (s *grpcServer) AddRule(ctx oldcontext.Context, req *pb.AddRuleRequest) (*pb.AddRuleResponse, error) {
@@ -94,6 +109,15 @@ func convertToNativeRule(r pb.IPTRule) (Rule, error) {
 	}, nil
 }
 
+// DecodeGRPCCreateChainRequest is a transport/grpc.DecodeRequestFunc that converts a
+// gRPC CreateChain request to a messages/iptables.proto-domain createchain request.
+func DecodeGRPCCreateChainRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
+	req := grpcReq.(*pb.CreateChainRequest)
+	return CreateChainRequest{
+		Name: req.Name,
+	}, nil
+}
+
 // DecodeGRPCAddRuleRequest is a transport/grpc.DecodeRequestFunc that converts a
 // gRPC AddRule request to a messages/iptables.proto-domain addrule request.
 func DecodeGRPCAddRuleRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
@@ -125,6 +149,17 @@ func DecodeGRPCGetRulesForUserRequest(_ context.Context, grpcReq interface{}) (i
 	return GetRulesForUserRequest{
 		Refid: uint(req.Refid),
 	}, nil
+}
+
+// EncodeGRPCCreateChainResponse is a transport/grpc.EncodeRequestFunc that converts a
+// messages/iptables.proto-domain createchain response to a gRPC CreateChain response.
+func EncodeGRPCCreateChainResponse(_ context.Context, response interface{}) (interface{}, error) {
+	res := response.(CreateChainResponse)
+	gRPCRes := &pb.CreateChainResponse{}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
 }
 
 // EncodeGRPCAddRuleResponse is a transport/grpc.EncodeRequestFunc that converts a
