@@ -305,4 +305,18 @@ var _ = Describe("Routing", func() {
 			Ω(err).Should(HaveOccurred())
 		})
 	})
+
+	Describe("Configurations", func() {
+		It("Should return all configurations", func() {
+			routingService, _ := routing.NewService(testutils.NewMockDB())
+			routingService.CreateRouterConfig(&routing.RouterConfig{
+				RefID: 1,
+				Name:  "test",
+			})
+
+			conf := make([]routing.RouterConfig, 0)
+			routingService.Configurations(&conf)
+			Expect(conf).To(HaveLen(1))
+		})
+	})
 })
