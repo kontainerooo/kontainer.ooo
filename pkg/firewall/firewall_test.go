@@ -15,8 +15,9 @@ var _ = Describe("Firewall", func() {
 			mockIpt := testutils.NewMockIPTClient()
 			mockIptEndpoints := testutils.NewMockIPTEndpoints(log.NewNopLogger(), *mockIpt)
 
-			fws := firewall.NewService(mockIptEndpoints)
+			fws, err := firewall.NewService(mockIptEndpoints)
 
+			Ω(err).ShouldNot(HaveOccurred())
 			Ω(fws).ShouldNot(BeNil())
 		})
 	})
@@ -25,13 +26,12 @@ var _ = Describe("Firewall", func() {
 		It("Should set up rules for bridge initialisation", func() {
 			mockIpt := testutils.NewMockIPTClient()
 			mockIptEndpoints := testutils.NewMockIPTEndpoints(log.NewNopLogger(), *mockIpt)
-			fws := firewall.NewService(mockIptEndpoints)
+			fws, _ := firewall.NewService(mockIptEndpoints)
 
 			ip, _ := abstraction.NewInet("0.0.0.0/0")
-			err := fws.InitBridge(ip, "br-ca8015388757")
+			err := fws.InitBridge(ip, "br-084d60eeada1")
 
 			Ω(err).ShouldNot(HaveOccurred())
-			mockIpt.ListRuleStrings()
 		})
 	})
 })
