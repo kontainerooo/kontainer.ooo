@@ -80,6 +80,35 @@ func (m *MockDB) PrintTables() {
 	}
 }
 
+// AppendToArray append to array
+func (m *MockDB) AppendToArray(query interface{}, target string, values interface{}) error {
+	if m.produceError() {
+		return ErrDBFailure
+	}
+	v := reflect.ValueOf(query).Elem()
+	t := v.Type()
+	name := t.String()
+	table, ok := m.tables[name]
+	if !ok {
+		return errors.New("table does not exist")
+	}
+
+	return table.appendToArray(v, target, values)
+}
+
+// RemoveFromArray remove from array
+func (m *MockDB) RemoveFromArray(query interface{}, target string, index int) error {
+	v := reflect.ValueOf(query).Elem()
+	t := v.Type()
+	name := t.String()
+	table, ok := m.tables[name]
+	if !ok {
+		return errors.New("table does not exist")
+	}
+
+	return table.removeFromArray(v, target, index)
+}
+
 // Begin begin transaction
 func (m *MockDB) Begin() {
 	m.rollback = make(map[string]*table)
@@ -271,12 +300,17 @@ func (m *MockDB) Delete(value interface{}, where ...interface{}) error {
 	if m.produceError() {
 		return ErrDBFailure
 	}
+	ids := make(map[string]reflect.Value)
+
 	ref := reflect.TypeOf(value).Elem()
 	name := ref.String()
 	table := m.tables[name]
-	id := reflect.ValueOf(value).Elem().FieldByName(table.PrimaryKey)
-	if id != RNil {
-		return m.tables[name].delete(id)
+	for _, k := range table.PrimaryKey {
+		ids[k] = reflect.ValueOf(value).Elem().FieldByName(k)
+	}
+
+	if len(ids) != 0 {
+		return m.tables[name].delete(ids)
 	}
 	return ErrDBFailure
 }
