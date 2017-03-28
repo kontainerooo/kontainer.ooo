@@ -86,7 +86,7 @@ func (l Log) Value() (driver.Value, error) {
 type SSLSettings struct {
 	protocols           []string
 	ciphers             []string
-	preferServerCiphers string
+	preferServerCiphers bool
 	certificate         string
 	certificateKey      string
 }
