@@ -6,7 +6,15 @@
 
 package abstraction
 
-import "github.com/jinzhu/gorm"
+import (
+	"errors"
+	"fmt"
+	"reflect"
+	"regexp"
+	"strings"
+
+	"github.com/jinzhu/gorm"
+)
 
 // DBAdapter includes functions used for Transactions and Getters
 type DBAdapter interface {
@@ -24,6 +32,9 @@ type DB interface {
 
 	// GetValue returns gorm.DB's Value property
 	GetValue() interface{}
+
+	AppendToArray(query interface{}, target string, values interface{}) error
+	RemoveFromArray(query interface{}, target string, index int) error
 
 	// Every function below invokes gorm.DB's function and returns gorm.DB's Error property
 	Begin()
@@ -49,6 +60,167 @@ func (w *dbWrapper) GetAffectedRows() int64 {
 
 func (w *dbWrapper) GetValue() interface{} {
 	return w.db.Value
+}
+
+func (w *dbWrapper) getTableName(v reflect.Value) string {
+	t := v.Type()
+
+	// Get TableName, either from type name or if it exists from TableName function
+	nameFunc, exists := t.MethodByName("TableName")
+	if exists {
+		nameResult := nameFunc.Func.Call([]reflect.Value{v})
+		return nameResult[0].String()
+	}
+	return gorm.ToDBName(t.Name())
+}
+
+func (w *dbWrapper) generateWhereClause(query *string, v reflect.Value) (*[]interface{}, error) {
+	var (
+		primary       []string
+		primaryValues []interface{}
+	)
+	t := v.Type()
+
+	// Search for primary keys in the reference type
+	idTag := "ID"
+	_, found := t.FieldByName(idTag)
+	if found {
+		primary = append(primary, idTag)
+	}
+
+	primaryRegExp := regexp.MustCompile("primary_key")
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		v, ok := f.Tag.Lookup("gorm")
+		if ok {
+			isPrimary := primaryRegExp.MatchString(v)
+			if isPrimary {
+				primary = append(primary, f.Name)
+			}
+		}
+	}
+
+	if len(primary) == 0 {
+		return nil, errors.New("no primary key found")
+	}
+
+	// Set WHERE clause
+	*query = fmt.Sprintf("%s WHERE", *query)
+	for i, key := range primary {
+		if i > 0 {
+			*query = fmt.Sprintf("%s AND", *query)
+		}
+		value := v.FieldByName(key)
+		key = gorm.ToDBName(key)
+		k := value.Kind()
+		if k == reflect.String {
+			primaryValues = append(primaryValues, value.String())
+			*query = fmt.Sprintf("%s %s=$%d", *query, key, len(primaryValues)+1)
+		} else if k == reflect.Uint {
+			*query = fmt.Sprintf("%s %s=%d", *query, key, value.Uint())
+		} else {
+			return nil, fmt.Errorf("unexpected %s", k)
+		}
+
+	}
+
+	return &primaryValues, nil
+}
+
+func (w *dbWrapper) AppendToArray(elem interface{}, target string, value interface{}) error {
+	var (
+		tableName string
+		stringVal string
+		query     string
+		typeCast  string
+	)
+
+	v := reflect.ValueOf(elem)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	t := v.Type()
+
+	// check if target is field of reference type
+	f, isPart := t.FieldByName(strings.Title(target))
+	if !isPart {
+		return fmt.Errorf("%s is not a column in destination table", target)
+	}
+	target = gorm.ToDBName(target)
+
+	tag := f.Tag.Get("sql")
+	re := regexp.MustCompile(`type:(.+)\[\]`)
+	match := re.FindStringSubmatch(tag)
+	if len(match) < 2 {
+		return fmt.Errorf("unsupported type %s", tag)
+	}
+	typeCast = match[1]
+
+	tableName = w.getTableName(v)
+
+	valuer, exists := reflect.TypeOf(value).MethodByName("Value")
+
+	if exists {
+		valuerResult := valuer.Func.Call([]reflect.Value{reflect.ValueOf(value)})
+		stringVal = valuerResult[0].Interface().(string)
+	} else {
+		var ok bool
+		stringVal, ok = value.(string)
+		if !ok {
+			return errors.New("type not supported")
+		}
+	}
+
+	// Set Update parameters
+	query = fmt.Sprintf("UPDATE %s SET %s = %s || $1::%s", tableName, target, target, typeCast)
+
+	pv, err := w.generateWhereClause(&query, v)
+	if err != nil {
+		return err
+	}
+
+	query = fmt.Sprintf("%s RETURNING cardinality(%s) AS index", query, target)
+
+	if w.tx != nil {
+		_, err = w.tx.CommonDB().Exec(query, append([]interface{}{stringVal}, *pv...)...)
+		return err
+	}
+
+	_, err = w.db.DB().Exec(query, append([]interface{}{stringVal}, *pv...)...)
+	return err
+}
+
+func (w *dbWrapper) RemoveFromArray(elem interface{}, target string, index int) error {
+	var query string
+
+	v := reflect.ValueOf(elem)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	t := v.Type()
+
+	_, isPart := t.FieldByName(strings.Title(target))
+	if !isPart {
+		return fmt.Errorf("%s is not a column in destination table", target)
+	}
+	target = gorm.ToDBName(target)
+
+	tableName := w.getTableName(v)
+
+	query = fmt.Sprintf("UPDATE %s SET %s = array_remove(%s, %s[$1])", tableName, target, target, target)
+
+	pv, err := w.generateWhereClause(&query, v)
+	if err != nil {
+		return err
+	}
+
+	if w.tx != nil {
+		_, err = w.tx.CommonDB().Exec(query, append([]interface{}{index}, *pv...)...)
+		return err
+	}
+
+	_, err = w.db.DB().Exec(query, append([]interface{}{index}, *pv...)...)
+	return err
 }
 
 func (w *dbWrapper) Begin() {

@@ -1,5 +1,6 @@
 syntax = "proto3";
-package pb;
+package containerlifecycle;
+option go_package = "pb";
 
 service ContainerLifecycleService {
   rpc StartContainer (StartContainerRequest) returns (StartContainerResponse);

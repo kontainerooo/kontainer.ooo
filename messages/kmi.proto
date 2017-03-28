@@ -1,5 +1,6 @@
 syntax = "proto3";
-package pb;
+package kmi;
+option go_package = "pb";
 
 service KMIService {
   rpc AddKMI (AddKMIRequest) returns (AddKMIResponse);
