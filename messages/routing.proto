@@ -1,0 +1,147 @@
+syntax = "proto3";
+package routing;
+option go_package = "pb";
+
+service RoutingService {
+  rpc CreateConfig (CreateConfigRequest) returns (CreateConfigResponse);
+  rpc EditConfig (EditConfigRequest) returns (EditConfigResponse);
+  rpc GetConfig (GetConfigRequest) returns (GetConfigResponse);
+  rpc RemoveConfig (RemoveConfigRequest) returns (RemoveConfigResponse);
+  rpc AddLocation (AddLocationRequest) returns (AddLocationResponse);
+  rpc RemoveLocation (RemoveLocationRequest) returns (RemoveLocationResponse);
+  rpc ChangeListenStatement (ChangeListenStatementRequest) returns (ChangeListenStatementResponse);
+  rpc AddServerName (AddServerNameRequest) returns (AddServerNameResponse);
+  rpc RemoveServerName (RemoveServerNameRequest) returns (RemoveServerNameResponse);
+  rpc Configurations (ConfigurationsRequest) returns (ConfigurationsResponse);
+}
+
+message ListenStatement {
+  string IPAddress = 1;
+  uint32 port = 2;
+  string keyword = 3;
+}
+
+message Log {
+  string path = 1;
+  string keyword = 2;
+}
+
+message SSLSettings {
+  repeated string protocols = 1;
+  repeated string ciphers = 2;
+  bool preferServerCiphers = 3;
+  string certificate = 4;
+  string certificateKey = 5;
+}
+
+message Location {
+  string location = 1;
+  map<string, string> rules = 2;
+}
+
+message RouterConfig {
+  uint32 refID = 1;
+  string name = 2;
+  ListenStatement ListenStatement = 3;
+  repeated string serverName = 4;
+  Log accessLog = 5;
+  Log errorLog = 6;
+  string rootPath = 7;
+  SSLSettings SSLSettings = 8;
+  repeated Location locationRules = 9;
+}
+
+message CreateConfigRequest {
+ RouterConfig config = 1;
+}
+
+message CreateConfigResponse {
+  string error = 1;
+}
+
+message EditConfigRequest {
+  uint32 refID = 1;
+  string name = 2;
+ RouterConfig config = 3;
+}
+
+message EditConfigResponse {
+  string error = 1;
+}
+
+message GetConfigRequest {
+  uint32 refID = 1;
+  string name = 2;
+}
+
+message GetConfigResponse {
+ RouterConfig config = 1;
+  string Error = 2;
+}
+
+message RemoveConfigRequest {
+  uint32 refID = 1;
+  string name = 2;
+}
+
+message RemoveConfigResponse {
+  string Error = 1;
+}
+
+message AddLocationRequest {
+  uint32 refID = 1;
+  string name = 2;
+  Location location = 3;
+}
+
+message AddLocationResponse {
+  string Error = 1;
+}
+
+message RemoveLocationRequest {
+  uint32 refID = 1;
+  string name = 2;
+  int32 id = 3;
+}
+
+message RemoveLocationResponse {
+  string Error = 1;
+}
+
+message ChangeListenStatementRequest {
+  uint32 refID = 1;
+  string name = 2;
+  ListenStatement listenStatement = 3;
+}
+
+message ChangeListenStatementResponse {
+  string error = 1;
+}
+
+message AddServerNameRequest {
+  uint32 refID = 1;
+  string name = 2;
+  string serverName = 3;
+}
+
+message AddServerNameResponse {
+  string Error = 1;
+}
+
+message RemoveServerNameRequest {
+  uint32 refID = 1;
+  string name = 2;
+  int32 id = 3;
+}
+
+message RemoveServerNameResponse {
+  string error = 1;
+}
+
+message ConfigurationsRequest {
+
+}
+
+message ConfigurationsResponse {
+  repeated RouterConfig configurations = 1;
+}
