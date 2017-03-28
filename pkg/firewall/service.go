@@ -3,9 +3,10 @@ package firewall
 
 import (
 	"context"
+	"errors"
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
-	"github.com/kontainerooo/kontainer.ooo/pkg/iptables"
+	"github.com/kontainerooo/kontainer.ooo/pkg/firewall/iptables"
 )
 
 // Service firewall
@@ -33,11 +34,40 @@ type Service interface {
 }
 
 type service struct {
-	iptClient *iptables.Endpoints
+	iptClient iptables.Service
 }
 
 func (s *service) InitBridge(ip abstraction.Inet, netIf string) error {
-	// TODO: implement
+	// Isolate bridge from other bridges and allow outgoing traffic
+	rules := []iptables.CreateRuleRequest{
+		iptables.CreateRuleRequest{
+			RuleType: iptables.IsolationRuleType,
+			RuleObject: iptables.IsolationRule{
+				SrcNetwork: netIf,
+			},
+		},
+		iptables.CreateRuleRequest{
+			RuleType: iptables.OutgoingOutRuleType,
+			RuleObject: iptables.OutgoingOutRule{
+				SrcNetwork: netIf,
+				SrcIP:      string(ip),
+			},
+		},
+		iptables.CreateRuleRequest{
+			RuleType: iptables.OutgoingInRuleType,
+			RuleObject: iptables.OutgoingInRule{
+				SrcNetwork: netIf,
+				SrcIP:      string(ip),
+			},
+		},
+	}
+
+	for _, v := range rules {
+		if _, err := s.iptClient.CreateRuleEndpoint(context.Background(), &v); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -72,10 +102,42 @@ func (s *service) RemoveRedirectPort(ip abstraction.Inet, src uint32, dst uint32
 }
 
 // NewService creates a new firewall service
-func NewService(ipte *iptables.Endpoints) Service {
+func NewService(ipte iptables.Service) (Service, error) {
 	s := &service{
 		iptClient: ipte,
 	}
 
-	return s
+	if s.iptClient == nil {
+		return &service{}, errors.New("Invalid iptable client")
+	}
+
+	// Create predefined chains
+	chains := []string{
+		"KROO-DNS",
+		"KROO-ISOLATION",
+		"KROO-LINK",
+		"KROO-OUTBOUND",
+	}
+	for _, v := range chains {
+		if err := s.iptClient.CreateRule(iptables.CreateChainRuleType, iptables.CreateChainRule{
+			Name: v,
+		}); err != nil {
+			return &service{}, err
+		}
+	}
+	// Create FORWARD jumps to chains
+	for _, v := range chains {
+		if err := s.iptClient.CreateRule(iptables.JumpToChainRuleType, iptables.JumpToChainRule{
+			From: "FORWARD",
+			To:   v,
+		}); err != nil {
+			return &service{}, err
+		}
+	}
+	// Allow DNS traffic
+	if _, err := s.iptClient.AllowDNSEndpoint(context.Background(), &iptables.AllowDNSRequest{}); err != nil {
+		return &service{}, err
+	}
+
+	return s, nil
 }
