@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
+	"github.com/kontainerooo/kontainer.ooo/pkg/firewall/iptables"
+	"github.com/kontainerooo/kontainer.ooo/pkg/testutils"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -39,9 +41,185 @@ func simpleNewInet(s string) abstraction.Inet {
 }
 
 var _ = Describe("Iptables", func() {
+	iptables.ExecCommand = fakeExecCommand
 	Describe("Create new service", func() {
 		It("Should create a new service", func() {
-			Ω(true).Should(BeTrue())
+			_, err := iptables.NewService("iptables", testutils.NewMockDB())
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should error with missing iptables", func() {
+			iptablesIsPresent = 0
+			_, err := iptables.NewService("iptables", testutils.NewMockDB())
+			Ω(err).Should(HaveOccurred())
+			iptablesIsPresent = 1
+		})
+
+		It("Should error with dberror", func() {
+			db := testutils.NewMockDB()
+			db.SetError(1)
+			_, err := iptables.NewService("iptables", db)
+			Ω(err).Should(HaveOccurred())
+		})
+	})
+
+	Describe("Create a new rule", func() {
+		It("Should create a new chain", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.CreateRule(iptables.CreateChainRuleType, iptables.CreateChainRule{
+				Name: "KROO-TEST",
+			})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should create a new JumpToChainRule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.CreateRule(iptables.JumpToChainRuleType, iptables.JumpToChainRule{
+				From: "INPUT",
+				To:   "OUTPUT",
+			})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should create a new IsolationRule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.CreateRule(iptables.IsolationRuleType, iptables.IsolationRule{
+				SrcNetwork: "br-0815",
+			})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should create a new OutgoingInRule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.CreateRule(iptables.OutgoingInRuleType, iptables.OutgoingInRule{
+				SrcNetwork: "br-0815",
+				SrcIP:      simpleNewInet("127.0.0.1/0"),
+			})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should create a new OutgoingOutRule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.CreateRule(iptables.OutgoingOutRuleType, iptables.OutgoingOutRule{
+				SrcNetwork: "br-0815",
+				SrcIP:      simpleNewInet("127.0.0.1/0"),
+			})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should create a new LinkContainerPortToRule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.CreateRule(iptables.LinkContainerPortToRuleType, iptables.LinkContainerPortToRule{
+				SrcIP:      simpleNewInet("127.0.0.1/0"),
+				DstIP:      simpleNewInet("127.0.0.1/0"),
+				SrcNetwork: "br-0815",
+				DstNetwork: "br-0815",
+				Protocol:   "tcp",
+				DstPort:    uint16(8080),
+			})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should create a new LinkContainerPortFromRule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.CreateRule(iptables.LinkContainerPortFromRuleType, iptables.LinkContainerPortFromRule{
+				SrcIP:      simpleNewInet("127.0.0.1/0"),
+				DstIP:      simpleNewInet("127.0.0.1/0"),
+				SrcNetwork: "br-0815",
+				DstNetwork: "br-0815",
+				Protocol:   "tcp",
+			})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should create a new LinkContainerToRule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.CreateRule(iptables.LinkContainerToRuleType, iptables.LinkContainerToRule{
+				SrcIP:      simpleNewInet("127.0.0.1/0"),
+				DstIP:      simpleNewInet("127.0.0.1/0"),
+				SrcNetwork: "br-0815",
+				DstNetwork: "br-0815",
+			})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should create a new LinkContainerFromRule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.CreateRule(iptables.LinkContainerFromRuleType, iptables.LinkContainerFromRule{
+				SrcIP:      simpleNewInet("127.0.0.1/0"),
+				DstIP:      simpleNewInet("127.0.0.1/0"),
+				SrcNetwork: "br-0815",
+				DstNetwork: "br-0815",
+			})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should create a new ConnectContainerFromRule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.CreateRule(iptables.ConnectContainerFromRuleType, iptables.ConnectContainerFromRule{
+				SrcIP:      simpleNewInet("127.0.0.1/0"),
+				DstIP:      simpleNewInet("127.0.0.1/0"),
+				SrcNetwork: "br-0815",
+				DstNetwork: "br-0815",
+			})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should create a new ConnectContainerToRule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.CreateRule(iptables.ConnectContainerToRuleType, iptables.ConnectContainerToRule{
+				SrcIP:      simpleNewInet("127.0.0.1/0"),
+				DstIP:      simpleNewInet("127.0.0.1/0"),
+				SrcNetwork: "br-0815",
+				DstNetwork: "br-0815",
+			})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should create a new AllowPortInRule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.CreateRule(iptables.AllowPortInRuleType, iptables.AllowPortInRule{
+				Protocol: "tcp",
+				Port:     uint16(53),
+				Chain:    "-m lalala",
+			})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should create a new AllowPortOutRule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.CreateRule(iptables.AllowPortOutRuleType, iptables.AllowPortOutRule{
+				Protocol: "tcp",
+				Port:     uint16(53),
+				Chain:    "-m lalala",
+			})
+
+			Ω(err).ShouldNot(HaveOccurred())
 		})
 	})
 })
