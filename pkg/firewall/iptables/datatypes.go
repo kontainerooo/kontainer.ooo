@@ -2,8 +2,11 @@
 package iptables
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
 	"fmt"
-	"html/template"
+	"text/template"
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 )
@@ -52,6 +55,12 @@ const (
 
 	// ConnectContainerToRuleType specifies a connect rule for outgoing traffic
 	ConnectContainerToRuleType = iota
+
+	// AllowPortInRuleType specifies a rule for incoming traffic with a port
+	AllowPortInRuleType = iota
+
+	// AllowPortOutRuleType specifies a rule for outgoing traffic with a port
+	AllowPortOutRuleType = iota
 )
 
 var (
@@ -72,6 +81,9 @@ var (
 
 	connectContainerFromStr = fmt.Sprintf("-A %s -s {{.SrcIP}} -d {{.DstIP}} -i {{.SrcNetwork}} -o {{.DstNetwork}} -j ACCEPT", IptLinkChain)
 	connectContainerToStr   = fmt.Sprintf("-A %s -s {{.DstIP}} -d {{.SrcIP}} -i {{.DstNetwork}} -o {{.SrcNetwork}} -j ACCEPT", IptLinkChain)
+
+	allowPortInStr  = "-A {{.Chain}} -p {{.Protocol}} -m {{.Protocol}} --sport {{.Port}} -m state --state ESTABLISHED -j ACCEPT"
+	allowPortOutStr = "-A {{.Chain}} -p {{.Protocol}} -m {{.Protocol}} --dport {{.Port}} -m state --state NEW,ESTABLISHED -j ACCEPT"
 )
 
 var (
@@ -90,23 +102,29 @@ var (
 	// OutgoingInRuleTmpl is the template for the container network Outgoing rule for incoming traffic
 	OutgoingInRuleTmpl = template.Must(template.New("outgoingInRule").Parse(outgoingInRuleStr))
 
-	// LinkContainerPortToTmpl is the template for the container network link rule for outgoing traffic with port
-	LinkContainerPortToTmpl = template.Must(template.New("linkContainerPortTo").Parse(linkContainerPortToStr))
+	// LinkContainerPortToRuleTmpl is the template for the container network link rule for outgoing traffic with port
+	LinkContainerPortToRuleTmpl = template.Must(template.New("linkContainerPortToRule").Parse(linkContainerPortToStr))
 
-	// LinkContainerPortFromTmpl is the template for the container network link rule for incoming traffic with port
-	LinkContainerPortFromTmpl = template.Must(template.New("linkContainerPortFrom").Parse(linkContainerPortFromStr))
+	// LinkContainerPortFromRuleTmpl is the template for the container network link rule for incoming traffic with port
+	LinkContainerPortFromRuleTmpl = template.Must(template.New("linkContainerPortFromRule").Parse(linkContainerPortFromStr))
 
-	// LinkContainerToTmpl is the template for the container network link rule for outgoing traffic
-	LinkContainerToTmpl = template.Must(template.New("linkContainerTo").Parse(linkContainerToStr))
+	// LinkContainerToRuleTmpl is the template for the container network link rule for outgoing traffic
+	LinkContainerToRuleTmpl = template.Must(template.New("linkContainerToRule").Parse(linkContainerToStr))
 
-	// LinkContainerFromTmpl is the template for the container network link rule for incoming traffic
-	LinkContainerFromTmpl = template.Must(template.New("linkContainerFrom").Parse(linkContainerFromStr))
+	// LinkContainerFromRuleTmpl is the template for the container network link rule for incoming traffic
+	LinkContainerFromRuleTmpl = template.Must(template.New("linkContainerFromRule").Parse(linkContainerFromStr))
 
-	// ConnectContainerFromTmpl is the template for the container connection rule for outgoing traffic
-	ConnectContainerFromTmpl = template.Must(template.New("connectContainerFrom").Parse(connectContainerFromStr))
+	// ConnectContainerFromRuleTmpl is the template for the container connection rule for outgoing traffic
+	ConnectContainerFromRuleTmpl = template.Must(template.New("connectContainerFromRule").Parse(connectContainerFromStr))
 
-	// ConnectContainerToTmpl is the template for the container connection rule for incoming traffic
-	ConnectContainerToTmpl = template.Must(template.New("connectContainerTo").Parse(connectContainerToStr))
+	// ConnectContainerToRuleTmpl is the template for the container connection rule for incoming traffic
+	ConnectContainerToRuleTmpl = template.Must(template.New("connectContainerToRule").Parse(connectContainerToStr))
+
+	// AllowPortInRuleTmpl is the template for the port acceptance rule for incoming traffic
+	AllowPortInRuleTmpl = template.Must(template.New("allowPortInRule").Parse(allowPortInStr))
+
+	// AllowPortOutRuleTmpl is the template for the port acceptance rule for outgoing traffic
+	AllowPortOutRuleTmpl = template.Must(template.New("allowPortOutRule").Parse(allowPortOutStr))
 )
 
 type ruleEntry struct {
@@ -135,34 +153,34 @@ type JumpToChainRule struct {
 	To   string
 }
 
-// IsolationRule represents rula data for an IsolationRuleType
+// IsolationRule represents rule data for an IsolationRuleType
 type IsolationRule struct {
 	SrcNetwork string
 }
 
-// OutgoingOutRule represents rula data for an OutgoingOutRuleType
+// OutgoingOutRule represents rule data for an OutgoingOutRuleType
 type OutgoingOutRule struct {
 	SrcNetwork string
 	SrcIP      abstraction.Inet
 }
 
-// OutgoingInRule represents rula data for an OutgoingInRuleType
+// OutgoingInRule represents rule data for an OutgoingInRuleType
 type OutgoingInRule struct {
 	SrcNetwork string
 	SrcIP      abstraction.Inet
 }
 
-// LinkContainerPortToRule represents rula data for an LinkContainerPortToRuleType
+// LinkContainerPortToRule represents rule data for an LinkContainerPortToRuleType
 type LinkContainerPortToRule struct {
 	SrcIP      abstraction.Inet
 	DstIP      abstraction.Inet
 	SrcNetwork string
 	DstNetwork string
 	Protocol   string
-	DstPort    string
+	DstPort    uint16
 }
 
-// LinkContainerPortFromRule represents rula data for an LinkContainerPortFromRuleType
+// LinkContainerPortFromRule represents rule data for an LinkContainerPortFromRuleType
 type LinkContainerPortFromRule struct {
 	DstIP      abstraction.Inet
 	SrcIP      abstraction.Inet
@@ -171,7 +189,7 @@ type LinkContainerPortFromRule struct {
 	Protocol   string
 }
 
-// LinkContainerToRule represents rula data for an LinkContainerToRuleType
+// LinkContainerToRule represents rule data for a LinkContainerToRuleType
 type LinkContainerToRule struct {
 	DstIP      abstraction.Inet
 	SrcIP      abstraction.Inet
@@ -179,7 +197,7 @@ type LinkContainerToRule struct {
 	SrcNetwork string
 }
 
-// LinkContainerFromRule represents rula data for an LinkContainerFromRuleType
+// LinkContainerFromRule represents rule data for a LinkContainerFromRuleType
 type LinkContainerFromRule struct {
 	DstIP      abstraction.Inet
 	SrcIP      abstraction.Inet
@@ -187,7 +205,7 @@ type LinkContainerFromRule struct {
 	SrcNetwork string
 }
 
-// ConnectContainerFromRule represents rula data for an ConnectContainerFromRuleType
+// ConnectContainerFromRule represents rule data for a ConnectContainerFromRuleType
 type ConnectContainerFromRule struct {
 	DstIP      abstraction.Inet
 	SrcIP      abstraction.Inet
@@ -195,10 +213,24 @@ type ConnectContainerFromRule struct {
 	SrcNetwork string
 }
 
-// ConnectContainerToRule represents rula data for an ConnectContainerToRuleType
+// ConnectContainerToRule represents rule data for a ConnectContainerToRuleType
 type ConnectContainerToRule struct {
 	DstIP      abstraction.Inet
 	SrcIP      abstraction.Inet
 	DstNetwork string
 	SrcNetwork string
+}
+
+// AllowPortInRule represents rule data for an AllowPortInRuleType
+type AllowPortInRule struct {
+	Protocol string
+	Port     uint16
+	Chain    string
+}
+
+// AllowPortOutRule represents rule data for an AllowPortOutRuleType
+type AllowPortOutRule struct {
+	Protocol string
+	Port     uint16
+	Chain    string
 }
