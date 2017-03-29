@@ -68,7 +68,7 @@ var (
 
 	jumpToChainRuleStr = "-A {{.From}} -j {{.To}}"
 
-	isolationRuleStr = fmt.Sprintf("-A %s ! -i {{.SrcInterface}} -o {{.SrcInterface}} -j DROP", IptIsolationChain)
+	isolationRuleStr = fmt.Sprintf("-A %s ! -i {{.SrcNetwork}} -o {{.SrcNetwork}} -j DROP", IptIsolationChain)
 
 	outgoingOutRuleStr = fmt.Sprintf("-A %s -s {{.SrcIP}} ! -d 172.16.0.0/12 -i {{.SrcNetwork}} ! -o {{.SrcNetwork}} -j ACCEPT", IptOutboundChain)
 	outgoingInRuleStr  = fmt.Sprintf("-A %s ! -s 172.16.0.0/12 - d {{.SrcIP}} ! -i {{.SrcNetwork}} -o {{.SrcNetwork}} -j ACCEPT", IptOutboundChain)
