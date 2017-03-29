@@ -41,7 +41,7 @@ func (s *service) InitBridge(ip abstraction.Inet, netIf string) error {
 	err := s.iptClient.CreateRule(iptables.IsolationRuleType, iptables.IsolationRule{
 		SrcNetwork: netIf,
 	})
-	if err == nil {
+	if err != nil {
 		return err
 	}
 
@@ -49,7 +49,7 @@ func (s *service) InitBridge(ip abstraction.Inet, netIf string) error {
 		SrcNetwork: netIf,
 		SrcIP:      ip,
 	})
-	if err == nil {
+	if err != nil {
 		return err
 	}
 
@@ -57,7 +57,7 @@ func (s *service) InitBridge(ip abstraction.Inet, netIf string) error {
 		SrcNetwork: netIf,
 		SrcIP:      ip,
 	})
-	if err == nil {
+	if err != nil {
 		return err
 	}
 
