@@ -3,14 +3,16 @@ package testutils
 import (
 	"errors"
 	"reflect"
+	"regexp"
 )
 
 func merge(dst, src reflect.Value, overwriteID bool, depth int) error {
 	if depth > 7 {
 		return errors.New("too deep")
 	}
+	idRegexp := regexp.MustCompile("ID")
 	for i := 0; i < src.NumField(); i++ {
-		if !overwriteID && src.Type().Field(i).Name == "ID" {
+		if !overwriteID && idRegexp.MatchString(src.Type().Field(i).Name) {
 			continue
 		}
 
