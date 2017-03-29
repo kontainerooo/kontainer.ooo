@@ -131,15 +131,223 @@ type ruleEntry struct {
 	ID         string
 	bridgeRef1 string
 	bridgeRef2 string
-	ipRef1     abstraction.Inet
-	ipRef2     abstraction.Inet
-	Rule
+	ipRef1     abstraction.Inet `sql:"type:inet"`
+	ipRef2     abstraction.Inet `sql:"type:inet"`
+	rule       Rule             `sql:"type:json"`
+}
+
+func (re ruleEntry) setRefs(br1 string, br2 string, ipr1 abstraction.Inet, ipr2 abstraction.Inet) {
+	if br1 != "" {
+		re.bridgeRef1 = br1
+	}
+	if br2 != "" {
+		re.bridgeRef2 = br2
+	}
+	if string(ipr1) != "" {
+		re.ipRef1 = ipr1
+	}
+	if string(ipr2) != "" {
+		re.ipRef2 = ipr2
+	}
 }
 
 // Rule specifies a rule with its corresponding type and data
 type Rule struct {
-	RuleType string
-	RuleData interface{}
+	RuleType int
+	Data     interface{}
+}
+
+// Value implements the Valuer interface
+func (r Rule) Value() (driver.Value, error) {
+	return json.Marshal(r)
+}
+
+// Scan implements the Scanner interface
+func (r *Rule) Scan(src interface{}) error {
+	switch src := src.(type) {
+	case string:
+		return r.scanBytes([]byte(src))
+	case []byte:
+		return r.scanBytes(src)
+	case nil:
+		*r = Rule{}
+		return nil
+	}
+
+	return errors.New("pq: cannot convert input src to FrontendArray")
+}
+
+func (r *Rule) scanBytes(src []byte) error {
+	a := Rule{}
+	err := json.Unmarshal(src, &a)
+	if err != nil {
+		return err
+	}
+	data := a.Data.(anyRule)
+	*r = Rule{RuleType: a.RuleType}
+
+	switch a.RuleType {
+	case CreateChainRuleType:
+		r.Data = CreateChainRule{
+			Name: data.Name,
+		}
+	case JumpToChainRuleType:
+		r.Data = JumpToChainRule{
+			From: data.From,
+			To:   data.To,
+		}
+	case IsolationRuleType:
+		r.Data = IsolationRule{
+			SrcNetwork: data.SrcNetwork,
+		}
+	case OutgoingOutRuleType:
+		srcIP, err := abstraction.NewInet(data.SrcIP)
+		if err != nil {
+			return err
+		}
+		r.Data = OutgoingOutRule{
+			SrcNetwork: data.SrcNetwork,
+			SrcIP:      srcIP,
+		}
+	case OutgoingInRuleType:
+		srcIP, err := abstraction.NewInet(data.SrcIP)
+		if err != nil {
+			return err
+		}
+		r.Data = OutgoingInRule{
+			SrcNetwork: data.SrcNetwork,
+			SrcIP:      srcIP,
+		}
+	case LinkContainerPortToRuleType:
+		srcIP, err := abstraction.NewInet(data.SrcIP)
+		if err != nil {
+			return err
+		}
+		dstIP, err := abstraction.NewInet(data.DstIP)
+		if err != nil {
+			return err
+		}
+
+		r.Data = LinkContainerPortToRule{
+			SrcIP:      srcIP,
+			DstIP:      dstIP,
+			SrcNetwork: data.SrcNetwork,
+			DstNetwork: data.DstNetwork,
+			Protocol:   data.Protocol,
+			DstPort:    uint16(data.DstPort),
+		}
+	case LinkContainerPortFromRuleType:
+		srcIP, err := abstraction.NewInet(data.SrcIP)
+		if err != nil {
+			return err
+		}
+		dstIP, err := abstraction.NewInet(data.DstIP)
+		if err != nil {
+			return err
+		}
+
+		r.Data = LinkContainerPortFromRule{
+			DstIP:      dstIP,
+			SrcIP:      srcIP,
+			DstNetwork: data.DstNetwork,
+			SrcNetwork: data.SrcNetwork,
+			Protocol:   data.Protocol,
+		}
+	case LinkContainerToRuleType:
+		srcIP, err := abstraction.NewInet(data.SrcIP)
+		if err != nil {
+			return err
+		}
+		dstIP, err := abstraction.NewInet(data.DstIP)
+		if err != nil {
+			return err
+		}
+
+		r.Data = LinkContainerToRule{
+			DstIP:      dstIP,
+			SrcIP:      srcIP,
+			DstNetwork: data.SrcNetwork,
+			SrcNetwork: data.DstNetwork,
+		}
+	case LinkContainerFromRuleType:
+		srcIP, err := abstraction.NewInet(data.SrcIP)
+		if err != nil {
+			return err
+		}
+		dstIP, err := abstraction.NewInet(data.DstIP)
+		if err != nil {
+			return err
+		}
+
+		r.Data = LinkContainerFromRule{
+			DstIP:      dstIP,
+			SrcIP:      srcIP,
+			DstNetwork: data.DstNetwork,
+			SrcNetwork: data.SrcNetwork,
+		}
+	case ConnectContainerFromRuleType:
+		srcIP, err := abstraction.NewInet(data.SrcIP)
+		if err != nil {
+			return err
+		}
+		dstIP, err := abstraction.NewInet(data.DstIP)
+		if err != nil {
+			return err
+		}
+
+		r.Data = ConnectContainerFromRule{
+			DstIP:      dstIP,
+			SrcIP:      srcIP,
+			DstNetwork: data.DstNetwork,
+			SrcNetwork: data.SrcNetwork,
+		}
+	case ConnectContainerToRuleType:
+		srcIP, err := abstraction.NewInet(data.SrcIP)
+		if err != nil {
+			return err
+		}
+		dstIP, err := abstraction.NewInet(data.DstIP)
+		if err != nil {
+			return err
+		}
+
+		r.Data = ConnectContainerToRule{
+			DstIP:      dstIP,
+			SrcIP:      srcIP,
+			DstNetwork: data.DstNetwork,
+			SrcNetwork: data.SrcNetwork,
+		}
+	case AllowPortInRuleType:
+		r.Data = AllowPortInRule{
+			Protocol: data.Protocol,
+			Port:     uint16(data.Port),
+			Chain:    data.Chain,
+		}
+	case AllowPortOutRuleType:
+		r.Data = AllowPortOutRule{
+			Protocol: data.Protocol,
+			Port:     uint16(data.Port),
+			Chain:    data.Chain,
+		}
+	default:
+		return errors.New("pq: cannot convert input src to FrontendArray")
+	}
+
+	return nil
+}
+
+type anyRule struct {
+	Name       string
+	From       string
+	To         string
+	SrcIP      string
+	DstIP      string
+	SrcNetwork string
+	DstNetwork string
+	Protocol   string
+	DstPort    float64
+	Port       float64
+	Chain      string
 }
 
 // CreateChainRule represents rule data for a CreateChainRuleType
