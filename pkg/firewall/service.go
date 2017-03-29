@@ -2,7 +2,6 @@
 package firewall
 
 import (
-	"context"
 	"errors"
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
@@ -39,33 +38,27 @@ type service struct {
 
 func (s *service) InitBridge(ip abstraction.Inet, netIf string) error {
 	// Isolate bridge from other bridges and allow outgoing traffic
-	rules := []iptables.CreateRuleRequest{
-		iptables.CreateRuleRequest{
-			RuleType: iptables.IsolationRuleType,
-			RuleObject: iptables.IsolationRule{
-				SrcNetwork: netIf,
-			},
-		},
-		iptables.CreateRuleRequest{
-			RuleType: iptables.OutgoingOutRuleType,
-			RuleObject: iptables.OutgoingOutRule{
-				SrcNetwork: netIf,
-				SrcIP:      string(ip),
-			},
-		},
-		iptables.CreateRuleRequest{
-			RuleType: iptables.OutgoingInRuleType,
-			RuleObject: iptables.OutgoingInRule{
-				SrcNetwork: netIf,
-				SrcIP:      string(ip),
-			},
-		},
+	err := s.iptClient.CreateRule(iptables.IsolationRuleType, iptables.IsolationRule{
+		SrcNetwork: netIf,
+	})
+	if err == nil {
+		return err
 	}
 
-	for _, v := range rules {
-		if _, err := s.iptClient.CreateRuleEndpoint(context.Background(), &v); err != nil {
-			return err
-		}
+	err = s.iptClient.CreateRule(iptables.OutgoingOutRuleType, iptables.OutgoingOutRule{
+		SrcNetwork: netIf,
+		SrcIP:      ip,
+	})
+	if err == nil {
+		return err
+	}
+
+	err = s.iptClient.CreateRule(iptables.OutgoingInRuleType, iptables.OutgoingInRule{
+		SrcNetwork: netIf,
+		SrcIP:      ip,
+	})
+	if err == nil {
+		return err
 	}
 
 	return nil
@@ -101,6 +94,46 @@ func (s *service) RemoveRedirectPort(ip abstraction.Inet, src uint32, dst uint32
 	return nil
 }
 
+func (s *service) setUpDNS() error {
+	err := s.iptClient.CreateRule(iptables.AllowPortInRuleType, iptables.AllowPortInRule{
+		Protocol: "udp",
+		Port:     53,
+		Chain:    iptables.IptDNSChain,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = s.iptClient.CreateRule(iptables.AllowPortOutRuleType, iptables.AllowPortOutRule{
+		Protocol: "udp",
+		Port:     53,
+		Chain:    iptables.IptDNSChain,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = s.iptClient.CreateRule(iptables.AllowPortInRuleType, iptables.AllowPortInRule{
+		Protocol: "tcp",
+		Port:     53,
+		Chain:    iptables.IptDNSChain,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = s.iptClient.CreateRule(iptables.AllowPortOutRuleType, iptables.AllowPortOutRule{
+		Protocol: "tcp",
+		Port:     53,
+		Chain:    iptables.IptDNSChain,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // NewService creates a new firewall service
 func NewService(ipte iptables.Service) (Service, error) {
 	s := &service{
@@ -133,10 +166,6 @@ func NewService(ipte iptables.Service) (Service, error) {
 		}); err != nil {
 			return &service{}, err
 		}
-	}
-	// Allow DNS traffic
-	if _, err := s.iptClient.AllowDNSEndpoint(context.Background(), &iptables.AllowDNSRequest{}); err != nil {
-		return &service{}, err
 	}
 
 	return s, nil
