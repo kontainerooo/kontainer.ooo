@@ -127,7 +127,8 @@ var (
 	AllowPortOutRuleTmpl = template.Must(template.New("allowPortOutRule").Parse(allowPortOutStr))
 )
 
-type ruleEntry struct {
+// RuleEntry represents a database rule entry
+type RuleEntry struct {
 	ID         string
 	bridgeRef1 string
 	bridgeRef2 string
@@ -136,7 +137,7 @@ type ruleEntry struct {
 	rule       Rule             `sql:"type:json"`
 }
 
-func (re ruleEntry) setRefs(br1 string, br2 string, ipr1 abstraction.Inet, ipr2 abstraction.Inet) {
+func (re RuleEntry) setRefs(br1 string, br2 string, ipr1 abstraction.Inet, ipr2 abstraction.Inet) {
 	if br1 != "" {
 		re.bridgeRef1 = br1
 	}

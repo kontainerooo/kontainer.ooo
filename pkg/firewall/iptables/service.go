@@ -39,7 +39,7 @@ func (s *service) executeIPTableCommand(c string) error {
 }
 
 func (s *service) InitializeDatabases() error {
-	return s.db.AutoMigrate(&ruleEntry{})
+	return s.db.AutoMigrate(&RuleEntry{})
 }
 
 func (s *service) ruleExists(id string) bool {
@@ -58,7 +58,7 @@ func createHash(cmd string) string {
 
 func (s *service) CreateRule(ruleType int, ruleData interface{}) error {
 	errInvalidData := errors.New("Invalid rule data")
-	re := ruleEntry{}
+	re := RuleEntry{}
 	cmdStr := ""
 
 	switch ruleType {
