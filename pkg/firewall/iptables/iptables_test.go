@@ -222,5 +222,24 @@ var _ = Describe("Iptables", func() {
 
 			Ω(err).ShouldNot(HaveOccurred())
 		})
+
+		It("Should create a new NatOutRule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.CreateRule(iptables.NatOutRuleType, iptables.NatOutRule{})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should create a new NatMaskRule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.CreateRule(iptables.NatMaskRuleType, iptables.NatMaskRule{
+				SrcIP:      simpleNewInet("127.0.0.1"),
+				SrcNetwork: "br-0815",
+			})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
 	})
 })
