@@ -162,12 +162,12 @@ func (l LocationRules) Value() (driver.Value, error) {
 
 // The RouterConfig struct represents the collected information needed to configurate an http router
 type RouterConfig struct {
-	RefID           uint            `gorm:"primary_key"`
-	Name            string          `gorm:"primary_key"`
-	ListenStatement ListenStatement `sql:"type:jsonb"`
-	ServerName      pq.StringArray  `sql:"type:text[]"`
-	AccessLog       Log             `sql:"type:jsonb"`
-	ErrorLog        Log             `sql:"type:jsonb"`
+	RefID           uint             `gorm:"primary_key"`
+	Name            string           `gorm:"primary_key"`
+	ListenStatement *ListenStatement `sql:"type:jsonb"`
+	ServerName      pq.StringArray   `sql:"type:text[]"`
+	AccessLog       Log              `sql:"type:jsonb"`
+	ErrorLog        Log              `sql:"type:jsonb"`
 	RootPath        string
 	SSLSettings     SSLSettings   `sql:"type:jsonb"`
 	LocationRules   LocationRules `sql:"type:jsonb[]"`
