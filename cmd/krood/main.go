@@ -25,6 +25,7 @@ import (
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
 	kmiClient "github.com/kontainerooo/kontainer.ooo/pkg/kmi/client"
 	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
+	"github.com/kontainerooo/kontainer.ooo/pkg/routing"
 	"github.com/kontainerooo/kontainer.ooo/pkg/testutils"
 	"github.com/kontainerooo/kontainer.ooo/pkg/user"
 	ws "github.com/kontainerooo/kontainer.ooo/pkg/websocket"
@@ -109,13 +110,21 @@ func main() {
 	customercontainerService = customercontainer.NewService(dcliWrapper)
 
 	ccEndpoint := makeCustomerContainerServiceEndpoints(customercontainerService)
+  
+	var routingService routing.Service
+	routingService, err = routing.NewService(dbWrapper)
+	if err != nil {
+		panic(err)
+	}
+
+	routingEndpoints := makeRoutingServiceEndpoints(routingService)
 
 	errc := make(chan error)
 	ctx := context.Background()
+  
+	go startGRPCTransport(ctx, errc, logger, grpcAddr, userEndpoints, kmiEndpoints, clsEndpoints, ccEndpoint, routingEndpoints)
 
-	go startGRPCTransport(ctx, errc, logger, grpcAddr, userEndpoints, kmiEndpoints, clsEndpoints, ccEndpoint)
-
-	go startWebsocketTransport(errc, logger, wsAddr, userEndpoints, kmiEndpoints, clsEndpoints, ccEndpoint)
+	go startWebsocketTransport(errc, logger, wsAddr, userEndpoints, kmiEndpoints, clsEndpoints, ccEndpoint, routingEndpoints)
 
 	conn, err := grpc.Dial(grpcAddr, grpc.WithInsecure(), grpc.WithTimeout(time.Second))
 	if err != nil {
@@ -138,7 +147,8 @@ func main() {
 	logger.Log("exit", <-errc)
 }
 
-func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger, grpcAddr string, ue user.Endpoints, ke kmi.Endpoints, cle containerlifecycle.Endpoints, cce customercontainer.Endpoints) {
+
+func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger, grpcAddr string, ue user.Endpoints, ke kmi.Endpoints, cle containerlifecycle.Endpoints, cce customercontainer.Endpoints, re routing.Endpoints) {
 	logger = log.With(logger, "transport", "gRPC")
 
 	ln, err := net.Listen("tcp", grpcAddr)
@@ -160,11 +170,14 @@ func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger,
 	ccsServer := customercontainer.MakeGRPCServer(ctx, cce, logger)
 	pb.RegisterCustomerContainerServiceServer(s, ccsServer)
 
+	routingServer := routing.MakeGRPCServer(ctx, re, logger)
+	pb.RegisterRoutingServiceServer(s, routingServer)
+  
 	logger.Log("addr", grpcAddr)
 	errc <- s.Serve(ln)
 }
 
-func startWebsocketTransport(errc chan error, logger log.Logger, wsAddr string, ue user.Endpoints, ke kmi.Endpoints, cle containerlifecycle.Endpoints, cce customercontainer.Endpoints) {
+func startWebsocketTransport(errc chan error, logger log.Logger, wsAddr string, ue user.Endpoints, ke kmi.Endpoints, cle containerlifecycle.Endpoints, cce customercontainer.Endpoints, re routing.Endpoints) {
 	logger = log.With(logger, "transport", "ws")
 	s := ws.NewServer(ws.BasicHandler{}, logger)
 
@@ -179,6 +192,9 @@ func startWebsocketTransport(errc chan error, logger log.Logger, wsAddr string, 
 
 	ccsServer := customercontainer.MakeWebsocketService(cce)
 	s.RegisterService(ccsServer)
+
+	routingServer := routing.MakeWebsocketService(re)
+	s.RegisterService(routingServer)
 
 	logger.Log("addr", wsAddr)
 	errc <- s.Serve(wsAddr)
@@ -311,5 +327,70 @@ func makeCustomerContainerServiceEndpoints(s customercontainer.Service) customer
 		RemoveContainerEndpoint:   RemoveContainerEndpoint,
 		InstancesEndpoint:         InstancesEndpoint,
 		CreateDockerImageEndpoint: CreateDockerImageEndpoint,
+	}
+}
+
+func makeRoutingServiceEndpoints(s routing.Service) routing.Endpoints {
+	var CreateConfigEndpoint endpoint.Endpoint
+	{
+		CreateConfigEndpoint = routing.MakeCreateConfigEndpoint(s)
+	}
+
+	var EditConfigEndpoint endpoint.Endpoint
+	{
+		EditConfigEndpoint = routing.MakeEditConfigEndpoint(s)
+	}
+
+	var GetConfigEndpoint endpoint.Endpoint
+	{
+		GetConfigEndpoint = routing.MakeGetConfigEndpoint(s)
+	}
+
+	var RemoveConfigEndpoint endpoint.Endpoint
+	{
+		RemoveConfigEndpoint = routing.MakeRemoveConfigEndpoint(s)
+	}
+
+	var AddLocationEndpoint endpoint.Endpoint
+	{
+		AddLocationEndpoint = routing.MakeAddLocationEndpoint(s)
+	}
+
+	var RemoveLocationEndpoint endpoint.Endpoint
+	{
+		RemoveLocationEndpoint = routing.MakeRemoveLocationEndpoint(s)
+	}
+
+	var ChangeListenStatementEndpoint endpoint.Endpoint
+	{
+		ChangeListenStatementEndpoint = routing.MakeChangeListenStatementEndpoint(s)
+	}
+
+	var AddServerNameEndpoint endpoint.Endpoint
+	{
+		AddServerNameEndpoint = routing.MakeAddServerNameEndpoint(s)
+	}
+
+	var RemoveServerNameEndpoint endpoint.Endpoint
+	{
+		RemoveServerNameEndpoint = routing.MakeRemoveServerNameEndpoint(s)
+	}
+
+	var ConfigurationsEndpoint endpoint.Endpoint
+	{
+		ConfigurationsEndpoint = routing.MakeConfigurationsEndpoint(s)
+	}
+
+	return routing.Endpoints{
+		CreateConfigEndpoint:          CreateConfigEndpoint,
+		EditConfigEndpoint:            EditConfigEndpoint,
+		GetConfigEndpoint:             GetConfigEndpoint,
+		RemoveConfigEndpoint:          RemoveConfigEndpoint,
+		AddLocationEndpoint:           AddLocationEndpoint,
+		RemoveLocationEndpoint:        RemoveLocationEndpoint,
+		ChangeListenStatementEndpoint: ChangeListenStatementEndpoint,
+		AddServerNameEndpoint:         AddServerNameEndpoint,
+		RemoveServerNameEndpoint:      RemoveServerNameEndpoint,
+		ConfigurationsEndpoint:        ConfigurationsEndpoint,
 	}
 }
