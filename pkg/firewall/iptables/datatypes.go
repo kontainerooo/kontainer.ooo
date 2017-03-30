@@ -64,6 +64,12 @@ const (
 
 	// AllowPortOutRuleType specifies a rule for outgoing traffic with a port
 	AllowPortOutRuleType = iota
+
+	// NatOutRuleType specifies the nat rule for outgoing traffic
+	NatOutRuleType = iota
+
+	// NatMaskRuleType specifies a rule for masking outgoing traffic
+	NatMaskRuleType = iota
 )
 
 var (
@@ -87,6 +93,10 @@ var (
 
 	allowPortInStr  = "-A {{.Chain}} -p {{.Protocol}} -m {{.Protocol}} --sport {{.Port}} -m state --state ESTABLISHED -j ACCEPT"
 	allowPortOutStr = "-A {{.Chain}} -p {{.Protocol}} -m {{.Protocol}} --dport {{.Port}} -m state --state NEW,ESTABLISHED -j ACCEPT"
+
+	natOutStr = fmt.Sprintf("-A OUTPUT ! -d 127.0.0.0/8 -m addrtype --dst-type LOCAL -j %s", IptNatChain)
+
+	natMaskStr = "-A POSTROUTING -s {{.SrcIP}} ! -o {{.SrcNetwork}} -j MASQUERADE"
 )
 
 var (
@@ -128,6 +138,12 @@ var (
 
 	// AllowPortOutRuleTmpl is the template for the port acceptance rule for outgoing traffic
 	AllowPortOutRuleTmpl = template.Must(template.New("allowPortOutRule").Parse(allowPortOutStr))
+
+	// NatOutRuleTmpl is the template for the general nat outgoing rule
+	NatOutRuleTmpl = template.Must(template.New("natOutRule").Parse(natOutStr))
+
+	// NatMaskRuleTmpl is the template for the nat outgoing mask rule
+	NatMaskRuleTmpl = template.Must(template.New("natMaskRule").Parse(natOutStr))
 )
 
 // RuleEntry represents a database rule entry
@@ -335,6 +351,10 @@ func (r *Rule) scanBytes(src []byte) error {
 			Port:     uint16(data.Port),
 			Chain:    data.Chain,
 		}
+	case NatOutRuleType:
+		r.Data = NatOutRule{}
+	case NatMaskRuleType:
+		r.Data = NatMaskRule{}
 	default:
 		return errors.New("pq: cannot convert input src to FrontendArray")
 	}
@@ -452,4 +472,13 @@ type AllowPortOutRule struct {
 	Protocol string
 	Port     uint16
 	Chain    string
+}
+
+// NatOutRule represents rule data for a NatOutRuleType
+type NatOutRule struct{}
+
+// NatMaskRule represents rule data for a NatMaskRuleType
+type NatMaskRule struct {
+	SrcIP      abstraction.Inet
+	SrcNetwork string
 }
