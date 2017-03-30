@@ -242,4 +242,52 @@ var _ = Describe("Iptables", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 	})
+
+	Describe("Remove a rule", func() {
+		It("Should remove rule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			ipts.CreateRule(iptables.AllowPortOutRuleType, iptables.AllowPortOutRule{
+				Protocol: "tcp",
+				Port:     uint16(53),
+				Chain:    "-m lalala",
+			})
+
+			err := ipts.RemoveRule(iptables.AllowPortOutRuleType, iptables.AllowPortOutRule{
+				Protocol: "tcp",
+				Port:     uint16(53),
+				Chain:    "-m lalala",
+			})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should error on non-removable rule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			ipts.CreateRule(iptables.CreateChainRuleType, iptables.CreateChainRule{
+				Name:  "KROO-TEST",
+				Table: "nat",
+			})
+
+			err := ipts.RemoveRule(iptables.CreateChainRuleType, iptables.CreateChainRule{
+				Name:  "KROO-TEST",
+				Table: "nat",
+			})
+
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Should error on non-existing rule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.RemoveRule(iptables.AllowPortOutRuleType, iptables.AllowPortOutRule{
+				Protocol: "tcp",
+				Port:     uint16(53),
+				Chain:    "-m lalala",
+			})
+
+			Ω(err).Should(HaveOccurred())
+		})
+	})
 })
