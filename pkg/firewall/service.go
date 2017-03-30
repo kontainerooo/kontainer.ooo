@@ -1,11 +1,15 @@
 // Package firewall handles the firewall and forwarding configuration
 package firewall
 
-import "github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
+import (
+	"errors"
+
+	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
+	"github.com/kontainerooo/kontainer.ooo/pkg/firewall/iptables"
+)
 
 // Service firewall
 type Service interface {
-
 	// InitBridge initializes a bridge network
 	InitBridge(ip abstraction.Inet, netIf string) error
 
@@ -28,10 +32,35 @@ type Service interface {
 	RemoveRedirectPort(ip abstraction.Inet, src uint32, dst uint32) error
 }
 
-type service struct{}
+type service struct {
+	iptClient iptables.Service
+}
 
 func (s *service) InitBridge(ip abstraction.Inet, netIf string) error {
-	// TODO: implement
+	// Isolate bridge from other bridges and allow outgoing traffic
+	err := s.iptClient.CreateRule(iptables.IsolationRuleType, iptables.IsolationRule{
+		SrcNetwork: netIf,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = s.iptClient.CreateRule(iptables.OutgoingOutRuleType, iptables.OutgoingOutRule{
+		SrcNetwork: netIf,
+		SrcIP:      ip,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = s.iptClient.CreateRule(iptables.OutgoingInRuleType, iptables.OutgoingInRule{
+		SrcNetwork: netIf,
+		SrcIP:      ip,
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -65,7 +94,79 @@ func (s *service) RemoveRedirectPort(ip abstraction.Inet, src uint32, dst uint32
 	return nil
 }
 
+func (s *service) setUpDNS() error {
+	err := s.iptClient.CreateRule(iptables.AllowPortInRuleType, iptables.AllowPortInRule{
+		Protocol: "udp",
+		Port:     53,
+		Chain:    iptables.IptDNSChain,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = s.iptClient.CreateRule(iptables.AllowPortOutRuleType, iptables.AllowPortOutRule{
+		Protocol: "udp",
+		Port:     53,
+		Chain:    iptables.IptDNSChain,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = s.iptClient.CreateRule(iptables.AllowPortInRuleType, iptables.AllowPortInRule{
+		Protocol: "tcp",
+		Port:     53,
+		Chain:    iptables.IptDNSChain,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = s.iptClient.CreateRule(iptables.AllowPortOutRuleType, iptables.AllowPortOutRule{
+		Protocol: "tcp",
+		Port:     53,
+		Chain:    iptables.IptDNSChain,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // NewService creates a new firewall service
-func NewService() Service {
-	return &service{}
+func NewService(ipte iptables.Service) (Service, error) {
+	s := &service{
+		iptClient: ipte,
+	}
+
+	if s.iptClient == nil {
+		return &service{}, errors.New("Invalid iptable client")
+	}
+
+	// Create predefined chains
+	chains := []string{
+		"KROO-DNS",
+		"KROO-ISOLATION",
+		"KROO-LINK",
+		"KROO-OUTBOUND",
+	}
+	for _, v := range chains {
+		if err := s.iptClient.CreateRule(iptables.CreateChainRuleType, iptables.CreateChainRule{
+			Name: v,
+		}); err != nil {
+			return &service{}, err
+		}
+	}
+	// Create FORWARD jumps to chains
+	for _, v := range chains {
+		if err := s.iptClient.CreateRule(iptables.JumpToChainRuleType, iptables.JumpToChainRule{
+			From: "FORWARD",
+			To:   v,
+		}); err != nil {
+			return &service{}, err
+		}
+	}
+
+	return s, nil
 }
