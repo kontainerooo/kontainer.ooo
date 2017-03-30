@@ -61,7 +61,8 @@ func createHash(cmd string) string {
 	return fmt.Sprintf("%x", sum)
 }
 
-func (s *service) createRuleEntryString(ruleType int, ruleData interface{}) (RuleEntry, string, error) {
+// CreateRuleEntryString creates a rule entry and the command string from a type and data
+func (s *service) CreateRuleEntryString(ruleType int, ruleData interface{}) (RuleEntry, string, error) {
 	errInvalidData := errors.New("Invalid rule data")
 	re := RuleEntry{}
 	cmdStr := ""
@@ -382,7 +383,7 @@ func (s *service) createRuleEntryString(ruleType int, ruleData interface{}) (Rul
 
 func (s *service) CreateRule(ruleType int, ruleData interface{}) error {
 
-	re, cmdStr, err := s.createRuleEntryString(ruleType, ruleData)
+	re, cmdStr, err := s.CreateRuleEntryString(ruleType, ruleData)
 	if err != nil {
 		return err
 	}
@@ -405,7 +406,7 @@ func (s *service) CreateRule(ruleType int, ruleData interface{}) error {
 }
 
 func (s *service) RemoveRule(ruleType int, ruleData interface{}) error {
-	re, cmdStr, err := s.createRuleEntryString(ruleType, ruleData)
+	re, cmdStr, err := s.CreateRuleEntryString(ruleType, ruleData)
 	if err != nil {
 		return err
 	}
