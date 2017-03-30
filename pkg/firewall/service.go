@@ -14,7 +14,7 @@ type Service interface {
 	InitBridge(ip abstraction.Inet, netIf string) error
 
 	// AllowConnection sets up a rule to let src talk to dst
-	AllowConnection(src abstraction.Inet, dst abstraction.Inet) error
+	AllowConnection(srcIP abstraction.Inet, srcNw string, dstIP abstraction.Inet, dstNw string) error
 
 	// AllowConnection sets up a rule to block src from talking to dst
 	BlockConnection(src abstraction.Inet, dst abstraction.Inet) error
@@ -87,8 +87,27 @@ func (s *service) InitBridge(ip abstraction.Inet, netIf string) error {
 	return nil
 }
 
-func (s *service) AllowConnection(src abstraction.Inet, dst abstraction.Inet) error {
-	// TODO: implement
+func (s *service) AllowConnection(srcIP abstraction.Inet, srcNw string, dstIP abstraction.Inet, dstNw string) error {
+	err := s.iptClient.CreateRule(iptables.LinkContainerFromRuleType, iptables.LinkContainerFromRule{
+		SrcIP:      srcIP,
+		SrcNetwork: srcNw,
+		DstIP:      dstIP,
+		DstNetwork: dstNw,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = s.iptClient.CreateRule(iptables.LinkContainerToRuleType, iptables.LinkContainerToRule{
+		SrcIP:      srcIP,
+		SrcNetwork: srcNw,
+		DstIP:      dstIP,
+		DstNetwork: dstNw,
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

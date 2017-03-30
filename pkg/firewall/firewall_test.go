@@ -44,4 +44,19 @@ var _ = Describe("Firewall", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 	})
+
+	Describe("Allow connection", func() {
+		It("Should allow connection", func() {
+			mockIpt, _ := testutils.NewMockIPTService()
+
+			fws, _ := firewall.NewService(mockIpt)
+
+			ip1, _ := abstraction.NewInet("172.18.0.0/16")
+			ip2, _ := abstraction.NewInet("172.18.0.0/16")
+
+			err := fws.AllowConnection(ip1, "br-0815", ip2, "br-0815")
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+	})
 })
