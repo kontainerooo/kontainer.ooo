@@ -49,8 +49,7 @@
       "ChangeListenStatement": "CLS",
       "AddServerName": "ASN",
       "RemoveServerName": "RSN",
-      "Configurations": "CON",
-
+      "Configurations": "CON"
     }
   }
 }
