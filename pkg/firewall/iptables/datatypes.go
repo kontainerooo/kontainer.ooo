@@ -69,7 +69,7 @@ const (
 var (
 	createChainRuleStr = "-t {{.Table}} -N {{.Name}}"
 
-	jumpToChainRuleStr = "-t {{.Table}} -A {{.From}} -j {{.To}}"
+	jumpToChainRuleStr = "-t {{.Table}} -A {{.From}} {{if .SrcNetwork}} -i {{.SrcNetwork}} {{end}} -j {{.To}}"
 
 	isolationRuleStr = fmt.Sprintf("-A %s ! -i {{.SrcNetwork}} -o {{.SrcNetwork}} -j DROP", IptIsolationChain)
 
@@ -365,9 +365,10 @@ type CreateChainRule struct {
 
 // JumpToChainRule represents rule data for a JumpToChainRuleType
 type JumpToChainRule struct {
-	From  string
-	To    string
-	Table string
+	From       string
+	To         string
+	Table      string
+	SrcNetwork string
 }
 
 // IsolationRule represents rule data for an IsolationRuleType
