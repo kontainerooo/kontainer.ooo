@@ -69,7 +69,7 @@ const (
 var (
 	createChainRuleStr = "-t {{.Table}} -N {{.Name}}"
 
-	jumpToChainRuleStr = "-A {{.From}} -j {{.To}}"
+	jumpToChainRuleStr = "-t {{.Table}} -A {{.From}} -j {{.To}}"
 
 	isolationRuleStr = fmt.Sprintf("-A %s ! -i {{.SrcNetwork}} -o {{.SrcNetwork}} -j DROP", IptIsolationChain)
 
@@ -198,8 +198,9 @@ func (r *Rule) scanBytes(src []byte) error {
 		}
 	case JumpToChainRuleType:
 		r.Data = JumpToChainRule{
-			From: data.From,
-			To:   data.To,
+			From:  data.From,
+			To:    data.To,
+			Table: data.Table,
 		}
 	case IsolationRuleType:
 		r.Data = IsolationRule{
@@ -364,8 +365,9 @@ type CreateChainRule struct {
 
 // JumpToChainRule represents rule data for a JumpToChainRuleType
 type JumpToChainRule struct {
-	From string
-	To   string
+	From  string
+	To    string
+	Table string
 }
 
 // IsolationRule represents rule data for an IsolationRuleType
