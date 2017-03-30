@@ -68,7 +68,8 @@ var _ = Describe("Iptables", func() {
 			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
 
 			err := ipts.CreateRule(iptables.CreateChainRuleType, iptables.CreateChainRule{
-				Name: "KROO-TEST",
+				Name:  "KROO-TEST",
+				Table: "nat",
 			})
 
 			Ω(err).ShouldNot(HaveOccurred())
@@ -217,6 +218,25 @@ var _ = Describe("Iptables", func() {
 				Protocol: "tcp",
 				Port:     uint16(53),
 				Chain:    "-m lalala",
+			})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should create a new NatOutRule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.CreateRule(iptables.NatOutRuleType, iptables.NatOutRule{})
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should create a new NatMaskRule", func() {
+			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
+
+			err := ipts.CreateRule(iptables.NatMaskRuleType, iptables.NatMaskRule{
+				SrcIP:      simpleNewInet("127.0.0.1"),
+				SrcNetwork: "br-0815",
 			})
 
 			Ω(err).ShouldNot(HaveOccurred())

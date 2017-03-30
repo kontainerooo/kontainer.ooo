@@ -61,6 +61,29 @@ func (s *service) InitBridge(ip abstraction.Inet, netIf string) error {
 		return err
 	}
 
+	err = s.iptClient.CreateRule(iptables.JumpToChainRuleType, iptables.JumpToChainRule{
+		Table:      "nat",
+		SrcNetwork: netIf,
+		From:       iptables.IptNatChain,
+		To:         "RETURN",
+	})
+	if err != nil {
+		return err
+	}
+
+	err = s.iptClient.CreateRule(iptables.NatOutRuleType, iptables.NatOutRule{})
+	if err != nil {
+		return err
+	}
+
+	err = s.iptClient.CreateRule(iptables.NatMaskRuleType, iptables.NatMaskRule{
+		SrcIP:      ip,
+		SrcNetwork: netIf,
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -146,10 +169,10 @@ func NewService(ipte iptables.Service) (Service, error) {
 
 	// Create predefined chains
 	chains := []string{
-		"KROO-DNS",
-		"KROO-ISOLATION",
-		"KROO-LINK",
-		"KROO-OUTBOUND",
+		iptables.IptDNSChain,
+		iptables.IptOutboundChain,
+		iptables.IptLinkChain,
+		iptables.IptIsolationChain,
 	}
 	for _, v := range chains {
 		if err := s.iptClient.CreateRule(iptables.CreateChainRuleType, iptables.CreateChainRule{
@@ -158,6 +181,14 @@ func NewService(ipte iptables.Service) (Service, error) {
 			return &service{}, err
 		}
 	}
+	// Create chain in nat table
+	if err := s.iptClient.CreateRule(iptables.CreateChainRuleType, iptables.CreateChainRule{
+		Name:  iptables.IptNatChain,
+		Table: "nat",
+	}); err != nil {
+		return &service{}, err
+	}
+
 	// Create FORWARD jumps to chains
 	for _, v := range chains {
 		if err := s.iptClient.CreateRule(iptables.JumpToChainRuleType, iptables.JumpToChainRule{
@@ -166,6 +197,20 @@ func NewService(ipte iptables.Service) (Service, error) {
 		}); err != nil {
 			return &service{}, err
 		}
+	}
+	// Create nat jump
+	if err := s.iptClient.CreateRule(iptables.JumpToChainRuleType, iptables.JumpToChainRule{
+		From:  "PREROUTING",
+		To:    iptables.IptNatChain,
+		Table: "nat",
+		Match: "addrtype --dst-type LOCAL",
+	}); err != nil {
+		return &service{}, err
+	}
+
+	err := s.setUpDNS()
+	if err != nil {
+		return &service{}, err
 	}
 
 	return s, nil

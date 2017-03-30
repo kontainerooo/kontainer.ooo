@@ -24,6 +24,9 @@ const (
 	// IptOutboundChain is the name of the outbound chain
 	IptOutboundChain = "KROO-OUTBOUND"
 
+	// IptNatChain is the name of the custom chain that is used within the nat table
+	IptNatChain = "KROO-NAT"
+
 	// CreateChainRuleType specifies a CreateChainRule
 	CreateChainRuleType = iota
 
@@ -61,17 +64,23 @@ const (
 
 	// AllowPortOutRuleType specifies a rule for outgoing traffic with a port
 	AllowPortOutRuleType = iota
+
+	// NatOutRuleType specifies the nat rule for outgoing traffic
+	NatOutRuleType = iota
+
+	// NatMaskRuleType specifies a rule for masking outgoing traffic
+	NatMaskRuleType = iota
 )
 
 var (
-	createChainRuleStr = "-N {{.Name}}"
+	createChainRuleStr = "-t {{.Table}} -N {{.Name}}"
 
-	jumpToChainRuleStr = "-A {{.From}} -j {{.To}}"
+	jumpToChainRuleStr = "-t {{.Table}} -A {{.From}} {{if .SrcNetwork}} -i {{.SrcNetwork}} {{end}} {{if .Match}} -m {{.Match}} {{end}} -j {{.To}}"
 
 	isolationRuleStr = fmt.Sprintf("-A %s ! -i {{.SrcNetwork}} -o {{.SrcNetwork}} -j DROP", IptIsolationChain)
 
 	outgoingOutRuleStr = fmt.Sprintf("-A %s -s {{.SrcIP}} ! -d 172.16.0.0/12 -i {{.SrcNetwork}} ! -o {{.SrcNetwork}} -j ACCEPT", IptOutboundChain)
-	outgoingInRuleStr  = fmt.Sprintf("-A %s ! -s 172.16.0.0/12 - d {{.SrcIP}} ! -i {{.SrcNetwork}} -o {{.SrcNetwork}} -j ACCEPT", IptOutboundChain)
+	outgoingInRuleStr  = fmt.Sprintf("-A %s ! -s 172.16.0.0/12 -d {{.SrcIP}} ! -i {{.SrcNetwork}} -o {{.SrcNetwork}} -j ACCEPT", IptOutboundChain)
 
 	linkContainerPortToStr   = fmt.Sprintf("-A %s -s {{.SrcIP}} -d {{.DstIP}} -i {{.SrcNetwork}} -o {{.DstNetwork}} -p {{.Protocol}} --dport {{.DstPort}} -j ACCEPT", IptLinkChain)
 	linkContainerPortFromStr = fmt.Sprintf("-A %s -s {{.DstIP}} -d {{.SrcIP}} -i {{.DstNetwork}} -o {{.SrcNetwork}} -p {{.Protocol}} -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT", IptLinkChain)
@@ -84,6 +93,10 @@ var (
 
 	allowPortInStr  = "-A {{.Chain}} -p {{.Protocol}} -m {{.Protocol}} --sport {{.Port}} -m state --state ESTABLISHED -j ACCEPT"
 	allowPortOutStr = "-A {{.Chain}} -p {{.Protocol}} -m {{.Protocol}} --dport {{.Port}} -m state --state NEW,ESTABLISHED -j ACCEPT"
+
+	natOutStr = fmt.Sprintf("-t nat -A OUTPUT ! -d 127.0.0.0/8 -m addrtype --dst-type LOCAL -j %s", IptNatChain)
+
+	natMaskStr = "-t nat -A POSTROUTING -s {{.SrcIP}} ! -o {{.SrcNetwork}} -j MASQUERADE"
 )
 
 var (
@@ -125,6 +138,12 @@ var (
 
 	// AllowPortOutRuleTmpl is the template for the port acceptance rule for outgoing traffic
 	AllowPortOutRuleTmpl = template.Must(template.New("allowPortOutRule").Parse(allowPortOutStr))
+
+	// NatOutRuleTmpl is the template for the general nat outgoing rule
+	NatOutRuleTmpl = template.Must(template.New("natOutRule").Parse(natOutStr))
+
+	// NatMaskRuleTmpl is the template for the nat outgoing mask rule
+	NatMaskRuleTmpl = template.Must(template.New("natMaskRule").Parse(natMaskStr))
 )
 
 // RuleEntry represents a database rule entry
@@ -190,12 +209,14 @@ func (r *Rule) scanBytes(src []byte) error {
 	switch a.RuleType {
 	case CreateChainRuleType:
 		r.Data = CreateChainRule{
-			Name: data.Name,
+			Name:  data.Name,
+			Table: data.Table,
 		}
 	case JumpToChainRuleType:
 		r.Data = JumpToChainRule{
-			From: data.From,
-			To:   data.To,
+			From:  data.From,
+			To:    data.To,
+			Table: data.Table,
 		}
 	case IsolationRuleType:
 		r.Data = IsolationRule{
@@ -330,6 +351,10 @@ func (r *Rule) scanBytes(src []byte) error {
 			Port:     uint16(data.Port),
 			Chain:    data.Chain,
 		}
+	case NatOutRuleType:
+		r.Data = NatOutRule{}
+	case NatMaskRuleType:
+		r.Data = NatMaskRule{}
 	default:
 		return errors.New("pq: cannot convert input src to FrontendArray")
 	}
@@ -349,17 +374,22 @@ type anyRule struct {
 	DstPort    float64
 	Port       float64
 	Chain      string
+	Table      string
 }
 
 // CreateChainRule represents rule data for a CreateChainRuleType
 type CreateChainRule struct {
-	Name string
+	Name  string
+	Table string
 }
 
 // JumpToChainRule represents rule data for a JumpToChainRuleType
 type JumpToChainRule struct {
-	From string
-	To   string
+	From       string
+	To         string
+	Table      string
+	SrcNetwork string
+	Match      string
 }
 
 // IsolationRule represents rule data for an IsolationRuleType
@@ -442,4 +472,13 @@ type AllowPortOutRule struct {
 	Protocol string
 	Port     uint16
 	Chain    string
+}
+
+// NatOutRule represents rule data for a NatOutRuleType
+type NatOutRule struct{}
+
+// NatMaskRule represents rule data for a NatMaskRuleType
+type NatMaskRule struct {
+	SrcIP      abstraction.Inet
+	SrcNetwork string
 }
