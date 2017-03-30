@@ -67,6 +67,9 @@ func (s *service) CreateRule(ruleType int, ruleData interface{}) error {
 		if !ok {
 			return errInvalidData
 		}
+		if rd.Table == "" {
+			rd.Table = "filter"
+		}
 		rule := Rule{
 			Data:     rd,
 			RuleType: CreateChainRuleType,
@@ -86,6 +89,9 @@ func (s *service) CreateRule(ruleType int, ruleData interface{}) error {
 		rd, ok := ruleData.(JumpToChainRule)
 		if !ok {
 			return errInvalidData
+		}
+		if rd.Table == "" {
+			rd.Table = "filter"
 		}
 		rule := Rule{
 			Data:     rd,
