@@ -68,7 +68,8 @@ var _ = Describe("Iptables", func() {
 			ipts, _ := iptables.NewService("iptables", testutils.NewMockDB())
 
 			err := ipts.CreateRule(iptables.CreateChainRuleType, iptables.CreateChainRule{
-				Name: "KROO-TEST",
+				Name:  "KROO-TEST",
+				Table: "nat",
 			})
 
 			Ω(err).ShouldNot(HaveOccurred())

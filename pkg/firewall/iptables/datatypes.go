@@ -24,6 +24,9 @@ const (
 	// IptOutboundChain is the name of the outbound chain
 	IptOutboundChain = "KROO-OUTBOUND"
 
+	// IptNatChain is the name of the custom chain that is used within the nat table
+	IptNatChain = "KROO-NAT"
+
 	// CreateChainRuleType specifies a CreateChainRule
 	CreateChainRuleType = iota
 
@@ -64,7 +67,7 @@ const (
 )
 
 var (
-	createChainRuleStr = "-N {{.Name}}"
+	createChainRuleStr = "-t {{.Table}} -N {{.Name}}"
 
 	jumpToChainRuleStr = "-A {{.From}} -j {{.To}}"
 
@@ -190,7 +193,8 @@ func (r *Rule) scanBytes(src []byte) error {
 	switch a.RuleType {
 	case CreateChainRuleType:
 		r.Data = CreateChainRule{
-			Name: data.Name,
+			Name:  data.Name,
+			Table: data.Table,
 		}
 	case JumpToChainRuleType:
 		r.Data = JumpToChainRule{
@@ -349,11 +353,13 @@ type anyRule struct {
 	DstPort    float64
 	Port       float64
 	Chain      string
+	Table      string
 }
 
 // CreateChainRule represents rule data for a CreateChainRuleType
 type CreateChainRule struct {
-	Name string
+	Name  string
+	Table string
 }
 
 // JumpToChainRule represents rule data for a JumpToChainRuleType
