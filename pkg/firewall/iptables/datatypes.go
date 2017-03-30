@@ -80,7 +80,7 @@ var (
 	isolationRuleStr = fmt.Sprintf("-A %s ! -i {{.SrcNetwork}} -o {{.SrcNetwork}} -j DROP", IptIsolationChain)
 
 	outgoingOutRuleStr = fmt.Sprintf("-A %s -s {{.SrcIP}} ! -d 172.16.0.0/12 -i {{.SrcNetwork}} ! -o {{.SrcNetwork}} -j ACCEPT", IptOutboundChain)
-	outgoingInRuleStr  = fmt.Sprintf("-A %s ! -s 172.16.0.0/12 - d {{.SrcIP}} ! -i {{.SrcNetwork}} -o {{.SrcNetwork}} -j ACCEPT", IptOutboundChain)
+	outgoingInRuleStr  = fmt.Sprintf("-A %s ! -s 172.16.0.0/12 -d {{.SrcIP}} ! -i {{.SrcNetwork}} -o {{.SrcNetwork}} -j ACCEPT", IptOutboundChain)
 
 	linkContainerPortToStr   = fmt.Sprintf("-A %s -s {{.SrcIP}} -d {{.DstIP}} -i {{.SrcNetwork}} -o {{.DstNetwork}} -p {{.Protocol}} --dport {{.DstPort}} -j ACCEPT", IptLinkChain)
 	linkContainerPortFromStr = fmt.Sprintf("-A %s -s {{.DstIP}} -d {{.SrcIP}} -i {{.DstNetwork}} -o {{.SrcNetwork}} -p {{.Protocol}} -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT", IptLinkChain)
@@ -94,9 +94,9 @@ var (
 	allowPortInStr  = "-A {{.Chain}} -p {{.Protocol}} -m {{.Protocol}} --sport {{.Port}} -m state --state ESTABLISHED -j ACCEPT"
 	allowPortOutStr = "-A {{.Chain}} -p {{.Protocol}} -m {{.Protocol}} --dport {{.Port}} -m state --state NEW,ESTABLISHED -j ACCEPT"
 
-	natOutStr = fmt.Sprintf("-A OUTPUT ! -d 127.0.0.0/8 -m addrtype --dst-type LOCAL -j %s", IptNatChain)
+	natOutStr = fmt.Sprintf("-t nat -A OUTPUT ! -d 127.0.0.0/8 -m addrtype --dst-type LOCAL -j %s", IptNatChain)
 
-	natMaskStr = "-A POSTROUTING -s {{.SrcIP}} ! -o {{.SrcNetwork}} -j MASQUERADE"
+	natMaskStr = "-t nat -A POSTROUTING -s {{.SrcIP}} ! -o {{.SrcNetwork}} -j MASQUERADE"
 )
 
 var (
@@ -143,7 +143,7 @@ var (
 	NatOutRuleTmpl = template.Must(template.New("natOutRule").Parse(natOutStr))
 
 	// NatMaskRuleTmpl is the template for the nat outgoing mask rule
-	NatMaskRuleTmpl = template.Must(template.New("natMaskRule").Parse(natOutStr))
+	NatMaskRuleTmpl = template.Must(template.New("natMaskRule").Parse(natMaskStr))
 )
 
 // RuleEntry represents a database rule entry
