@@ -36,5 +36,21 @@
       "StartCommand": "SCM",
       "StopContainer": "STP"
     }
+  },
+  "routing": {
+    "id": "RTG",
+    "methods": {
+      "CreateConfig": "CRT",
+      "EditConfig": "EDT",
+      "GetConfig": "GET",
+      "RemoveConfig": "REM",
+      "AddLocation": "ALO",
+      "RemoveLocation": "RLO",
+      "ChangeListenStatement": "CLS",
+      "AddServerName": "ASN",
+      "RemoveServerName": "RSN",
+      "Configurations": "CON",
+
+    }
   }
 }
