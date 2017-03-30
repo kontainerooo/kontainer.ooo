@@ -328,6 +328,46 @@ func (s *service) CreateRule(ruleType int, ruleData interface{}) error {
 
 		cmdStr = buf.String()
 		re.ID = createHash(cmdStr)
+	case NatOutRuleType:
+		rd, ok := ruleData.(NatOutRule)
+		if !ok {
+			return errInvalidData
+		}
+		rule := Rule{
+			Data:     rd,
+			RuleType: NatOutRuleType,
+		}
+		re.rule = rule
+		re.setRefs("", "", abstraction.Inet(""), abstraction.Inet(""))
+
+		var buf bytes.Buffer
+		err := NatOutRuleTmpl.Execute(&buf, rd)
+		if err != nil {
+			return err
+		}
+
+		cmdStr = buf.String()
+		re.ID = createHash(cmdStr)
+	case NatMaskRuleType:
+		rd, ok := ruleData.(NatMaskRule)
+		if !ok {
+			return errInvalidData
+		}
+		rule := Rule{
+			Data:     rd,
+			RuleType: NatMaskRuleType,
+		}
+		re.rule = rule
+		re.setRefs("", "", abstraction.Inet(""), abstraction.Inet(""))
+
+		var buf bytes.Buffer
+		err := NatMaskRuleTmpl.Execute(&buf, rd)
+		if err != nil {
+			return err
+		}
+
+		cmdStr = buf.String()
+		re.ID = createHash(cmdStr)
 	default:
 		return errors.New("pq: cannot convert input src to FrontendArray")
 	}
