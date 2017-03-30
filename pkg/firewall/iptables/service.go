@@ -358,7 +358,7 @@ func (s *service) CreateRule(ruleType int, ruleData interface{}) error {
 			RuleType: NatMaskRuleType,
 		}
 		re.rule = rule
-		re.setRefs("", "", abstraction.Inet(""), abstraction.Inet(""))
+		re.setRefs(rd.SrcNetwork, "", rd.SrcIP, abstraction.Inet(""))
 
 		var buf bytes.Buffer
 		err := NatMaskRuleTmpl.Execute(&buf, rd)
