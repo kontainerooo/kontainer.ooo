@@ -95,7 +95,6 @@ func (s *service) createNetwork(refid uint, cfg *Config, isPrimary bool) error {
 		return err
 	}
 
-	s.db.Begin()
 	nw = Networks{
 		UserID:      uint(refid),
 		NetworkName: name,
@@ -104,14 +103,12 @@ func (s *service) createNetwork(refid uint, cfg *Config, isPrimary bool) error {
 	}
 
 	err = s.db.Create(&nw)
-	fmt.Println(err)
 	if err != nil {
-		s.db.Rollback()
 		// Try to remove the actual network on db error
 		s.dcli.NetworkRemove(context.Background(), res.ID)
 		return err
 	}
-	s.db.Commit()
+
 	return nil
 }
 
