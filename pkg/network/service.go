@@ -39,7 +39,7 @@ type Service interface {
 	ExposePortToContainer(refid uint, srcContainerID string, port uint16, protocol string, destContainerID string) error
 
 	// RemovePortFromContainer removes an exposed port from a container
-	RemovePortFromContainer(refid uint, srcContainerID string, port uint16, destContainerID string) error
+	RemovePortFromContainer(refid uint, srcContainerID string, port uint16, protocol string, destContainerID string) error
 }
 
 type dbAdapter interface {
@@ -283,22 +283,22 @@ func (s *service) getContainerIPInNetwork(containerID string, networkID string) 
 	return abstraction.Inet(""), errors.New("Container is not in network")
 }
 
-func (s *service) ExposePortToContainer(refid uint, srcContainerID string, port uint16, protocol string, destContainerID string) error {
+func (s *service) getExposeData(refid uint, srcContainerID string, port uint16, protocol string, destContainerID string) (exposeData, error) {
 	// Check if the containers are in a same network
 	srcNetworks, err := s.getContainerNetworks(srcContainerID)
 	if err != nil {
-		return err
+		return exposeData{0, abstraction.Inet(""), abstraction.Inet(""), "", "", ""}, err
 	}
 
 	dstNetworks, err := s.getContainerNetworks(destContainerID)
 	if err != nil {
-		return err
+		return exposeData{0, abstraction.Inet(""), abstraction.Inet(""), "", "", ""}, err
 	}
 
 	for _, srcV := range srcNetworks {
 		for _, dstV := range dstNetworks {
 			if srcV.NetworkID == dstV.NetworkID {
-				return errors.New("Containers are already in the same network")
+				return exposeData{0, abstraction.Inet(""), abstraction.Inet(""), "", "", ""}, errors.New("Containers are already in the same network")
 			}
 		}
 	}
@@ -307,26 +307,43 @@ func (s *service) ExposePortToContainer(refid uint, srcContainerID string, port 
 	dstPrimaryNetwork := s.getPrimaryNetworkForContainer(destContainerID)
 
 	if srcPrimaryNetwork == (Networks{}) || dstPrimaryNetwork == (Networks{}) {
-		return errors.New("Both containers must have a primary network")
+		return exposeData{0, abstraction.Inet(""), abstraction.Inet(""), "", "", ""}, errors.New("Both containers must have a primary network")
 	}
 
 	srcIP, err := s.getContainerIPInNetwork(srcContainerID, srcPrimaryNetwork.NetworkID)
 	if err != nil {
-		return err
+		return exposeData{0, abstraction.Inet(""), abstraction.Inet(""), "", "", ""}, err
 	}
 
 	dstIP, err := s.getContainerIPInNetwork(destContainerID, dstPrimaryNetwork.NetworkID)
+	if err != nil {
+		return exposeData{0, abstraction.Inet(""), abstraction.Inet(""), "", "", ""}, err
+	}
+
+	return exposeData{
+			port,
+			srcIP,
+			dstIP,
+			dstPrimaryNetwork.NetworkID,
+			srcPrimaryNetwork.NetworkID,
+			protocol,
+		},
+		nil
+}
+
+func (s *service) ExposePortToContainer(refid uint, srcContainerID string, port uint16, protocol string, destContainerID string) error {
+	exp, err := s.getExposeData(refid, srcContainerID, port, protocol, destContainerID)
 	if err != nil {
 		return err
 	}
 
 	_, err = s.fwClient.AllowPortEndpoint(context.Background(), firewall.AllowPortRequest{
-		Port:       port,
-		SrcIP:      srcIP,
-		DstIP:      dstIP,
-		DstNetwork: dstPrimaryNetwork.NetworkID,
-		SrcNetwork: srcPrimaryNetwork.NetworkID,
-		Protocol:   protocol,
+		Port:       exp.Port,
+		SrcIP:      exp.SrcIP,
+		DstIP:      exp.DstIP,
+		DstNetwork: exp.DstNetwork,
+		SrcNetwork: exp.SrcNetwork,
+		Protocol:   exp.Protocol,
 	})
 	if err != nil {
 		return err
@@ -335,8 +352,24 @@ func (s *service) ExposePortToContainer(refid uint, srcContainerID string, port 
 	return nil
 }
 
-func (s *service) RemovePortFromContainer(refid uint, srcContainerID string, port uint16, destContainerID string) error {
-	// TODO: implement
+func (s *service) RemovePortFromContainer(refid uint, srcContainerID string, port uint16, protocol string, destContainerID string) error {
+	exp, err := s.getExposeData(refid, srcContainerID, port, protocol, destContainerID)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.fwClient.BlockPortEndpoint(context.Background(), firewall.BlockPortRequest{
+		Port:       exp.Port,
+		SrcIP:      exp.SrcIP,
+		DstIP:      exp.DstIP,
+		DstNetwork: exp.DstNetwork,
+		SrcNetwork: exp.SrcNetwork,
+		Protocol:   exp.Protocol,
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

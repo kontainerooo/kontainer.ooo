@@ -23,3 +23,13 @@ type Config struct {
 	Name   string
 	Driver string
 }
+
+// exposeData is the data needed for an expose rule
+type exposeData struct {
+	Port       uint16
+	SrcIP      abstraction.Inet
+	DstIP      abstraction.Inet
+	DstNetwork string
+	SrcNetwork string
+	Protocol   string
+}

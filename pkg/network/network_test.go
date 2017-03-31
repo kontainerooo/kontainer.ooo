@@ -1,6 +1,9 @@
 package network_test
 
 import (
+	"fmt"
+
+	"github.com/go-kit/kit/log"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -11,8 +14,12 @@ import (
 
 var _ = Describe("Network", func() {
 	Describe("Create service", func() {
+		mockFw := testutils.NewMockFirewallClient()
+		mockFwEndpoints := testutils.NewMockFirewallEndpoints(log.NewNopLogger(), *mockFw)
+
 		It("Should create service", func() {
-			networkService, err := network.NewService(testutils.NewMockDCli(), testutils.NewMockDB())
+
+			networkService, err := network.NewService(testutils.NewMockDCli(), testutils.NewMockDB(), mockFwEndpoints)
 			Ω(networkService).ShouldNot(BeNil())
 			Ω(err).ShouldNot(HaveOccurred())
 		})
@@ -20,15 +27,18 @@ var _ = Describe("Network", func() {
 		It("Should return db error", func() {
 			db := testutils.NewMockDB()
 			db.SetError(1)
-			_, err := network.NewService(testutils.NewMockDCli(), db)
+			_, err := network.NewService(testutils.NewMockDCli(), db, mockFwEndpoints)
 			Ω(err).Should(HaveOccurred())
 		})
 	})
 
 	Describe("Create Network", func() {
+		mockFw := testutils.NewMockFirewallClient()
+		mockFwEndpoints := testutils.NewMockFirewallEndpoints(log.NewNopLogger(), *mockFw)
 		dcli := testutils.NewMockDCli()
 		db := testutils.NewMockDB()
-		networkService, _ := network.NewService(dcli, db)
+		networkService, _ := network.NewService(dcli, db, mockFwEndpoints)
+
 		It("Should create a new network", func() {
 			err := networkService.CreateNetwork(123, &network.Config{
 				Driver: "bridge",
@@ -73,16 +83,20 @@ var _ = Describe("Network", func() {
 	})
 
 	Describe("Remove Network", func() {
+		mockFw := testutils.NewMockFirewallClient()
+		mockFwEndpoints := testutils.NewMockFirewallEndpoints(log.NewNopLogger(), *mockFw)
 		dcli := testutils.NewMockDCli()
 		db := testutils.NewMockDB()
-		networkService, _ := network.NewService(dcli, db)
+		networkService, _ := network.NewService(dcli, db, mockFwEndpoints)
 		It("Should remove a network", func() {
-			_ = networkService.CreateNetwork(123, &network.Config{
+			err := networkService.CreateNetwork(123, &network.Config{
 				Driver: "bridge",
 				Name:   "network1",
 			})
 
-			err := networkService.RemoveNetworkByName(123, "network1")
+			fmt.Println(err)
+
+			err = networkService.RemoveNetworkByName(123, "network1")
 
 			Ω(err).ShouldNot(HaveOccurred())
 		})
@@ -121,10 +135,12 @@ var _ = Describe("Network", func() {
 	})
 
 	Describe("Add Container to network", func() {
+		mockFw := testutils.NewMockFirewallClient()
+		mockFwEndpoints := testutils.NewMockFirewallEndpoints(log.NewNopLogger(), *mockFw)
 		dcli := testutils.NewMockDCli()
 		db := testutils.NewMockDB()
 		ccs := customercontainer.NewService(dcli)
-		networkService, _ := network.NewService(dcli, db)
+		networkService, _ := network.NewService(dcli, db, mockFwEndpoints)
 		dcli.CreateMockImage("testimage")
 		containerID, _, _ := ccs.CreateContainer(123, &customercontainer.ContainerConfig{
 			ImageName: "testimage",
@@ -175,10 +191,12 @@ var _ = Describe("Network", func() {
 	})
 
 	Describe("Remove container from network", func() {
+		mockFw := testutils.NewMockFirewallClient()
+		mockFwEndpoints := testutils.NewMockFirewallEndpoints(log.NewNopLogger(), *mockFw)
 		dcli := testutils.NewMockDCli()
 		db := testutils.NewMockDB()
 		ccs := customercontainer.NewService(dcli)
-		networkService, _ := network.NewService(dcli, db)
+		networkService, _ := network.NewService(dcli, db, mockFwEndpoints)
 		dcli.CreateMockImage("testimage")
 		containerID, _, _ := ccs.CreateContainer(123, &customercontainer.ContainerConfig{
 			ImageName: "testimage",
