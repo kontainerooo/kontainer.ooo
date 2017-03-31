@@ -384,7 +384,6 @@ func (s *service) CreateRuleEntryString(ruleType int, ruleData interface{}) (Rul
 }
 
 func (s *service) CreateRule(ruleType int, ruleData interface{}) error {
-
 	re, cmdStr, err := s.CreateRuleEntryString(ruleType, ruleData)
 	if err != nil {
 		return err
