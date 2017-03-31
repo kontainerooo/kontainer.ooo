@@ -3,6 +3,7 @@ package firewall
 
 import (
 	"errors"
+	"regexp"
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 	"github.com/kontainerooo/kontainer.ooo/pkg/firewall/iptables"
@@ -14,22 +15,16 @@ type Service interface {
 	InitBridge(ip abstraction.Inet, netIf string) error
 
 	// AllowConnection sets up a rule to let src talk to dst
-	AllowConnection(src abstraction.Inet, dst abstraction.Inet) error
+	AllowConnection(srcIP abstraction.Inet, srcNw string, dstIP abstraction.Inet, dstNw string) error
 
 	// AllowConnection sets up a rule to block src from talking to dst
-	BlockConnection(src abstraction.Inet, dst abstraction.Inet) error
+	BlockConnection(srcIP abstraction.Inet, srcNw string, dstIP abstraction.Inet, dstNw string) error
 
 	// AllowPort sets up a rule to let src talk to dst on port port
-	AllowPort(src abstraction.Inet, dst abstraction.Inet, port uint32) error
+	AllowPort(srcIP abstraction.Inet, srcNw string, dstIP abstraction.Inet, dstNw string, port uint16, protocol string) error
 
 	// AllowPort sets up a rule to block src from talking to dst on port port
-	BlockPort(src abstraction.Inet, dst abstraction.Inet, port uint32) error
-
-	// RedirectPort redirects the src port to the dst port on ip
-	RedirectPort(ip abstraction.Inet, src uint32, dst uint32) error
-
-	// RemoveRedirectPort removes a port redirection
-	RemoveRedirectPort(ip abstraction.Inet, src uint32, dst uint32) error
+	BlockPort(srcIP abstraction.Inet, srcNw string, dstIP abstraction.Inet, dstNw string, port uint16, protocol string) error
 }
 
 type service struct {
@@ -87,33 +82,122 @@ func (s *service) InitBridge(ip abstraction.Inet, netIf string) error {
 	return nil
 }
 
-func (s *service) AllowConnection(src abstraction.Inet, dst abstraction.Inet) error {
-	// TODO: implement
+func (s *service) AllowConnection(srcIP abstraction.Inet, srcNw string, dstIP abstraction.Inet, dstNw string) error {
+	err := s.iptClient.CreateRule(iptables.LinkContainerFromRuleType, iptables.LinkContainerFromRule{
+		SrcIP:      srcIP,
+		SrcNetwork: srcNw,
+		DstIP:      dstIP,
+		DstNetwork: dstNw,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = s.iptClient.CreateRule(iptables.LinkContainerToRuleType, iptables.LinkContainerToRule{
+		SrcIP:      srcIP,
+		SrcNetwork: srcNw,
+		DstIP:      dstIP,
+		DstNetwork: dstNw,
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (s *service) BlockConnection(src abstraction.Inet, dst abstraction.Inet) error {
-	// TODO: implement
+func (s *service) BlockConnection(srcIP abstraction.Inet, srcNw string, dstIP abstraction.Inet, dstNw string) error {
+	err := s.iptClient.RemoveRule(iptables.LinkContainerFromRuleType, iptables.LinkContainerFromRule{
+		SrcIP:      srcIP,
+		SrcNetwork: srcNw,
+		DstIP:      dstIP,
+		DstNetwork: dstNw,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = s.iptClient.RemoveRule(iptables.LinkContainerToRuleType, iptables.LinkContainerToRule{
+		SrcIP:      srcIP,
+		SrcNetwork: srcNw,
+		DstIP:      dstIP,
+		DstNetwork: dstNw,
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (s *service) AllowPort(src abstraction.Inet, dst abstraction.Inet, port uint32) error {
-	// TODO: implement
+func (s *service) isValidProtocol(p string) bool {
+	// TODO: which protocols do we support?
+	r := regexp.MustCompile("tcp|udp")
+	if r.MatchString(p) {
+		return true
+	}
+	return false
+}
+
+func (s *service) AllowPort(srcIP abstraction.Inet, srcNw string, dstIP abstraction.Inet, dstNw string, port uint16, protocol string) error {
+	if !s.isValidProtocol(protocol) {
+		return errors.New("Not a valid protocol")
+	}
+
+	err := s.iptClient.CreateRule(iptables.LinkContainerPortFromRuleType, iptables.LinkContainerPortFromRule{
+		SrcIP:      srcIP,
+		SrcNetwork: srcNw,
+		DstIP:      dstIP,
+		DstNetwork: dstNw,
+		Protocol:   protocol,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = s.iptClient.CreateRule(iptables.LinkContainerPortToRuleType, iptables.LinkContainerPortToRule{
+		SrcIP:      srcIP,
+		SrcNetwork: srcNw,
+		DstIP:      dstIP,
+		DstNetwork: dstNw,
+		Protocol:   protocol,
+		DstPort:    port,
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (s *service) BlockPort(src abstraction.Inet, dst abstraction.Inet, port uint32) error {
-	// TODO: implement
-	return nil
-}
+func (s *service) BlockPort(srcIP abstraction.Inet, srcNw string, dstIP abstraction.Inet, dstNw string, port uint16, protocol string) error {
+	if !s.isValidProtocol(protocol) {
+		return errors.New("Not a valid protocol")
+	}
 
-func (s *service) RedirectPort(ip abstraction.Inet, src uint32, dst uint32) error {
-	// TODO: implement
-	return nil
-}
+	err := s.iptClient.RemoveRule(iptables.LinkContainerPortFromRuleType, iptables.LinkContainerPortFromRule{
+		SrcIP:      srcIP,
+		SrcNetwork: srcNw,
+		DstIP:      dstIP,
+		DstNetwork: dstNw,
+		Protocol:   protocol,
+	})
+	if err != nil {
+		return err
+	}
 
-func (s *service) RemoveRedirectPort(ip abstraction.Inet, src uint32, dst uint32) error {
-	// TODO: implement
+	err = s.iptClient.RemoveRule(iptables.LinkContainerPortToRuleType, iptables.LinkContainerPortToRule{
+		SrcIP:      srcIP,
+		SrcNetwork: srcNw,
+		DstIP:      dstIP,
+		DstNetwork: dstNw,
+		Protocol:   protocol,
+		DstPort:    port,
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
