@@ -76,4 +76,91 @@ var _ = Describe("Firewall", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 	})
+
+	Describe("Allow port", func() {
+		It("Should allow a port", func() {
+			mockIpt, _ := testutils.NewMockIPTService()
+
+			fws, _ := firewall.NewService(mockIpt)
+
+			ip1, _ := abstraction.NewInet("172.18.0.0/16")
+			ip2, _ := abstraction.NewInet("172.18.0.0/16")
+
+			err := fws.AllowPort(ip1, "br-0815", ip2, "br-0815", 8080, "tcp")
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should error on invalid protocol", func() {
+			mockIpt, _ := testutils.NewMockIPTService()
+
+			fws, _ := firewall.NewService(mockIpt)
+
+			ip1, _ := abstraction.NewInet("172.18.0.0/16")
+			ip2, _ := abstraction.NewInet("172.18.0.0/16")
+
+			err := fws.AllowPort(ip1, "br-0815", ip2, "br-0815", 8080, "DPD")
+
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Should error on existing rule", func() {
+			mockIpt, _ := testutils.NewMockIPTService()
+
+			fws, _ := firewall.NewService(mockIpt)
+
+			ip1, _ := abstraction.NewInet("172.18.0.0/16")
+			ip2, _ := abstraction.NewInet("172.18.0.0/16")
+
+			fws.AllowPort(ip1, "br-0815", ip2, "br-0815", 8080, "udp")
+			err := fws.AllowPort(ip1, "br-0815", ip2, "br-0815", 8080, "udp")
+
+			Ω(err).Should(HaveOccurred())
+		})
+	})
+
+	Describe("Block port", func() {
+		It("Should block a port", func() {
+			mockIpt, _ := testutils.NewMockIPTService()
+
+			fws, _ := firewall.NewService(mockIpt)
+
+			ip1, _ := abstraction.NewInet("172.18.0.0/16")
+			ip2, _ := abstraction.NewInet("172.18.0.0/16")
+
+			fws.AllowPort(ip1, "br-0815", ip2, "br-0815", 8080, "tcp")
+
+			err := fws.BlockPort(ip1, "br-0815", ip2, "br-0815", 8080, "tcp")
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should error on invalid protocol", func() {
+			mockIpt, _ := testutils.NewMockIPTService()
+
+			fws, _ := firewall.NewService(mockIpt)
+
+			ip1, _ := abstraction.NewInet("172.18.0.0/16")
+			ip2, _ := abstraction.NewInet("172.18.0.0/16")
+
+			fws.AllowPort(ip1, "br-0815", ip2, "br-0815", 8080, "tcp")
+
+			err := fws.BlockPort(ip1, "br-0815", ip2, "br-0815", 8080, "DPD")
+
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Should error non-existing rule", func() {
+			mockIpt, _ := testutils.NewMockIPTService()
+
+			fws, _ := firewall.NewService(mockIpt)
+
+			ip1, _ := abstraction.NewInet("172.18.0.0/16")
+			ip2, _ := abstraction.NewInet("172.18.0.0/16")
+
+			err := fws.BlockPort(ip1, "br-0815", ip2, "br-0815", 8080, "DPD")
+
+			Ω(err).Should(HaveOccurred())
+		})
+	})
 })
