@@ -165,7 +165,7 @@ func (s *service) ChangeListenStatement(refID uint, name string, ls *ListenState
 	}
 
 	err = s.db.Update(&RouterConfig{}, &RouterConfig{
-		ListenStatement: *ls,
+		ListenStatement: ls,
 	})
 	if err != nil {
 		return err
