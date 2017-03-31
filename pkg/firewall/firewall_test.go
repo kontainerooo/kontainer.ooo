@@ -59,4 +59,21 @@ var _ = Describe("Firewall", func() {
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 	})
+
+	Describe("Block connection", func() {
+		It("Should block a connection", func() {
+			mockIpt, _ := testutils.NewMockIPTService()
+
+			fws, _ := firewall.NewService(mockIpt)
+
+			ip1, _ := abstraction.NewInet("172.18.0.0/16")
+			ip2, _ := abstraction.NewInet("172.18.0.0/16")
+
+			fws.AllowConnection(ip1, "br-0815", ip2, "br-0815")
+
+			err := fws.BlockConnection(ip1, "br-0815", ip2, "br-0815")
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+	})
 })
