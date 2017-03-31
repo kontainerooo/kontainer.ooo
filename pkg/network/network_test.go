@@ -233,42 +233,4 @@ var _ = Describe("Network", func() {
 			Ω(err).Should(HaveOccurred())
 		})
 	})
-
-	Describe("Check if user has a network", func() {
-		dcli := testutils.NewMockDCli()
-		db := testutils.NewMockDB()
-		ccs := customercontainer.NewService(dcli)
-		networkService, _ := network.NewService(dcli, db)
-		dcli.CreateMockImage("testimage")
-		_, _, _ = ccs.CreateContainer(123, &customercontainer.ContainerConfig{
-			ImageName: "testimage",
-		})
-
-		It("Should return true when user has a network", func() {
-			_ = networkService.CreateNetwork(123, &network.Config{
-				Driver: "bridge",
-				Name:   "network1",
-			})
-
-			b := networkService.UserHasNetwork(123)
-
-			Ω(b).Should(BeTrue())
-		})
-
-		It("Should return false when user does not have a network", func() {
-			networkService.RemoveNetworkByName(123, "network1")
-
-			b := networkService.UserHasNetwork(123)
-
-			Ω(b).ShouldNot(BeTrue())
-		})
-
-		It("Should return false when DB errors", func() {
-			db.SetError(1)
-
-			b := networkService.UserHasNetwork(123)
-
-			Ω(b).ShouldNot(BeTrue())
-		})
-	})
 })
