@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+
+	"github.com/jinzhu/gorm"
 )
 
 // Table simulates a Table in the MockDb
@@ -15,6 +17,7 @@ type table struct {
 	ref        reflect.Type
 	idx        []string
 	count      uint
+	columns    map[string]string
 }
 
 func (t *table) String() string {
@@ -85,6 +88,9 @@ func (t *table) insert(row interface{}) error {
 }
 
 func (t *table) find(field string, value interface{}) (reflect.Value, error) {
+	if field == gorm.ToDBName(field) {
+		field = t.columns[field]
+	}
 	_, found := t.ref.FieldByName(field)
 	if !found {
 		return reflect.ValueOf(nil), errors.New("field name not in struct")
@@ -114,6 +120,9 @@ func (t *table) delete(ids map[string]reflect.Value) error {
 	for i, row := range t.rows {
 		match := true
 		for k, v := range ids {
+			if k == gorm.ToDBName(k) {
+				k = t.columns[k]
+			}
 			if v.Interface() != reflect.ValueOf(row).Elem().FieldByName(k).Interface() {
 				match = false
 				break
@@ -223,6 +232,7 @@ func newTable(ref reflect.Type, name string) *table {
 	var (
 		idx     []string
 		primary []string
+		columns = make(map[string]string)
 	)
 
 	idTag := "ID"
@@ -239,6 +249,8 @@ func newTable(ref reflect.Type, name string) *table {
 
 	for i := 0; i < ref.NumField(); i++ {
 		f := ref.Field(i)
+		dbName := gorm.ToDBName(f.Name)
+		columns[dbName] = f.Name
 		v, ok := f.Tag.Lookup("gorm")
 		if ok {
 			isPrimary := primaryRegExp.MatchString(v)
@@ -254,6 +266,7 @@ func newTable(ref reflect.Type, name string) *table {
 	return &table{
 		Name:       name,
 		PrimaryKey: primary,
+		columns:    columns,
 		ref:        ref,
 		idx:        idx,
 	}
