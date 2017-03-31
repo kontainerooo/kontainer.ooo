@@ -17,7 +17,7 @@ type Service interface {
 	AllowConnection(srcIP abstraction.Inet, srcNw string, dstIP abstraction.Inet, dstNw string) error
 
 	// AllowConnection sets up a rule to block src from talking to dst
-	BlockConnection(src abstraction.Inet, dst abstraction.Inet) error
+	BlockConnection(srcIP abstraction.Inet, srcNw string, dstIP abstraction.Inet, dstNw string) error
 
 	// AllowPort sets up a rule to let src talk to dst on port port
 	AllowPort(src abstraction.Inet, dst abstraction.Inet, port uint32) error
@@ -111,8 +111,27 @@ func (s *service) AllowConnection(srcIP abstraction.Inet, srcNw string, dstIP ab
 	return nil
 }
 
-func (s *service) BlockConnection(src abstraction.Inet, dst abstraction.Inet) error {
-	// TODO: implement
+func (s *service) BlockConnection(srcIP abstraction.Inet, srcNw string, dstIP abstraction.Inet, dstNw string) error {
+	err := s.iptClient.RemoveRule(iptables.LinkContainerFromRuleType, iptables.LinkContainerFromRule{
+		SrcIP:      srcIP,
+		SrcNetwork: srcNw,
+		DstIP:      dstIP,
+		DstNetwork: dstNw,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = s.iptClient.RemoveRule(iptables.LinkContainerToRuleType, iptables.LinkContainerToRule{
+		SrcIP:      srcIP,
+		SrcNetwork: srcNw,
+		DstIP:      dstIP,
+		DstNetwork: dstNw,
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
