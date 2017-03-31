@@ -88,12 +88,12 @@ func MakeBlockConnectionEndpoint(s Service) endpoint.Endpoint {
 
 // AllowPortRequest is the request struct for the AllowPortEndpoint
 type AllowPortRequest struct {
-	SrcIP    abstraction.Inet
-	SrcNw    string
-	DstIP    abstraction.Inet
-	DstNw    string
-	Port     uint16
-	Protocol string
+	SrcIP      abstraction.Inet
+	SrcNetwork string
+	DstIP      abstraction.Inet
+	DstNetwork string
+	Port       uint16
+	Protocol   string
 }
 
 // AllowPortResponse is the response struct for the AllowPortEndpoint
@@ -114,12 +114,12 @@ func MakeAllowPortEndpoint(s Service) endpoint.Endpoint {
 
 // BlockPortRequest is the request struct for the BlockPortEndpoint
 type BlockPortRequest struct {
-	SrcIP    abstraction.Inet
-	SrcNw    string
-	DstIP    abstraction.Inet
-	DstNw    string
-	Port     uint16
-	Protocol string
+	SrcIP      abstraction.Inet
+	SrcNetwork string
+	DstIP      abstraction.Inet
+	DstNetwork string
+	Port       uint16
+	Protocol   string
 }
 
 // BlockPortResponse is the response struct for the BlockPortEndpoint
