@@ -73,7 +73,7 @@ func (m *MockIPTService) ListRules() []string {
 func NewMockIPTService() (*MockIPTService, error) {
 	db := NewMockDB()
 	iptables.ExecCommand = fakeExecCommand
-	ipts, err := iptables.NewService("iptables", db)
+	ipts, err := iptables.NewService("iptables", "iptables-restore", db)
 
 	return &MockIPTService{
 		rules: make(map[string]iptables.RuleEntry),
