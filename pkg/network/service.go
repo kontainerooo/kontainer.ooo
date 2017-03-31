@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/api/types"
 	networkTypes "github.com/docker/docker/api/types/network"
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
+	"github.com/kontainerooo/kontainer.ooo/pkg/firewall"
 )
 
 var (
@@ -35,7 +36,7 @@ type Service interface {
 	RemoveContainerFromNetwork(refid uint, name string, containerID string) error
 
 	// ExposePortToContainer exposes a port from one container to another
-	ExposePortToContainer(refid uint, srcContainerID string, port uint16, destContainerID string) error
+	ExposePortToContainer(refid uint, srcContainerID string, port uint16, protocol string, destContainerID string) error
 
 	// RemovePortFromContainer removes an exposed port from a container
 	RemovePortFromContainer(refid uint, srcContainerID string, port uint16, destContainerID string) error
@@ -52,9 +53,10 @@ type dbAdapter interface {
 }
 
 type service struct {
-	dcli   abstraction.DCli
-	db     dbAdapter
-	logger log.Logger
+	dcli     abstraction.DCli
+	db       dbAdapter
+	fwClient *firewall.Endpoints
+	logger   log.Logger
 }
 
 func (s *service) InitializeDatabases() error {
@@ -263,7 +265,28 @@ func (s *service) getPrimaryNetworkForContainer(containerID string) Networks {
 	return Networks{}
 }
 
-func (s *service) ExposePortToContainer(refid uint, srcContainerID string, port uint16, destContainerID string) error {
+func (s *service) getContainerIPInNetwork(containerID string, networkID string) (abstraction.Inet, error) {
+	s.db.Begin()
+
+	err := s.db.Where("container_id = ? AND network_id = ?", containerID, networkID)
+	if err != nil {
+		return abstraction.Inet(""), err
+	}
+
+	cts := Containers{}
+	err = s.db.First(cts)
+	if err != nil {
+		return abstraction.Inet(""), err
+	}
+
+	if cts.ContainerIP != abstraction.Inet("") {
+		return cts.ContainerIP, nil
+	}
+
+	return abstraction.Inet(""), errors.New("Container is not in network")
+}
+
+func (s *service) ExposePortToContainer(refid uint, srcContainerID string, port uint16, protocol string, destContainerID string) error {
 	// Check if the containers are in a same network
 	srcNetworks, err := s.getContainerNetworks(srcContainerID)
 	if err != nil {
@@ -290,7 +313,27 @@ func (s *service) ExposePortToContainer(refid uint, srcContainerID string, port 
 		return errors.New("Both containers must have a primary network")
 	}
 
-	// TODO: talk to firewall service
+	srcIP, err := s.getContainerIPInNetwork(srcContainerID, srcPrimaryNetwork.NetworkID)
+	if err != nil {
+		return err
+	}
+
+	dstIP, err := s.getContainerIPInNetwork(destContainerID, dstPrimaryNetwork.NetworkID)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.fwClient.AllowPortEndpoint(context.Background(), firewall.AllowPortRequest{
+		Port:       port,
+		SrcIP:      srcIP,
+		DstIP:      dstIP,
+		DstNetwork: dstPrimaryNetwork.NetworkID,
+		SrcNetwork: srcPrimaryNetwork.NetworkID,
+		Protocol:   protocol,
+	})
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -301,10 +344,11 @@ func (s *service) RemovePortFromContainer(refid uint, srcContainerID string, por
 }
 
 // NewService creates a new network service
-func NewService(dcli abstraction.DCli, db dbAdapter) (Service, error) {
+func NewService(dcli abstraction.DCli, db dbAdapter, fw *firewall.Endpoints) (Service, error) {
 	s := &service{
-		dcli: dcli,
-		db:   db,
+		dcli:     dcli,
+		db:       db,
+		fwClient: fw,
 	}
 
 	err := s.InitializeDatabases()
