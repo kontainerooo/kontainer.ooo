@@ -1,6 +1,8 @@
 package testutils
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 
@@ -23,7 +25,43 @@ func fakeExecCommand(command string, args ...string) *exec.Cmd {
 
 // CreateRule creates a new iptables rule
 func (m *MockIPTService) CreateRule(ruleType int, ruleData interface{}) error {
-	return m.s.CreateRule(ruleType, ruleData)
+	re, _, err := m.s.CreateRuleEntryString(ruleType, ruleData)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(m.rules)
+
+	_, ok := m.rules[re.ID]
+	if ok {
+		return errors.New("Rule already exists")
+	}
+
+	m.rules[re.ID] = re
+
+	return nil
+}
+
+// RemoveRule removes an iptables rule
+func (m *MockIPTService) RemoveRule(ruleType int, ruleData interface{}) error {
+	re, _, err := m.s.CreateRuleEntryString(ruleType, ruleData)
+	if err != nil {
+		return err
+	}
+
+	_, ok := m.rules[re.ID]
+	if !ok {
+		return errors.New("Rule does not exist")
+	}
+
+	delete(m.rules, re.ID)
+
+	return nil
+}
+
+// CreateRuleEntryString calls the original CreateRuleEntryString
+func (m *MockIPTService) CreateRuleEntryString(ruleType int, ruleData interface{}) (iptables.RuleEntry, string, error) {
+	return m.s.CreateRuleEntryString(ruleType, ruleData)
 }
 
 // ListRules lists all created rules as string
