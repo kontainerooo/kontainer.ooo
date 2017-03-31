@@ -19,6 +19,9 @@ type Service interface {
 
 	// RemoveRule removes a rule in case it exists
 	RemoveRule(ruleType int, ruleData interface{}) error
+
+	// CreateRuleEntryString creates a rule entry and the command string from a type and data
+	CreateRuleEntryString(ruleType int, ruleData interface{}) (RuleEntry, string, error)
 }
 
 type dbAdapter interface {
@@ -61,7 +64,6 @@ func createHash(cmd string) string {
 	return fmt.Sprintf("%x", sum)
 }
 
-// CreateRuleEntryString creates a rule entry and the command string from a type and data
 func (s *service) CreateRuleEntryString(ruleType int, ruleData interface{}) (RuleEntry, string, error) {
 	errInvalidData := errors.New("Invalid rule data")
 	re := RuleEntry{}
