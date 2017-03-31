@@ -25,12 +25,6 @@ type Service interface {
 
 	// AllowPort sets up a rule to block src from talking to dst on port port
 	BlockPort(srcIP abstraction.Inet, srcNw string, dstIP abstraction.Inet, dstNw string, port uint16, protocol string) error
-
-	// RedirectPort redirects the src port to the dst port on ip
-	RedirectPort(ip abstraction.Inet, src uint32, dst uint32) error
-
-	// RemoveRedirectPort removes a port redirection
-	RemoveRedirectPort(ip abstraction.Inet, src uint32, dst uint32) error
 }
 
 type service struct {
@@ -204,16 +198,6 @@ func (s *service) BlockPort(srcIP abstraction.Inet, srcNw string, dstIP abstract
 		return err
 	}
 
-	return nil
-}
-
-func (s *service) RedirectPort(ip abstraction.Inet, src uint32, dst uint32) error {
-	// TODO: implement
-	return nil
-}
-
-func (s *service) RemoveRedirectPort(ip abstraction.Inet, src uint32, dst uint32) error {
-	// TODO: implement
 	return nil
 }
 
