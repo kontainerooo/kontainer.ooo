@@ -468,7 +468,7 @@ func (s *service) RestoreRules() error {
 		return err
 	}
 
-	cmd := ExecCommand("iptables-restore", "-c")
+	cmd := ExecCommand(s.iptRestorePath, "-c")
 
 	cmd.Stdin = strings.NewReader(str)
 
