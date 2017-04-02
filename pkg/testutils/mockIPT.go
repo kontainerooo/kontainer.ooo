@@ -69,6 +69,11 @@ func (m *MockIPTService) ListRules() []string {
 	return []string{}
 }
 
+// RestoreRules is not mocked
+func (m *MockIPTService) RestoreRules() error {
+	return nil
+}
+
 // NewMockIPTService creates a new MockIPTServicet
 func NewMockIPTService() (*MockIPTService, error) {
 	db := NewMockDB()
