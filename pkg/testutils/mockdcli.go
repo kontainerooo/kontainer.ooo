@@ -284,6 +284,21 @@ func (d *MockDCli) NetworkDisconnect(ctx context.Context, networkID, containerID
 	return ErrNetNotFound
 }
 
+// NetworkInspect returns network information
+func (d *MockDCli) NetworkInspect(ctx context.Context, networkID string) (types.NetworkResource, error) {
+	cts := make(map[string]types.EndpointResource)
+
+	for k := range d.containers {
+		cts[k] = types.EndpointResource{
+			IPv4Address: "127.0.0.2",
+		}
+	}
+
+	return types.NetworkResource{
+		Containers: cts,
+	}, nil
+}
+
 // NewMockDCli returns a new instance of MockDCli
 func NewMockDCli() *MockDCli {
 	return &MockDCli{
