@@ -23,6 +23,9 @@ var (
 
 // Service NetworkService
 type Service interface {
+	// CreatePrimaryNetworkForContainer creates a network and assigns it as primary to the given container
+	CreatePrimaryNetworkForContainer(refid uint, cfg *Config, containerID string) error
+
 	// CreateNetwork creates a new network for a given user
 	CreateNetwork(refid uint, cfg *Config) error
 
@@ -50,6 +53,7 @@ type dbAdapter interface {
 	Find(interface{}, ...interface{}) error
 	Create(interface{}) error
 	Delete(interface{}, ...interface{}) error
+	PrintTables()
 }
 
 type service struct {
@@ -149,10 +153,10 @@ func (s *service) RemoveNetworkByName(refid uint, name string) error {
 			return err
 		}
 
-		cts := Containers{
+		cts := &Containers{
 			NetworkID: nw.NetworkID,
 		}
-		err = s.db.Delete(&cts)
+		err = s.db.Delete(cts)
 		if err != nil {
 			s.db.Rollback()
 			return err
@@ -170,6 +174,14 @@ func (s *service) AddContainerToNetwork(refid uint, name string, containerID str
 		return err
 	}
 
+	// Check that this network is not someone else's primary network
+	if s.isPrimary(nw.NetworkID) {
+		cts := s.getContainerForPrimaryNetwork(nw.NetworkID)
+		if cts.ContainerID != "" {
+			return errors.New("Network is primary for other container")
+		}
+	}
+
 	if nw.NetworkID != "" {
 		err = s.dcli.NetworkConnect(context.Background(), nw.NetworkID, containerID, &networkTypes.EndpointSettings{})
 		if err != nil {
@@ -177,7 +189,7 @@ func (s *service) AddContainerToNetwork(refid uint, name string, containerID str
 		}
 
 		s.db.Begin()
-		cts := Containers{
+		cts := &Containers{
 			ContainerID: containerID,
 			NetworkID:   nw.NetworkID,
 		}
@@ -215,10 +227,12 @@ func (s *service) RemoveContainerFromNetwork(refid uint, name string, containerI
 
 func (s *service) getContainerNetworks(containerID string) ([]Containers, error) {
 	cts := []Containers{}
+	err := s.db.Where("container_id = ?", containerID)
+	if err != nil {
+		return []Containers{}, err
+	}
 
-	s.db.Where("container_id = ?", containerID)
-
-	err := s.db.Find(&cts)
+	err = s.db.Find(&cts)
 	if err != nil {
 		return []Containers{}, err
 	}
@@ -262,6 +276,21 @@ func (s *service) getPrimaryNetworkForContainer(containerID string) Networks {
 	return Networks{}
 }
 
+func (s *service) getContainerForPrimaryNetwork(networkID string) Containers {
+	err := s.db.Where("network_id = ?", networkID)
+	if err != nil {
+		return Containers{}
+	}
+
+	cts := Containers{}
+	err = s.db.First(&cts)
+	if err != nil {
+		return Containers{}
+	}
+
+	return cts
+}
+
 func (s *service) getContainerIPInNetwork(containerID string, networkID string) (abstraction.Inet, error) {
 	s.db.Begin()
 
@@ -273,8 +302,10 @@ func (s *service) getContainerIPInNetwork(containerID string, networkID string) 
 	cts := Containers{}
 	err = s.db.First(cts)
 	if err != nil {
+		s.db.Rollback()
 		return abstraction.Inet(""), err
 	}
+	s.db.Commit()
 
 	if cts.ContainerIP != abstraction.Inet("") {
 		return cts.ContainerIP, nil
@@ -294,6 +325,9 @@ func (s *service) getExposeData(refid uint, srcContainerID string, port uint16, 
 	if err != nil {
 		return exposeData{0, abstraction.Inet(""), abstraction.Inet(""), "", "", ""}, err
 	}
+
+	fmt.Println("src:", srcContainerID, "nws:", srcNetworks)
+	fmt.Println("dst", dstNetworks)
 
 	for _, srcV := range srcNetworks {
 		for _, dstV := range dstNetworks {
