@@ -1,10 +1,97 @@
 package template
 
-import "github.com/kontainerooo/kontainer.ooo/pkg/routing"
+import (
+	"errors"
+
+	"github.com/kontainerooo/kontainer.ooo/pkg/routing"
+	"github.com/lib/pq"
+)
+
+var (
+	// ErrNoRefID is returned, if no ref id is set in a config
+	ErrNoRefID = errors.New("no RefID set")
+
+	// ErrNoName is returned, if no name is set in a config
+	ErrNoName = errors.New("no Name set")
+)
 
 type writingService struct {
-	s routing.Service
-	w Writer
+	s   routing.Service
+	w   Writer
+	mem map[uint]map[string]*routing.RouterConfig
+}
+
+func checkListenStatement(r *routing.ListenStatement) error {
+	return nil
+}
+
+func checkServerName(s pq.StringArray) error {
+	return nil
+}
+
+func checkPath(p string) error {
+	return nil
+}
+
+func checkLog(l *routing.Log) error {
+	return nil
+}
+
+func checkSSLSettings(s *routing.SSLSettings) error {
+	return nil
+}
+
+func checkLocationRules(l *routing.LocationRules) error {
+	return nil
+}
+
+func checkConfig(r *routing.RouterConfig) error {
+	var err error
+
+	if r.RefID == 0 {
+		return ErrNoRefID
+	}
+
+	if r.Name == "" {
+		return ErrNoName
+	}
+
+	err = checkListenStatement(r.ListenStatement)
+	if err != nil {
+		return err
+	}
+
+	err = checkServerName(r.ServerName)
+	if err != nil {
+		return err
+	}
+
+	err = checkLog(&r.AccessLog)
+	if err != nil {
+		return err
+	}
+
+	err = checkLog(&r.ErrorLog)
+	if err != nil {
+		return err
+	}
+
+	err = checkPath(r.RootPath)
+	if err != nil {
+		return err
+	}
+
+	err = checkSSLSettings(&r.SSLSettings)
+	if err != nil {
+		return err
+	}
+
+	err = checkLocationRules(&r.LocationRules)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (w *writingService) CreateRouterConfig(r *routing.RouterConfig) error {
@@ -91,7 +178,8 @@ func NewWritingService(s routing.Service, r Router, p string) (routing.Service, 
 	}
 
 	return &writingService{
-		s: s,
-		w: w,
+		s:   s,
+		w:   w,
+		mem: make(map[uint]map[string]*routing.RouterConfig),
 	}, nil
 }
