@@ -107,6 +107,11 @@ func (t *table) find(field string, value interface{}) (reflect.Value, error) {
 			if uint(v) == value {
 				result = reflect.Append(result, reflect.ValueOf(row))
 			}
+		} else if reflect.TypeOf(value).Kind() == reflect.Bool {
+			v := reflect.ValueOf(row).Elem().FieldByName(field).Bool()
+			if bool(v) == value {
+				result = reflect.Append(result, reflect.ValueOf(row))
+			}
 		} else {
 			v := reflect.ValueOf(row).Elem().FieldByName(field).String()
 			if v == value {
