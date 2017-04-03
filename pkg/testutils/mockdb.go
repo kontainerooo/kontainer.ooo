@@ -218,13 +218,12 @@ func (m *MockDB) Where(query interface{}, args ...interface{}) error {
 				}
 				if !intersect {
 					// remove table from the multiValue property if it is not part of the new result array
-					m.multiValue = append(m.multiValue[:i], m.multiValue[i+1:]...)
-
-					// if nothing is left reset everything and return
-					if len(m.multiValue) == 0 {
+					if len(m.multiValue) == 1 {
 						m.multiValue = nil
 						return nil
 					}
+
+					m.multiValue = append(m.multiValue[:i], m.multiValue[i+1:]...)
 				}
 			}
 		}
