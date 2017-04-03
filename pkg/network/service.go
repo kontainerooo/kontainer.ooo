@@ -254,6 +254,13 @@ func (s *service) getContainerNetworks(containerID string) ([]Containers, error)
 		return []Containers{}, err
 	}
 
+	// TEMPORARY: until mockDB is fixed
+	for i, v := range cts {
+		if v.ContainerID != containerID {
+			cts = append(cts[:i], cts[i+1:]...)
+		}
+	}
+
 	return cts, nil
 }
 
@@ -316,7 +323,7 @@ func (s *service) getContainerIPInNetwork(containerID string, networkID string) 
 		return abstraction.Inet(""), err
 	}
 
-	cts := Containers{}
+	cts := &Containers{}
 	err = s.db.First(cts)
 	if err != nil {
 		s.db.Rollback()
@@ -342,9 +349,6 @@ func (s *service) getExposeData(refid uint, srcContainerID string, port uint16, 
 	if err != nil {
 		return exposeData{0, abstraction.Inet(""), abstraction.Inet(""), "", "", ""}, err
 	}
-
-	fmt.Println("src:", srcContainerID, "nws:", srcNetworks)
-	fmt.Println("dst", dstNetworks)
 
 	for _, srcV := range srcNetworks {
 		for _, dstV := range dstNetworks {
@@ -388,7 +392,7 @@ func (s *service) ExposePortToContainer(refid uint, srcContainerID string, port 
 		return err
 	}
 
-	_, err = s.fwClient.AllowPortEndpoint(context.Background(), firewall.AllowPortRequest{
+	_, err = s.fwClient.AllowPortEndpoint(context.Background(), &firewall.AllowPortRequest{
 		Port:       exp.Port,
 		SrcIP:      exp.SrcIP,
 		DstIP:      exp.DstIP,
@@ -409,7 +413,7 @@ func (s *service) RemovePortFromContainer(refid uint, srcContainerID string, por
 		return err
 	}
 
-	_, err = s.fwClient.BlockPortEndpoint(context.Background(), firewall.BlockPortRequest{
+	_, err = s.fwClient.BlockPortEndpoint(context.Background(), &firewall.BlockPortRequest{
 		Port:       exp.Port,
 		SrcIP:      exp.SrcIP,
 		DstIP:      exp.DstIP,
