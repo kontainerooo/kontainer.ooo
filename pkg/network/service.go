@@ -53,7 +53,6 @@ type dbAdapter interface {
 	Find(interface{}, ...interface{}) error
 	Create(interface{}) error
 	Delete(interface{}, ...interface{}) error
-	PrintTables()
 }
 
 type service struct {
