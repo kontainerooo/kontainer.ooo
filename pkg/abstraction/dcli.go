@@ -27,7 +27,7 @@ type DCli interface {
 	NetworkRemove(ctx context.Context, networkID string) error
 	NetworkConnect(ctx context.Context, networkID, containerID string, config *network.EndpointSettings) error
 	NetworkDisconnect(ctx context.Context, networkID, containerID string, force bool) error
-	NetworkInspect(ctx context.Context, networkID string) (types.NetworkResource, error)
+	NetworkInspect(ctx context.Context, networkID string, verbose bool) (types.NetworkResource, error)
 }
 
 type dcliAbstract struct {
@@ -91,8 +91,8 @@ func (d dcliAbstract) NetworkDisconnect(ctx context.Context, networkID, containe
 	return d.cli.NetworkDisconnect(ctx, networkID, containerID, force)
 }
 
-func (d dcliAbstract) NetworkInspect(ctx context.Context, networkID string) (types.NetworkResource, error) {
-	return d.cli.NetworkInspect(ctx, networkID)
+func (d dcliAbstract) NetworkInspect(ctx context.Context, networkID string, verbose bool) (types.NetworkResource, error) {
+	return d.cli.NetworkInspect(ctx, networkID, verbose)
 }
 
 // NewDCLI returns an new Wrapper instance
