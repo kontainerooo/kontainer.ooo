@@ -171,7 +171,7 @@ func (m *MockDB) Where(query interface{}, args ...interface{}) error {
 	for i, part := range and {
 		// get field name out of query
 		s := strings.Split(part, " ")
-		field := strings.Title(s[0])
+		field := s[0] //strings.Title(s[0])
 
 		// init result array
 		mValue := []*result{}
@@ -186,7 +186,7 @@ func (m *MockDB) Where(query interface{}, args ...interface{}) error {
 					return err
 				}
 				// update result array if the result isn't empty
-				if res != reflect.ValueOf(nil) {
+				if res != RNil {
 					mValue = append(mValue, &result{
 						table:  table.Name,
 						values: res,
@@ -197,7 +197,7 @@ func (m *MockDB) Where(query interface{}, args ...interface{}) error {
 
 		if i == 0 {
 			// if nothing is found stop and return
-			if mValue == nil {
+			if mValue == nil || len(mValue) == 0 {
 				return nil
 			}
 
@@ -304,9 +304,15 @@ func (m *MockDB) Delete(value interface{}, where ...interface{}) error {
 
 	ref := reflect.TypeOf(value).Elem()
 	name := ref.String()
-	table := m.tables[name]
-	for _, k := range table.PrimaryKey {
-		ids[k] = reflect.ValueOf(value).Elem().FieldByName(k)
+
+	v := reflect.ValueOf(value).Elem()
+
+	for i := 0; i < ref.NumField(); i++ {
+		f := ref.Field(i).Name
+		fv := v.Field(i)
+		if !isZero(fv) {
+			ids[f] = fv
+		}
 	}
 
 	if len(ids) != 0 {
