@@ -188,7 +188,7 @@ func (s *service) AddContainerToNetwork(refid uint, name string, containerID str
 		}
 
 		// Check which IP address we got
-		information, err := s.dcli.NetworkInspect(context.Background(), nw.NetworkID)
+		information, err := s.dcli.NetworkInspect(context.Background(), nw.NetworkID, false)
 		if err != nil {
 			return err
 		}
