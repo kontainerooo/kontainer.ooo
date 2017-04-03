@@ -2,6 +2,7 @@ package template
 
 import (
 	"errors"
+	"regexp"
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/routing"
 	"github.com/lib/pq"
@@ -13,39 +14,63 @@ var (
 
 	// ErrNoName is returned, if no name is set in a config
 	ErrNoName = errors.New("no Name set")
+
+	// ErrPortRange is returned, if port is <1024
+	ErrPortRange = errors.New("port not in acceptable range")
+
+	// ErrKeyword is returned, if the used keyword is not allowed in the used router
+	ErrKeyword = errors.New("keyword not allowed")
 )
 
 type writingService struct {
 	s   routing.Service
 	w   Writer
+	r   Router
 	mem map[uint]map[string]*routing.RouterConfig
 }
 
-func checkListenStatement(r *routing.ListenStatement) error {
+func (w *writingService) checkListenStatement(r *routing.ListenStatement) error {
+	// TODO: get IP pool for check: if !pool.In(inet) return err
+	if r.Port <= 1024 {
+		return ErrPortRange
+	}
+
+	switch w.r {
+	case Nginx:
+		regex := regexp.MustCompile(`^ssl$`)
+		if !regex.MatchString(r.Keyword) {
+			return ErrKeyword
+		}
+	default:
+		if r.Keyword != "" {
+			return ErrKeyword
+		}
+	}
+
 	return nil
 }
 
-func checkServerName(s pq.StringArray) error {
+func (w *writingService) checkServerName(s pq.StringArray) error {
 	return nil
 }
 
-func checkPath(p string) error {
+func (w *writingService) checkPath(p string) error {
 	return nil
 }
 
-func checkLog(l *routing.Log) error {
+func (w *writingService) checkLog(l *routing.Log) error {
 	return nil
 }
 
-func checkSSLSettings(s *routing.SSLSettings) error {
+func (w *writingService) checkSSLSettings(s *routing.SSLSettings) error {
 	return nil
 }
 
-func checkLocationRules(l *routing.LocationRules) error {
+func (w *writingService) checkLocationRules(l *routing.LocationRules) error {
 	return nil
 }
 
-func checkConfig(r *routing.RouterConfig) error {
+func (w *writingService) checkConfig(r *routing.RouterConfig) error {
 	var err error
 
 	if r.RefID == 0 {
@@ -56,37 +81,37 @@ func checkConfig(r *routing.RouterConfig) error {
 		return ErrNoName
 	}
 
-	err = checkListenStatement(r.ListenStatement)
+	err = w.checkListenStatement(r.ListenStatement)
 	if err != nil {
 		return err
 	}
 
-	err = checkServerName(r.ServerName)
+	err = w.checkServerName(r.ServerName)
 	if err != nil {
 		return err
 	}
 
-	err = checkLog(&r.AccessLog)
+	err = w.checkLog(&r.AccessLog)
 	if err != nil {
 		return err
 	}
 
-	err = checkLog(&r.ErrorLog)
+	err = w.checkLog(&r.ErrorLog)
 	if err != nil {
 		return err
 	}
 
-	err = checkPath(r.RootPath)
+	err = w.checkPath(r.RootPath)
 	if err != nil {
 		return err
 	}
 
-	err = checkSSLSettings(&r.SSLSettings)
+	err = w.checkSSLSettings(&r.SSLSettings)
 	if err != nil {
 		return err
 	}
 
-	err = checkLocationRules(&r.LocationRules)
+	err = w.checkLocationRules(&r.LocationRules)
 	if err != nil {
 		return err
 	}
@@ -180,6 +205,7 @@ func NewWritingService(s routing.Service, r Router, p string) (routing.Service, 
 	return &writingService{
 		s:   s,
 		w:   w,
+		r:   r,
 		mem: make(map[uint]map[string]*routing.RouterConfig),
 	}, nil
 }
