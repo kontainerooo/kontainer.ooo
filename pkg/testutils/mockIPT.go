@@ -69,11 +69,16 @@ func (m *MockIPTService) ListRules() []string {
 	return []string{}
 }
 
+// RestoreRules is not mocked
+func (m *MockIPTService) RestoreRules() error {
+	return nil
+}
+
 // NewMockIPTService creates a new MockIPTServicet
 func NewMockIPTService() (*MockIPTService, error) {
 	db := NewMockDB()
 	iptables.ExecCommand = fakeExecCommand
-	ipts, err := iptables.NewService("iptables", db)
+	ipts, err := iptables.NewService("iptables", "iptables-restore", db)
 
 	return &MockIPTService{
 		rules: make(map[string]iptables.RuleEntry),

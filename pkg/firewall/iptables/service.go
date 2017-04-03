@@ -22,6 +22,9 @@ type Service interface {
 
 	// CreateRuleEntryString creates a rule entry and the command string from a type and data
 	CreateRuleEntryString(ruleType int, ruleData interface{}) (RuleEntry, string, error)
+
+	// RestoreRules restores all rules from the database using iptables-restore
+	RestoreRules() error
 }
 
 type dbAdapter interface {
@@ -29,12 +32,14 @@ type dbAdapter interface {
 	AutoMigrate(...interface{}) error
 	Create(interface{}) error
 	Where(interface{}, ...interface{}) error
+	Find(interface{}, ...interface{}) error
 	Delete(interface{}, ...interface{}) error
 }
 
 type service struct {
-	iptPath string
-	db      dbAdapter
+	iptPath        string
+	iptRestorePath string
+	db             dbAdapter
 }
 
 func (s *service) executeIPTableCommand(c string) error {
@@ -435,18 +440,65 @@ func (s *service) RemoveRule(ruleType int, ruleData interface{}) error {
 	return nil
 }
 
+func (s *service) createExportStrings() (string, error) {
+	restoreStr := ""
+
+	res := []RuleEntry{}
+
+	err := s.db.Find(&res)
+	if err != nil {
+		return "", err
+	}
+
+	for _, v := range res {
+		_, cmdStr, err := s.CreateRuleEntryString(v.rule.RuleType, v.rule.Data)
+		if err != nil {
+			return "", err
+		}
+
+		restoreStr = fmt.Sprintf("%s%s\n", restoreStr, cmdStr)
+	}
+
+	return restoreStr, nil
+}
+
+func (s *service) RestoreRules() error {
+	str, err := s.createExportStrings()
+	if err != nil {
+		return err
+	}
+
+	cmd := ExecCommand(s.iptRestorePath, "-c")
+
+	cmd.Stdin = strings.NewReader(str)
+
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // ExecCommand is a wrapper around exec.Command used for testing
 var ExecCommand = exec.Command
 
 // NewService creates a new iptables service
-func NewService(iptPath string, db dbAdapter) (Service, error) {
+func NewService(iptPath string, iptRestorePath string, db dbAdapter) (Service, error) {
 	s := &service{
-		iptPath: iptPath,
-		db:      db,
+		iptPath:        iptPath,
+		iptRestorePath: iptRestorePath,
+		db:             db,
 	}
 
 	cmd := ExecCommand(iptPath, "--version")
 	err := cmd.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	cmd = ExecCommand(iptRestorePath, "--help")
+	err = cmd.Run()
 	if err != nil {
 		return nil, err
 	}
