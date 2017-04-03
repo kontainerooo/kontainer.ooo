@@ -15,6 +15,7 @@ type MockFirewallClient struct {
 func NewMockFirewallEndpoints(logger log.Logger, m MockFirewallClient) *firewall.Endpoints {
 	return &firewall.Endpoints{
 		AllowPortEndpoint: m.AllowPortEndpoint,
+		BlockPortEndpoint: m.BlockPortEndpoint,
 	}
 }
 
@@ -23,6 +24,15 @@ func (m *MockFirewallClient) AllowPortEndpoint(ctx context.Context, req interfac
 	_ = req.(*firewall.AllowPortRequest)
 
 	return &firewall.AllowPortResponse{
+		Error: nil,
+	}, nil
+}
+
+// BlockPortEndpoint is a mock endpoint
+func (m *MockFirewallClient) BlockPortEndpoint(ctx context.Context, req interface{}) (interface{}, error) {
+	_ = req.(*firewall.BlockPortRequest)
+
+	return &firewall.BlockPortResponse{
 		Error: nil,
 	}, nil
 }
