@@ -285,7 +285,7 @@ func (d *MockDCli) NetworkDisconnect(ctx context.Context, networkID, containerID
 }
 
 // NetworkInspect returns network information
-func (d *MockDCli) NetworkInspect(ctx context.Context, networkID string) (types.NetworkResource, error) {
+func (d *MockDCli) NetworkInspect(ctx context.Context, networkID string, verbose bool) (types.NetworkResource, error) {
 	cts := make(map[string]types.EndpointResource)
 
 	for k := range d.containers {
