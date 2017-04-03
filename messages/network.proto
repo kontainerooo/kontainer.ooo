@@ -1,0 +1,90 @@
+syntax = "proto3";
+package network;
+option go_package = "pb";
+
+service NetworkService {
+  rpc CreatePrimaryNetworkForContainer (CreatePrimaryNetworkForContainerRequest) returns (CreatePrimaryNetworkForContainerResponse);
+  rpc CreateNetwork (CreateNetworkRequest) returns (CreateNetworkResponse);
+  rpc RemoveNetworkByName (RemoveNetworkByNameRequest) returns (RemoveNetworkByNameResponse);
+  rpc AddContainerToNetwork (AddContainerToNetworkRequest) returns (AddContainerToNetworkResponse);
+  rpc RemoveContainerFromNetwork (RemoveContainerFromNetworkRequest) returns (RemoveContainerFromNetworkResponse);
+  rpc ExposePortToContainer (ExposePortToContainerRequest) returns (ExposePortToContainerResponse);
+  rpc RemovePortFromContainer (RemovePortFromContainerRequest) returns (RemovePortFromContainerResponse);
+}
+
+message NetworkConfig {
+    string Name = 1;
+    string Driver = 2;
+}
+
+message CreatePrimaryNetworkForContainerRequest {
+    uint32 Refid = 1;
+    NetworkConfig Config = 2;
+    string ContainerID = 3;
+}
+
+message CreatePrimaryNetworkForContainerResponse {
+    string error = 1;
+}
+
+message CreateNetworkRequest {
+    uint32 Refid = 1;
+    NetworkConfig Config = 2;
+}
+
+message CreateNetworkResponse {
+    string error = 1;
+}
+
+message RemoveNetworkByNameRequest {
+    uint32 Refid = 1;
+    string Name = 2;
+}
+
+message RemoveNetworkByNameResponse {
+    string error = 1;
+}
+
+message AddContainerToNetworkRequest {
+    uint32 Refid = 1;
+    string Name = 2;
+    string ContainerID = 3;
+}
+
+message AddContainerToNetworkResponse {
+    string error = 2;
+}
+
+message RemoveContainerFromNetworkRequest {
+    uint32 Refid = 1;
+    string Name = 2;
+    string ContainerID = 3;
+}
+
+message RemoveContainerFromNetworkResponse {
+    string error = 1;
+}
+
+message ExposePortToContainerRequest {
+    uint32 Refid = 1;
+    string SrcContainerID = 2;
+    uint32 Port = 3;
+    string Protocol = 4;
+    string DstContainerID = 5;
+}
+
+message ExposePortToContainerResponse {
+    string error = 1;
+}
+
+message RemovePortFromContainerRequest {
+    uint32 Refid = 1;
+    string SrcContainerID = 2;
+    uint32 Port = 3;
+    string Protocol = 4;
+    string DstContainerID = 5;
+}
+
+message RemovePortFromContainerResponse {
+    string error = 1;
+}
