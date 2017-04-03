@@ -2,7 +2,6 @@ package testutils
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 
@@ -29,8 +28,6 @@ func (m *MockIPTService) CreateRule(ruleType int, ruleData interface{}) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Println(m.rules)
 
 	_, ok := m.rules[re.ID]
 	if ok {
