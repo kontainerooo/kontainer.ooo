@@ -57,6 +57,9 @@ func (t *table) all(out interface{}) error {
 }
 
 func (t *table) checkForField(f string) bool {
+	if f == gorm.ToDBName(f) {
+		f = t.columns[f]
+	}
 	_, found := t.ref.FieldByName(f)
 	return found
 }
@@ -91,10 +94,12 @@ func (t *table) find(field string, value interface{}) (reflect.Value, error) {
 	if field == gorm.ToDBName(field) {
 		field = t.columns[field]
 	}
+
 	_, found := t.ref.FieldByName(field)
 	if !found {
-		return reflect.ValueOf(nil), errors.New("field name not in struct")
+		return RNil, errors.New("field name not in struct")
 	}
+
 	result := reflect.MakeSlice(reflect.SliceOf(reflect.PtrTo(t.ref)), 0, 0)
 	for _, row := range t.rows {
 		if reflect.TypeOf(value).Kind() == reflect.Uint {
