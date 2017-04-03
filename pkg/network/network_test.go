@@ -1,8 +1,6 @@
 package network_test
 
 import (
-	"fmt"
-
 	"github.com/go-kit/kit/log"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -88,11 +86,16 @@ var _ = Describe("Network", func() {
 		dcli := testutils.NewMockDCli()
 		db := testutils.NewMockDB()
 		networkService, _ := network.NewService(dcli, db, mockFwEndpoints)
+		ccs := customercontainer.NewService(dcli)
+		dcli.CreateMockImage("testimage")
+		_, containerID, _ := ccs.CreateContainer(123, &customercontainer.ContainerConfig{
+			ImageName: "testimage",
+		})
 		It("Should remove a network", func() {
 			networkService.CreatePrimaryNetworkForContainer(123, &network.Config{
 				Driver: "bridge",
 				Name:   "network1",
-			}, "123")
+			}, containerID)
 
 			err := networkService.RemoveNetworkByName(123, "network1")
 
@@ -292,9 +295,14 @@ var _ = Describe("Network", func() {
 				Name:   "network2",
 			}, containerIDTwo)
 
-			fmt.Println("EXPOSE :) :) :( :(")
-
 			err := networkService.ExposePortToContainer(123, containerIDOne, 8080, "tcp", containerIDTwo)
+
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should remove a port exposure", func() {
+
+			err := networkService.RemovePortFromContainer(123, containerIDOne, 8080, "tcp", containerIDTwo)
 
 			Ω(err).ShouldNot(HaveOccurred())
 		})
