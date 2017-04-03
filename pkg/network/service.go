@@ -188,10 +188,27 @@ func (s *service) AddContainerToNetwork(refid uint, name string, containerID str
 			return err
 		}
 
+		// Check which IP address we got
+		information, err := s.dcli.NetworkInspect(context.Background(), nw.NetworkID)
+		if err != nil {
+			return err
+		}
+
+		c, ok := information.Containers[containerID]
+		if !ok {
+			return errors.New("Container was not connected to network")
+		}
+
+		ip, err := abstraction.NewInet(c.IPv4Address)
+		if err != nil {
+			return err
+		}
+
 		s.db.Begin()
 		cts := &Containers{
 			ContainerID: containerID,
 			NetworkID:   nw.NetworkID,
+			ContainerIP: ip,
 		}
 
 		err = s.db.Create(cts)
