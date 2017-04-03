@@ -218,18 +218,19 @@ func convertPBListenStatement(l *pb.ListenStatement) *ListenStatement {
 
 func convertPBLog(l *pb.Log) Log {
 	return Log{
-		path:    l.Path,
-		keyword: l.Keyword,
+		Path:    l.Path,
+		Keyword: l.Keyword,
 	}
 }
 
 func convertPBSSLSettings(s *pb.SSLSettings) SSLSettings {
 	return SSLSettings{
-		protocols:           s.Protocols,
-		ciphers:             s.Ciphers,
-		preferServerCiphers: s.PreferServerCiphers,
-		certificate:         s.Certificate,
-		certificateKey:      s.CertificateKey,
+		Protocols:           s.Protocols,
+		Ciphers:             s.Ciphers,
+		PreferServerCiphers: s.PreferServerCiphers,
+		Certificate:         s.Certificate,
+		CertificateKey:      s.CertificateKey,
+		Curve:               s.Curve,
 	}
 }
 
@@ -283,18 +284,19 @@ func ConvertListenStatement(l *ListenStatement) *pb.ListenStatement {
 
 func convertLog(l Log) *pb.Log {
 	return &pb.Log{
-		Path:    l.path,
-		Keyword: l.keyword,
+		Path:    l.Path,
+		Keyword: l.Keyword,
 	}
 }
 
 func convertSSLSettings(s SSLSettings) *pb.SSLSettings {
 	return &pb.SSLSettings{
-		Protocols:           s.protocols,
-		Ciphers:             s.ciphers,
-		PreferServerCiphers: s.preferServerCiphers,
-		Certificate:         s.certificate,
-		CertificateKey:      s.certificateKey,
+		Protocols:           s.Protocols,
+		Ciphers:             s.Ciphers,
+		PreferServerCiphers: s.PreferServerCiphers,
+		Certificate:         s.Certificate,
+		CertificateKey:      s.CertificateKey,
+		Curve:               s.Curve,
 	}
 }
 
