@@ -3,7 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { SideNavElement } from '../interfaces/side-nav-element';
 
 @Component({
-  selector: 'kio-sidebar-navigation',
+  selector: 'kro-sidebar-navigation',
   templateUrl: './sidebar-navigation.component.html',
   styleUrls: ['./sidebar-navigation.component.scss']
 })

@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/ttdennis/kontainer.io/pkg/pb"
-	ws "github.com/ttdennis/kontainer.io/pkg/websocket"
+	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
+	ws "github.com/kontainerooo/kontainer.ooo/pkg/websocket"
 )
 
 // MakeWebsocketService makes a set of customercontainer Endpoints available as a websocket Service
@@ -42,6 +42,14 @@ func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
 		endpoints.InstancesEndpoint,
 		DecodeWSInstancesRequest,
 		EncodeGRPCInstancesResponse,
+	))
+
+	service.AddEndpoint(ws.NewServiceEndpoint(
+		"CreateDockerImage",
+		ws.ProtoIDFromString("CDI"),
+		endpoints.CreateDockerImageEndpoint,
+		DecodeWSCreateDockerImageRequest,
+		EncodeGRPCCreateDockerImageResponse,
 	))
 
 	return service
@@ -93,4 +101,16 @@ func DecodeWSInstancesRequest(ctx context.Context, data interface{}) (interface{
 	}
 
 	return DecodeGRPCInstancesRequest(ctx, req)
+}
+
+// DecodeWSCreateDockerImageRequest is a websocket.DecodeRequestFunc that converts a
+// WS CreateDockerImage request to a messages/customercontainer.proto-domain CreateDockerImage request.
+func DecodeWSCreateDockerImageRequest(ctx context.Context, data interface{}) (interface{}, error) {
+	req := &pb.CreateDockerImageRequest{}
+	err := proto.Unmarshal(data.([]byte), req)
+	if err != nil {
+		return nil, err
+	}
+
+	return DecodeGRPCCreateDockerImageRequest(ctx, req)
 }

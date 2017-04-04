@@ -310,7 +310,7 @@ func GetFrontend(src interface{}, dst *FrontendArray) error {
 
 	len := value.Len()
 	for i := 0; i < len; i++ {
-		fm := frontendModule{}
+		fm := FrontendModule{}
 		module := value.Index(i).Elem()
 		keys := module.MapKeys()
 		for i, key := range keys {
@@ -320,14 +320,14 @@ func GetFrontend(src interface{}, dst *FrontendArray) error {
 				if tpl.Kind() != reflect.String {
 					return fmt.Errorf("template is not of type string in module %d", i)
 				}
-				fm.template = tpl.String()
+				fm.Template = tpl.String()
 			case "parameters":
 				params := module.MapIndex(key).Elem()
 				if params.Kind() != reflect.Map {
 					return fmt.Errorf("parameters are no json in module %d", i)
 				}
-				fm.parameters = make(map[string]interface{})
-				err := ExtractStringMap(params, fm.parameters, nil)
+				fm.Parameters = make(map[string]interface{})
+				err := ExtractStringMap(params, fm.Parameters, nil)
 				if err != nil {
 					return err
 				}
@@ -335,10 +335,18 @@ func GetFrontend(src interface{}, dst *FrontendArray) error {
 				return fmt.Errorf("unsupported property %s", key.String())
 			}
 		}
-		*dst = append(*dst, fm)
+		*dst = append(*dst, &fm)
 	}
 
 	return nil
+}
+
+func GetDockerfile(p string, kc *Content) (string, error) {
+	b, err := kc.GetFile(p)
+	if err != nil {
+		return "", err
+	}
+	return string(*b), nil
 }
 
 // GetData is used to fill a KMI struct based on a Content struct
@@ -353,8 +361,12 @@ func GetData(kC *Content, k *KMI) error {
 	k.Version = m.Version
 	k.Description = m.Description
 	k.Type = int(m.Type)
-	k.Dockerfile = m.Dockerfile
 	k.Container = m.Container
+
+	k.Dockerfile, err = GetDockerfile(m.Dockerfile, kC)
+	if err != nil {
+		return err
+	}
 
 	intRestriction := make(map[reflect.Kind]bool)
 	intRestriction[reflect.Int] = true

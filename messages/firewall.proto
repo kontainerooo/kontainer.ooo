@@ -1,0 +1,68 @@
+syntax = "proto3";
+package firewall;
+option go_package = "pb";
+
+service FirewallService {
+	rpc InitBridge (InitBridgeRequest) returns (InitBridgeResponse);
+	rpc AllowConnection (AllowConnectionRequest) returns (AllowConnectionResponse);
+	rpc BlockConnection (BlockConnectionRequest) returns (BlockConnectionResponse);
+	rpc AllowPort (AllowPortRequest) returns (AllowPortResponse);
+	rpc BlockPort (BlockPortRequest) returns (BlockPortResponse);
+}
+
+message InitBridgeRequest {
+    string IP = 1;
+    string networkName = 2;
+}
+
+message InitBridgeResponse {
+    string error = 1;
+}
+
+message AllowConnectionRequest {
+    string srcIP = 1;
+    string srcNetwork = 2;
+    string dstIP = 3;
+    string dstNetwork = 4;
+}
+
+message AllowConnectionResponse {
+    string error = 1;
+}
+
+message BlockConnectionRequest {
+    string srcIP = 1;
+    string srcNetwork = 2;
+    string dstIP = 3;
+    string dstNetwork = 4;
+}
+
+message BlockConnectionResponse {
+    string error = 1;
+}
+
+message AllowPortRequest {
+    string srcIP = 1;
+    string srcNetwork = 2;
+    string dstIP = 3;
+    string dstNetwork = 4;
+    uint32 port = 5;
+    string protocol = 6;
+}
+
+message AllowPortResponse {
+    string error = 1;
+}
+
+message BlockPortRequest {
+    string srcIP = 1;
+    string srcNetwork = 2;
+    string dstIP = 3;
+    string dstNetwork = 4;
+    uint32 port = 5;
+    string protocol = 6;
+}
+
+message BlockPortResponse {
+    string error = 1;
+}

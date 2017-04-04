@@ -14,10 +14,10 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
+	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
+	ws "github.com/kontainerooo/kontainer.ooo/pkg/websocket"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/ttdennis/kontainer.io/pkg/pb"
-	ws "github.com/ttdennis/kontainer.io/pkg/websocket"
 )
 
 type request struct {

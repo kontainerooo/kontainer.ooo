@@ -1,6 +1,6 @@
 package user
 
-import "github.com/ttdennis/kontainer.io/pkg/abstraction"
+import "github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 
 type transactionBasedService struct {
 	s  Service

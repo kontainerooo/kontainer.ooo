@@ -1,0 +1,55 @@
+{
+  "user": {
+    "id": "USR",
+    "methods": {
+      "CreateUser": "CRT",
+      "EditUser": "EDT",
+      "ChangeUsername": "CHU",
+      "DeleteUser": "DLT",
+      "ResetPassword": "RST",
+      "GetUser": "GET"
+    }
+  },
+  "kmi": {
+    "id": "KMI",
+    "methods": {
+      "AddKMI": "ADD",
+      "RemoveKMI": "REM",
+      "GetKMI": "GET",
+      "KMI": "ALL"
+    }
+  },
+  "customercontainer": {
+    "id": "CCS",
+    "methods": {
+      "CreateContainer": "CRT",
+      "EditContainer": "EDT",
+      "RemoveContainer": "REM",
+      "Instances": "ALL",
+      "CreateDockerImage": "CDI"
+    }
+  },
+  "containerlifecycle": {
+    "id": "CLS",
+    "methods": {
+      "StartContainer": "SCN",
+      "StartCommand": "SCM",
+      "StopContainer": "STP"
+    }
+  },
+  "routing": {
+    "id": "RTG",
+    "methods": {
+      "CreateConfig": "CRT",
+      "EditConfig": "EDT",
+      "GetConfig": "GET",
+      "RemoveConfig": "REM",
+      "AddLocation": "ALO",
+      "RemoveLocation": "RLO",
+      "ChangeListenStatement": "CLS",
+      "AddServerName": "ASN",
+      "RemoveServerName": "RSN",
+      "Configurations": "CON"
+    }
+  }
+}
