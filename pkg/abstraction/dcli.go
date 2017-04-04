@@ -2,6 +2,7 @@ package abstraction
 
 import (
 	"context"
+	"io"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -20,7 +21,12 @@ type DCli interface {
 	ContainerRemove(ctx context.Context, containerID string, options types.ContainerRemoveOptions) error
 	ContainerList(ctx context.Context, options types.ContainerListOptions) ([]types.Container, error)
 	ImageInspectWithRaw(ctx context.Context, imageID string) (types.ImageInspect, []byte, error)
+	ImageBuild(ctx context.Context, buildContext io.Reader, options types.ImageBuildOptions) (types.ImageBuildResponse, error)
 	IsErrImageNotFound(err error) bool
+	NetworkCreate(ctx context.Context, name string, options types.NetworkCreate) (types.NetworkCreateResponse, error)
+	NetworkRemove(ctx context.Context, networkID string) error
+	NetworkConnect(ctx context.Context, networkID, containerID string, config *network.EndpointSettings) error
+	NetworkDisconnect(ctx context.Context, networkID, containerID string, force bool) error
 }
 
 type dcliAbstract struct {
@@ -60,8 +66,28 @@ func (d dcliAbstract) ImageInspectWithRaw(ctx context.Context, imageID string) (
 	return d.cli.ImageInspectWithRaw(ctx, imageID)
 }
 
+func (d dcliAbstract) ImageBuild(ctx context.Context, buildContext io.Reader, options types.ImageBuildOptions) (types.ImageBuildResponse, error) {
+	return d.cli.ImageBuild(ctx, buildContext, options)
+}
+
 func (d dcliAbstract) IsErrImageNotFound(err error) bool {
 	return engine.IsErrImageNotFound(err)
+}
+
+func (d dcliAbstract) NetworkCreate(ctx context.Context, name string, options types.NetworkCreate) (types.NetworkCreateResponse, error) {
+	return d.cli.NetworkCreate(ctx, name, options)
+}
+
+func (d dcliAbstract) NetworkRemove(ctx context.Context, networkID string) error {
+	return d.cli.NetworkRemove(ctx, networkID)
+}
+
+func (d dcliAbstract) NetworkConnect(ctx context.Context, networkID, containerID string, config *network.EndpointSettings) error {
+	return d.cli.NetworkConnect(ctx, networkID, containerID, config)
+}
+
+func (d dcliAbstract) NetworkDisconnect(ctx context.Context, networkID, containerID string, force bool) error {
+	return d.cli.NetworkDisconnect(ctx, networkID, containerID, force)
 }
 
 // NewDCLI returns an new Wrapper instance

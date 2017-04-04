@@ -1,0 +1,59 @@
+package client
+
+import (
+  grpctransport "github.com/go-kit/kit/transport/grpc"
+  "github.com/go-kit/kit/log"
+  "github.com/go-kit/kit/endpoint"
+
+  "github.com/kontainerooo/kontainer.ooo/pkg/pb"
+  "github.com/kontainerooo/kontainer.ooo/pkg/{{.File.Name | splitArray "/" | last | splitArray "." | first}}"
+)
+
+{{$file:=.File}}
+// New creates a set of endpoints based on a gRPC connection
+func New(conn *grpc.ClientConn, logger log.Logger) *{{.File.Name | splitArray "/" | last | splitArray "." | first}}.Endpoints {
+  {{range .Service.Method}}
+    var {{.Name}}Endpoint endpoint.Endpoint
+			{
+				{{.Name}}Endpoint = grpctransport.NewClient(
+					conn,
+					"{{$file.Name | splitArray "/" | last | splitArray "." | first}}Service",
+					"{{.Name}}",
+					EncodeGRPC{{.Name}}Request,
+					DecodeGRPC{{.Name}}Response,
+					pb.{{.Name}}Response{},
+				).Endpoint()
+			}
+  {{end}}
+
+        return &{{.File.Name | splitArray "/" | last | splitArray "." | first}}.Endpoints { {{range .Service.Method}}
+          {{.Name | title}}Endpoint: {{.Name}}Endpoint,{{end}}
+        }
+}
+
+func getError(e string) error {
+	if e != "" {
+		return errors.New(e)
+	}
+	return nil
+}
+
+{{range .Service.Method}}
+  // EncodeGRPC{{.Name}}Request is a transport/grpc.EncodeRequestFunc that converts a
+  // {{$file.Name}}-domain {{.Name | lower}} request to a gRPC {{.Name}} request.
+	func EncodeGRPC{{.Name}}Request(_ context.Context, request interface{}) (interface{}, error) {
+		req := request.(*{{$file.Name | splitArray "/" | last | splitArray "." | first}}.{{.Name}}Request)
+		return &pb.{{.Name}}Request{
+
+    }, nil
+	}
+
+  // DecodeGRPC{{.Name}}Response is a transport/grpc.DecodeResponseFunc that converts a
+  // gRPC {{.Name}} response to a {{$file.Name}}-domain {{.Name | lower}} response.
+	func DecodeGRPC{{.Name}}Response(_ context.Context, grpcResponse interface{}) (interface{}, error) {
+		response := grpcResponse.(*pb.{{.Name}}Response)
+		return &{{$file.Name | splitArray "/" | last | splitArray "." | first}}.{{.Name}}Response{
+      Error: getError(response.Error),
+    }, nil
+	}
+{{end}}

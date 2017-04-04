@@ -1,9 +1,11 @@
 package testutils
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"math/rand"
 	"strings"
 
@@ -18,7 +20,16 @@ var (
 
 	// ErrAlreadyRunning is returned, if a container which should be started is already running
 	ErrAlreadyRunning = errors.New("container already running")
+
+	// ErrNetNotFound is returned when a network that is operated on does not exist
+	ErrNetNotFound = errors.New("network not found")
 )
+
+type nopCloser struct {
+	io.Reader
+}
+
+func (nopCloser) Close() error { return nil }
 
 // MockDCli simulates a docker client for testing purposes
 type MockDCli struct {
@@ -28,6 +39,12 @@ type MockDCli struct {
 	err             bool
 	idNotExist      bool
 	dockerIsOffline bool
+	networks        map[string]mockNetwork
+}
+
+type mockNetwork struct {
+	ID         string
+	containers []string
 }
 
 // SetError sets the err property of MockDCli to be true, causing the next instruction to return an error
@@ -51,6 +68,15 @@ func (d *MockDCli) produceError() bool {
 		return true
 	}
 	return false
+}
+
+// GetNetworks returns available networks
+func (d *MockDCli) GetNetworks() map[string]string {
+	nwMap := make(map[string]string)
+	for k, v := range d.networks {
+		nwMap[k] = v.ID
+	}
+	return nwMap
 }
 
 // IsRunning checks if a mocked container is running
@@ -162,6 +188,13 @@ func (d *MockDCli) ImageInspectWithRaw(ctx context.Context, imageID string) (typ
 	return types.ImageInspect{}, nil, fmt.Errorf("Image does not exist")
 }
 
+// ImageBuild builds a mock image
+func (d *MockDCli) ImageBuild(ctx context.Context, buildContext io.Reader, options types.ImageBuildOptions) (types.ImageBuildResponse, error) {
+	return types.ImageBuildResponse{
+		Body: nopCloser{bytes.NewBufferString("{\"stream\":\"sha1:1234\"}")},
+	}, nil
+}
+
 // IsErrImageNotFound returns true if the error means the image was not found
 func (d *MockDCli) IsErrImageNotFound(err error) bool {
 	if err != nil {
@@ -171,11 +204,92 @@ func (d *MockDCli) IsErrImageNotFound(err error) bool {
 	return false
 }
 
+// NetworkCreate creates a new mock network
+func (d *MockDCli) NetworkCreate(ctx context.Context, name string, options types.NetworkCreate) (types.NetworkCreateResponse, error) {
+	if d.produceError() {
+		return types.NetworkCreateResponse{}, ErrClientError
+	}
+	_, ok := d.networks[name]
+	if ok {
+		return types.NetworkCreateResponse{}, errors.New("Network already exists")
+	}
+
+	id := fmt.Sprintf("%d", rand.Int())
+	d.networks[name] = mockNetwork{
+		ID: id,
+	}
+
+	return types.NetworkCreateResponse{
+		ID: id,
+	}, nil
+}
+
+// NetworkRemove removes a mock network
+func (d *MockDCli) NetworkRemove(ctx context.Context, networkID string) error {
+	if d.produceError() {
+		return ErrClientError
+	}
+
+	for k, v := range d.networks {
+		if v.ID == networkID {
+			delete(d.networks, k)
+			return nil
+		}
+	}
+
+	return ErrNetNotFound
+}
+
+// NetworkConnect connects a container to a mock network
+func (d *MockDCli) NetworkConnect(ctx context.Context, networkID, containerID string, config *network.EndpointSettings) error {
+	if d.produceError() {
+		return ErrClientError
+	}
+
+	for k, v := range d.networks {
+		if v.ID == networkID {
+			d.networks[k] = mockNetwork{
+				ID:         networkID,
+				containers: append(d.networks[k].containers, containerID),
+			}
+			return nil
+		}
+	}
+
+	return ErrNetNotFound
+}
+
+// NetworkDisconnect disconnects a container from a mock network
+func (d *MockDCli) NetworkDisconnect(ctx context.Context, networkID, containerID string, force bool) error {
+	if d.produceError() {
+		return ErrClientError
+	}
+
+	for _, v := range d.networks {
+		if v.ID == networkID {
+			// Remove containerID fom array
+			for idx, cont := range v.containers {
+				if cont == containerID {
+					v.containers[idx] = v.containers[len(v.containers)-1]
+					v.containers = v.containers[:len(v.containers)-1]
+
+					return nil
+				}
+
+				return errors.New("container not connected to network")
+			}
+		}
+	}
+
+	return ErrNetNotFound
+}
+
 // NewMockDCli returns a new instance of MockDCli
 func NewMockDCli() *MockDCli {
 	return &MockDCli{
 		running:    make(map[string]bool),
 		containers: make(map[string]types.Container),
 		images:     make(map[string]bool),
+		networks:   make(map[string]mockNetwork),
 	}
 }

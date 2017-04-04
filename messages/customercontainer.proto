@@ -1,5 +1,6 @@
 syntax = "proto3";
-package pb;
+package customercontainer;
+option go_package = "pb";
 
 service CustomerContainerService {
     rpc CreateContainer (CreateContainerRequest) returns (CreateContainerResponse);
@@ -46,4 +47,14 @@ message InstancesRequest {
 
 message InstancesResponse {
     repeated string Instances = 1;
+}
+
+message CreateDockerImageRequest {
+    uint32 Refid = 1;
+    uint32 KmiID = 2;
+}
+
+message CreateDockerImageResponse {
+    string ID = 1;
+    string Error = 2;
 }

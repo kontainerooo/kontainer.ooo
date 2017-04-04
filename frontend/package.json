@@ -1,14 +1,18 @@
 {
-  "name": "kontainer.io",
+  "name": "kontainer.ooo",
   "version": "0.0.0",
   "license": "MIT",
   "angular-cli": {},
   "scripts": {
+    "postinstall": "npm run proto",
     "ng": "ng",
     "start": "ng serve",
     "test": "ng test",
     "lint": "ng lint",
-    "e2e": "ng e2e"
+    "e2e": "ng e2e",
+    "proto": "npm run protojs && npm run protots",
+    "protojs": "./node_modules/.bin/pbjs -t static-module -w commonjs -o ./src/messages/messages.js ../messages/user.proto ../messages/kmi.proto ../messages/containerlifecycle.proto ../messages/customercontainer.proto",
+    "protots": "./node_modules/.bin/pbts -o ./src/messages/messages.d.ts ./src/messages/messages.js"
   },
   "private": true,
   "dependencies": {
@@ -25,6 +29,7 @@
     "core-js": "^2.4.1",
     "hammerjs": "^2.0.8",
     "material-design-lite": "^1.3.0",
+    "protobufjs": "^6.6.5",
     "rxjs": "^5.0.1",
     "ts-helpers": "^1.1.1",
     "zone.js": "^0.7.2"
@@ -47,6 +52,6 @@
     "protractor": "~5.1.0",
     "ts-node": "1.2.1",
     "tslint": "^4.3.0",
-    "typescript": "~2.0.0"
+    "typescript": "~2.2.0"
   }
 }

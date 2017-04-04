@@ -1,6 +1,6 @@
 import { browser, element, by } from 'protractor';
 
-export class Kontainer.IoPage {
+export class kroPage {
   navigateTo() {
     return browser.get('/');
   }

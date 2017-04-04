@@ -2,12 +2,15 @@ package customercontainer_test
 
 import (
 	"context"
+	"os"
 	"strings"
 
+	"github.com/go-kit/kit/log"
+	"github.com/kontainerooo/kontainer.ooo/pkg/customercontainer"
+	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
+	"github.com/kontainerooo/kontainer.ooo/pkg/testutils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/ttdennis/kontainer.io/pkg/customercontainer"
-	"github.com/ttdennis/kontainer.io/pkg/testutils"
 )
 
 var _ = Describe("Customercontainer", func() {
@@ -144,6 +147,93 @@ var _ = Describe("Customercontainer", func() {
 		It("Should return no instances when none exist", func() {
 			instances := cc.Instances(123)
 			Ω(instances).Should(BeEmpty())
+		})
+	})
+
+	Describe("Create image", func() {
+		cli := testutils.NewMockDCli()
+		cc := customercontainer.NewService(cli)
+		cc.AddLogger(log.NewNopLogger())
+
+		os.Mkdir("container-test", 0777)
+		os.Create("container-test/.dockerignore")
+
+		mockKMI := testutils.NewMockKMIClient()
+
+		mockKMIEndpoints := testutils.NewMockKMIEndpoints(log.NewNopLogger(), *mockKMI)
+
+		AfterSuite(func() {
+			os.RemoveAll("container-test")
+		})
+
+		It("Should error when there is no KMI client", func() {
+			_, err := cc.CreateDockerImage(123, 0)
+			Ω(err).Should(HaveOccurred())
+
+			cc.AddKMIClient(mockKMIEndpoints)
+		})
+
+		It("Should create an image", func() {
+
+			mockKMI.AddMockKMI(0, kmi.KMI{
+				KMDI: kmi.KMDI{
+					ID:          1,
+					Name:        "node",
+					Version:     "",
+					Description: "",
+					Type:        3,
+				},
+				Dockerfile:  "FROM FROM node:7-wheezy",
+				Container:   "./container-test",
+				Commands:    nil,
+				Environment: nil,
+				Frontend:    nil,
+				Imports:     nil,
+				Interfaces:  nil,
+				Mounts:      nil,
+				Variables:   nil,
+				Resources: map[string]interface{}{
+					"cpus": 1,
+					"mem":  500,
+					"swap": 500,
+				},
+			})
+
+			id, err := cc.CreateDockerImage(123, 0)
+
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(id).ShouldNot(BeNil())
+		})
+
+		It("Should fail on invalid environment", func() {
+			mockKMI.AddMockKMI(0, kmi.KMI{
+				KMDI: kmi.KMDI{
+					ID:          1,
+					Name:        "node",
+					Version:     "",
+					Description: "",
+					Type:        3,
+				},
+				Dockerfile: "FROM FROM node:7-wheezy",
+				Container:  "./container-test",
+				Commands:   nil,
+				Environment: map[string]interface{}{
+					"in valid": "val",
+				},
+				Frontend:   nil,
+				Imports:    nil,
+				Interfaces: nil,
+				Mounts:     nil,
+				Variables:  nil,
+				Resources: map[string]interface{}{
+					"cpus": 1,
+					"mem":  500,
+					"swap": 500,
+				},
+			})
+
+			_, err := cc.CreateDockerImage(123, 0)
+			Ω(err).Should(HaveOccurred())
 		})
 	})
 
