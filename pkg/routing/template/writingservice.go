@@ -31,7 +31,7 @@ type writingService struct {
 	s   routing.Service
 	w   Writer
 	r   Router
-	mem map[uint]map[string]*routing.RouterConfig
+	mem *cache
 }
 
 func (w *writingService) checkListenStatement(r *routing.ListenStatement) error {
@@ -73,6 +73,10 @@ func (w *writingService) checkLog(l *routing.Log) error {
 }
 
 func (w *writingService) checkSSLSettings(s *routing.SSLSettings) error {
+	return nil
+}
+
+func (w *writingService) checkLocationRule(l *routing.LocationRule) error {
 	return nil
 }
 
@@ -130,7 +134,13 @@ func (w *writingService) checkConfig(r *routing.RouterConfig) error {
 }
 
 func (w *writingService) CreateRouterConfig(r *routing.RouterConfig) error {
-	err := w.s.CreateRouterConfig(r)
+	var err error
+	err = w.checkConfig(r)
+	if err != nil {
+		return err
+	}
+
+	err = w.s.CreateRouterConfig(r)
 	if err != nil {
 		return err
 	}
@@ -138,7 +148,13 @@ func (w *writingService) CreateRouterConfig(r *routing.RouterConfig) error {
 }
 
 func (w *writingService) EditRouterConfig(refID uint, name string, r *routing.RouterConfig) error {
-	err := w.s.EditRouterConfig(refID, name, r)
+	var err error
+	err = w.checkConfig(r)
+	if err != nil {
+		return err
+	}
+
+	err = w.s.EditRouterConfig(refID, name, r)
 	if err != nil {
 		return err
 	}
@@ -146,10 +162,12 @@ func (w *writingService) EditRouterConfig(refID uint, name string, r *routing.Ro
 }
 
 func (w *writingService) GetRouterConfig(refID uint, name string, r *routing.RouterConfig) error {
-	err := w.s.GetRouterConfig(refID, name, r)
+	var err error
+	err = w.s.GetRouterConfig(refID, name, r)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -162,7 +180,13 @@ func (w *writingService) RemoveRouterConfig(refID uint, name string) error {
 }
 
 func (w *writingService) AddLocationRule(refID uint, name string, lr *routing.LocationRule) error {
-	err := w.s.AddLocationRule(refID, name, lr)
+	var err error
+	err = w.checkLocationRule(lr)
+	if err != nil {
+		return err
+	}
+
+	err = w.s.AddLocationRule(refID, name, lr)
 	if err != nil {
 		return err
 	}
@@ -178,7 +202,13 @@ func (w *writingService) RemoveLocationRule(refID uint, name string, lid int) er
 }
 
 func (w *writingService) ChangeListenStatement(refID uint, name string, ls *routing.ListenStatement) error {
-	err := w.s.ChangeListenStatement(refID, name, ls)
+	var err error
+	err = w.checkListenStatement(ls)
+	if err != nil {
+		return err
+	}
+
+	err = w.s.ChangeListenStatement(refID, name, ls)
 	if err != nil {
 		return err
 	}
@@ -186,7 +216,13 @@ func (w *writingService) ChangeListenStatement(refID uint, name string, ls *rout
 }
 
 func (w *writingService) AddServerName(refID uint, name string, sn string) error {
-	err := w.s.AddServerName(refID, name, sn)
+	var err error
+	err = w.checkServerName([]string{sn})
+	if err != nil {
+		return err
+	}
+
+	err = w.s.AddServerName(refID, name, sn)
 	if err != nil {
 		return err
 	}
@@ -216,6 +252,6 @@ func NewWritingService(s routing.Service, r Router, p string) (routing.Service, 
 		s:   s,
 		w:   w,
 		r:   r,
-		mem: make(map[uint]map[string]*routing.RouterConfig),
+		mem: newCache(s.GetRouterConfig),
 	}, nil
 }
