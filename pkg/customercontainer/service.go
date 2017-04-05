@@ -30,7 +30,7 @@ import (
 // Service Customer Container service
 type Service interface {
 	// CreateContainer instanciates a container for a User with the id refid and returns its id
-	CreateContainer(refid int, cfg *ContainerConfig) (name string, id string, err error)
+	CreateContainer(refid uint, cfg *ContainerConfig) (name string, id string, err error)
 
 	// EditContainer is used to edit a container instances configuration by id
 	EditContainer(id string, cfg *ContainerConfig) error
@@ -39,10 +39,10 @@ type Service interface {
 	RemoveContainer(id string) error
 
 	// Instances returns a list of instances of an user by id
-	Instances(refid int) []string
+	Instances(refid uint) []string
 
 	// CreateDockerImage creates a Docker image from a given KMI
-	CreateDockerImage(refid int, kmiID uint) (string, error)
+	CreateDockerImage(refid uint, kmiID uint) (string, error)
 
 	// AddKMIClient adds the kmi Endpoints to the service
 	AddKMIClient(ke *kmi.Endpoints)
@@ -68,7 +68,7 @@ func (s *service) imageExists(image string) bool {
 	return !s.dcli.IsErrImageNotFound(err)
 }
 
-func (s *service) CreateContainer(refid int, cfg *ContainerConfig) (name string, id string, err error) {
+func (s *service) CreateContainer(refid uint, cfg *ContainerConfig) (name string, id string, err error) {
 	securityOpts := []string{
 		"no-new-privileges",
 	}
@@ -134,7 +134,7 @@ func (s *service) RemoveContainer(id string) error {
 	return s.dcli.ContainerRemove(context.Background(), id, types.ContainerRemoveOptions{})
 }
 
-func (s *service) Instances(refid int) []string {
+func (s *service) Instances(refid uint) []string {
 
 	containers, _ := s.dcli.ContainerList(context.Background(), types.ContainerListOptions{})
 
@@ -150,7 +150,7 @@ func (s *service) Instances(refid int) []string {
 	return containerList
 }
 
-func (s *service) CreateDockerImage(refid int, kmiID uint) (string, error) {
+func (s *service) CreateDockerImage(refid uint, kmiID uint) (string, error) {
 
 	buildBuf := bytes.NewBuffer(nil)
 
@@ -219,7 +219,7 @@ func (s *service) AddLogger(l log.Logger) {
 	s.logger = l
 }
 
-func generateBuildOptions(kmi *kmi.KMI, userID int, imageTag string) types.ImageBuildOptions {
+func generateBuildOptions(kmi *kmi.KMI, userID uint, imageTag string) types.ImageBuildOptions {
 	var (
 		cpus string
 		mem  int64

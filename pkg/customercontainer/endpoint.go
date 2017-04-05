@@ -17,7 +17,7 @@ type Endpoints struct {
 
 // CreateContainerRequest is the request struct for the CreateContainerEndpoint
 type CreateContainerRequest struct {
-	RefID int
+	RefID uint
 	Cfg   *ContainerConfig
 }
 
@@ -86,7 +86,7 @@ func MakeRemoveContainerEndpoint(s Service) endpoint.Endpoint {
 
 // InstancesRequest is the request struct for the InstancesEndpoint
 type InstancesRequest struct {
-	RefID int
+	RefID uint
 }
 
 // InstancesResponse is the response struct for the InstancesEndpoint
@@ -107,7 +107,7 @@ func MakeInstancesEndpoint(s Service) endpoint.Endpoint {
 
 // CreateDockerImageRequest is the request struct for the CreateDockerImageEndpoint
 type CreateDockerImageRequest struct {
-	RefID int
+	RefID uint
 	KmiID uint
 }
 
