@@ -31,7 +31,7 @@ type writingService struct {
 	s   routing.Service
 	w   Writer
 	r   Router
-	mem *cache
+	mem Cache
 }
 
 func (w *writingService) checkListenStatement(r *routing.ListenStatement) error {
@@ -145,7 +145,7 @@ func (w *writingService) CreateRouterConfig(r *routing.RouterConfig) error {
 		return err
 	}
 
-	err = w.w.CreateFile(w.mem.setConf(r))
+	err = w.w.CreateFile(w.mem.SetConf(r))
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ func (w *writingService) EditRouterConfig(refID uint, name string, r *routing.Ro
 		return err
 	}
 
-	err = w.w.CreateFile(w.mem.editConf(r))
+	err = w.w.CreateFile(w.mem.EditConf(r))
 	if err != nil {
 		return err
 	}
@@ -195,7 +195,7 @@ func (w *writingService) RemoveRouterConfig(refID uint, name string) error {
 		return err
 	}
 
-	w.mem.removeConf(refID, name)
+	w.mem.RemoveConf(refID, name)
 
 	return nil
 }
@@ -212,7 +212,7 @@ func (w *writingService) AddLocationRule(refID uint, name string, lr *routing.Lo
 		return err
 	}
 
-	w.w.CreateFile(w.mem.updateConf(refID, name))
+	w.w.CreateFile(w.mem.UpdateConf(refID, name))
 
 	return nil
 }
@@ -223,7 +223,7 @@ func (w *writingService) RemoveLocationRule(refID uint, name string, lid int) er
 		return err
 	}
 
-	w.w.CreateFile(w.mem.updateConf(refID, name))
+	w.w.CreateFile(w.mem.UpdateConf(refID, name))
 
 	return nil
 }
@@ -240,7 +240,7 @@ func (w *writingService) ChangeListenStatement(refID uint, name string, ls *rout
 		return err
 	}
 
-	w.w.CreateFile(w.mem.updateConf(refID, name))
+	w.w.CreateFile(w.mem.UpdateConf(refID, name))
 
 	return nil
 }
@@ -257,7 +257,7 @@ func (w *writingService) AddServerName(refID uint, name string, sn string) error
 		return err
 	}
 
-	w.w.CreateFile(w.mem.updateConf(refID, name))
+	w.w.CreateFile(w.mem.UpdateConf(refID, name))
 
 	return nil
 }
@@ -268,7 +268,7 @@ func (w *writingService) RemoveServerName(refID uint, name string, id int) error
 		return err
 	}
 
-	w.w.CreateFile(w.mem.updateConf(refID, name))
+	w.w.CreateFile(w.mem.UpdateConf(refID, name))
 
 	return nil
 }
@@ -288,6 +288,6 @@ func NewWritingService(s routing.Service, r Router, p string) (routing.Service, 
 		s:   s,
 		w:   w,
 		r:   r,
-		mem: newCache(s.GetRouterConfig),
+		mem: NewCache(s.GetRouterConfig),
 	}, nil
 }

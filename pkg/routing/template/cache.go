@@ -2,12 +2,30 @@ package template
 
 import "github.com/kontainerooo/kontainer.ooo/pkg/routing"
 
+// Cache is a cache for routing.RouterConfig files
+type Cache interface {
+	// GetConf returns a routing.RouterConfig either from the cache or using the get function
+	GetConf(refID uint, name string) (*routing.RouterConfig, error)
+
+	// SetConf puts a conf into the cache
+	SetConf(r *routing.RouterConfig) *routing.RouterConfig
+
+	// EditConf edits an existing conf or gets it if its not exists and edits afterwards
+	EditConf(r *routing.RouterConfig) *routing.RouterConfig
+
+	// RemoveConf removes a routing.RouterConfig from the Cache
+	RemoveConf(refID uint, name string)
+
+	// UpdateConf removes a routing.RouterConfig and gets a new version from the Database
+	UpdateConf(refID uint, name string) *routing.RouterConfig
+}
+
 type cache struct {
 	m             map[uint]map[string]*routing.RouterConfig
 	getRouterConf func(uint, string, *routing.RouterConfig) error
 }
 
-func (c *cache) getConf(refID uint, name string) (*routing.RouterConfig, error) {
+func (c *cache) GetConf(refID uint, name string) (*routing.RouterConfig, error) {
 	ref, ok := c.m[refID]
 	if ok {
 		conf, ok := ref[name]
@@ -100,7 +118,7 @@ func (c *cache) changeConf(r *routing.RouterConfig, edit bool) *routing.RouterCo
 	} else if ok {
 		c.m[r.RefID][r.Name] = r
 	} else {
-		conf, err := c.getConf(r.RefID, r.Name)
+		conf, err := c.GetConf(r.RefID, r.Name)
 		if err != nil {
 			return nil
 		}
@@ -113,30 +131,31 @@ func (c *cache) changeConf(r *routing.RouterConfig, edit bool) *routing.RouterCo
 	return c.m[r.RefID][r.Name]
 }
 
-func (c *cache) setConf(r *routing.RouterConfig) *routing.RouterConfig {
+func (c *cache) SetConf(r *routing.RouterConfig) *routing.RouterConfig {
 	return c.changeConf(r, false)
 }
 
-func (c *cache) editConf(r *routing.RouterConfig) *routing.RouterConfig {
+func (c *cache) EditConf(r *routing.RouterConfig) *routing.RouterConfig {
 	return c.changeConf(r, true)
 }
 
-func (c *cache) removeConf(refID uint, name string) {
+func (c *cache) RemoveConf(refID uint, name string) {
 	_, ok := c.m[refID]
 	if ok {
 		c.m[refID][name] = nil
 	}
 }
 
-func (c *cache) updateConf(refID uint, name string) *routing.RouterConfig {
-	c.removeConf(refID, name)
-	return c.editConf(&routing.RouterConfig{
+func (c *cache) UpdateConf(refID uint, name string) *routing.RouterConfig {
+	c.RemoveConf(refID, name)
+	return c.EditConf(&routing.RouterConfig{
 		RefID: refID,
 		Name:  name,
 	})
 }
 
-func newCache(g func(uint, string, *routing.RouterConfig) error) *cache {
+// NewCache returns a new Cache instance with the help of a get function
+func NewCache(g func(uint, string, *routing.RouterConfig) error) Cache {
 	return &cache{
 		m:             make(map[uint]map[string]*routing.RouterConfig),
 		getRouterConf: g,
