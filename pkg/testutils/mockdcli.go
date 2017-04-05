@@ -190,8 +190,9 @@ func (d *MockDCli) ImageInspectWithRaw(ctx context.Context, imageID string) (typ
 
 // ImageBuild builds a mock image
 func (d *MockDCli) ImageBuild(ctx context.Context, buildContext io.Reader, options types.ImageBuildOptions) (types.ImageBuildResponse, error) {
+	d.images[options.Tags[0]] = true
 	return types.ImageBuildResponse{
-		Body: nopCloser{bytes.NewBufferString("{\"stream\":\"sha1:1234\"}")},
+		Body: nopCloser{bytes.NewBufferString(fmt.Sprintf("{\"stream\":\"sha1:%s\"}", options.Tags[0]))},
 	}, nil
 }
 
