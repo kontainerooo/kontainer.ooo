@@ -15,7 +15,7 @@ message ContainerConfig {
 
 message CreateContainerRequest {
     uint32 RefID = 1;
-    ContainerConfig Cfg = 2;
+    uint32 kmiID = 2;
 }
 
 message CreateContainerResponse {
@@ -47,14 +47,4 @@ message InstancesRequest {
 
 message InstancesResponse {
     repeated string Instances = 1;
-}
-
-message CreateDockerImageRequest {
-    uint32 RefID = 1;
-    uint32 KmiID = 2;
-}
-
-message CreateDockerImageResponse {
-    string ID = 1;
-    string Error = 2;
 }
