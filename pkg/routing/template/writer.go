@@ -26,6 +26,7 @@ var router = [...]string{
 type Writer interface {
 	CreatePath(refID uint, name string) string
 	CreateFile(*routing.RouterConfig) error
+	RemoveFile(refID uint, name string) error
 }
 
 type writer struct {
@@ -53,6 +54,10 @@ func (w writer) CreateFile(c *routing.RouterConfig) error {
 	}
 
 	return nil
+}
+
+func (w writer) RemoveFile(refID uint, name string) error {
+	return os.Remove(w.CreatePath(refID, name))
 }
 
 // NewWriter returns a new writer
