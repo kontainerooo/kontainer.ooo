@@ -253,13 +253,6 @@ func (s *service) getContainerNetworks(containerID string) ([]Containers, error)
 		return []Containers{}, err
 	}
 
-	// TEMPORARY: until mockDB is fixed
-	for i, v := range cts {
-		if v.ContainerID != containerID {
-			cts = append(cts[:i], cts[i+1:]...)
-		}
-	}
-
 	return cts, nil
 }
 
