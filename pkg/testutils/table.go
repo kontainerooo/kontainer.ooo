@@ -39,6 +39,7 @@ func (t *table) copy() *table {
 		ref:        t.ref,
 		idx:        t.idx,
 		count:      t.count,
+		columns:    t.columns,
 	}
 
 	for _, r := range t.rows {
@@ -133,6 +134,7 @@ func (t *table) delete(ids map[string]reflect.Value) error {
 			if k == gorm.ToDBName(k) {
 				k = t.columns[k]
 			}
+
 			if v.Interface() != reflect.ValueOf(row).Elem().FieldByName(k).Interface() {
 				match = false
 				break
@@ -238,6 +240,38 @@ func (t *table) removeFromArray(query reflect.Value, target string, index int) e
 	return nil
 }
 
+func getPrimaryKeys(ref reflect.Type, prime, idx *[]string, m map[string]string) {
+	primaryRegExp := regexp.MustCompile("primary_key")
+	refRegExp := regexp.MustCompile("Ref")
+
+	for i := 0; i < ref.NumField(); i++ {
+		f := ref.Field(i)
+		t := f.Type
+		if t.Kind() == reflect.Ptr {
+			t = t.Elem()
+		}
+
+		if t.Kind() == reflect.Struct {
+			getPrimaryKeys(t, prime, idx, m)
+			continue
+		}
+
+		dbName := gorm.ToDBName(f.Name)
+		m[dbName] = f.Name
+
+		v, ok := f.Tag.Lookup("gorm")
+		if ok {
+			isPrimary := primaryRegExp.MatchString(v)
+			if isPrimary {
+				*prime = append(*prime, f.Name)
+				if f.Type.Kind() == reflect.Uint && !refRegExp.MatchString(f.Name) {
+					*idx = append(*idx, f.Name)
+				}
+			}
+		}
+	}
+}
+
 func newTable(ref reflect.Type, name string) *table {
 	var (
 		idx     []string
@@ -254,24 +288,7 @@ func newTable(ref reflect.Type, name string) *table {
 		}
 	}
 
-	primaryRegExp := regexp.MustCompile("primary_key")
-	refRegExp := regexp.MustCompile("Ref")
-
-	for i := 0; i < ref.NumField(); i++ {
-		f := ref.Field(i)
-		dbName := gorm.ToDBName(f.Name)
-		columns[dbName] = f.Name
-		v, ok := f.Tag.Lookup("gorm")
-		if ok {
-			isPrimary := primaryRegExp.MatchString(v)
-			if isPrimary {
-				primary = append(primary, f.Name)
-				if f.Type.Kind() == reflect.Uint && !refRegExp.MatchString(f.Name) {
-					idx = append(idx, f.Name)
-				}
-			}
-		}
-	}
+	getPrimaryKeys(ref, &primary, &idx, columns)
 
 	return &table{
 		Name:       name,
