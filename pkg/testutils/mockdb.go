@@ -322,9 +322,9 @@ func (m *MockDB) Delete(value interface{}, where ...interface{}) error {
 
 	v := reflect.ValueOf(value).Elem()
 
-	for i := 0; i < ref.NumField(); i++ {
-		f := ref.Field(i).Name
-		fv := v.Field(i)
+	for _, f := range m.tables[name].columns {
+		fv := v.FieldByName(f)
+
 		if !isZero(fv) {
 			ids[f] = fv
 		}
