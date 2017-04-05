@@ -55,6 +55,7 @@ type MockDB struct {
 	err        int
 	value      reflect.Value
 	multiValue []*result
+	isQuery    bool
 }
 
 // SetError sets the err property to true, causing the next function to be invoked next to return an error
@@ -233,6 +234,9 @@ func (m *MockDB) Where(query interface{}, args ...interface{}) error {
 	if len(m.multiValue) == 1 {
 		m.value = m.multiValue[0].values
 	}
+
+	m.isQuery = true
+
 	return nil
 }
 
@@ -262,6 +266,7 @@ func (m *MockDB) First(out interface{}, where ...interface{}) error {
 	}
 
 	m.value, m.multiValue = RNil, nil
+	m.isQuery = false
 	return nil
 }
 
@@ -271,9 +276,18 @@ func (m *MockDB) Find(out interface{}, where ...interface{}) error {
 		return ErrDBFailure
 	}
 
+	defer func() { m.isQuery = false }()
+
 	ref := reflect.TypeOf(out).Elem()
 	for _, t := range m.tables {
 		if ref == reflect.SliceOf(t.getRef()) {
+			if !m.isQuery {
+				err := t.all(out)
+				if err != nil {
+					return err
+				}
+				return nil
+			}
 			if reflect.TypeOf(out).Elem().Kind() == reflect.Slice {
 				for k, v := range m.multiValue {
 					val := v.values.Slice(0, 1).Index(k).Elem()
