@@ -274,9 +274,11 @@ func (m *MockDB) Find(out interface{}, where ...interface{}) error {
 	ref := reflect.TypeOf(out).Elem()
 	for _, t := range m.tables {
 		if ref == reflect.SliceOf(t.getRef()) {
-			err := t.all(out)
-			if err != nil {
-				return err
+			if reflect.TypeOf(out).Elem().Kind() == reflect.Slice {
+				for k, v := range m.multiValue {
+					val := v.values.Slice(0, 1).Index(k).Elem()
+					reflect.ValueOf(out).Elem().Set(reflect.Append(reflect.ValueOf(out).Elem(), val))
+				}
 			}
 			break
 		}
