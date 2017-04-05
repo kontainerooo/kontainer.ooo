@@ -87,7 +87,7 @@ func EncodeGRPCCreateContainerRequest(_ context.Context, request interface{}) (i
 	req := request.(*customercontainer.CreateContainerRequest)
 	return &pb.CreateContainerRequest{
 		Refid: uint32(req.Refid),
-		Cfg:   configToPbConfig(req.Cfg),
+		KmiID: uint32(req.KMIID),
 	}, nil
 }
 
