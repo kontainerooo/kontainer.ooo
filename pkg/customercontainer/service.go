@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -30,7 +31,7 @@ import (
 // Service Customer Container service
 type Service interface {
 	// CreateContainer instanciates a container for a User with the id refid and returns its id
-	CreateContainer(refid uint, cfg *ContainerConfig) (name string, id string, err error)
+	CreateContainer(refid uint, kmiID uint) (name string, id string, err error)
 
 	// EditContainer is used to edit a container instances configuration by id
 	EditContainer(id string, cfg *ContainerConfig) error
@@ -40,9 +41,6 @@ type Service interface {
 
 	// Instances returns a list of instances of an user by id
 	Instances(refid uint) []string
-
-	// CreateDockerImage creates a Docker image from a given KMI
-	CreateDockerImage(refid uint, kmiID uint) (string, error)
 
 	// AddKMIClient adds the kmi Endpoints to the service
 	AddKMIClient(ke *kmi.Endpoints)
@@ -68,7 +66,12 @@ func (s *service) imageExists(image string) bool {
 	return !s.dcli.IsErrImageNotFound(err)
 }
 
-func (s *service) CreateContainer(refid uint, cfg *ContainerConfig) (name string, id string, err error) {
+func (s *service) CreateContainer(refid uint, kmiID uint) (name string, id string, err error) {
+	_, imageTag, err := s.createDockerImage(refid, kmiID)
+	if err != nil {
+		return "", "", err
+	}
+
 	securityOpts := []string{
 		"no-new-privileges",
 	}
@@ -85,7 +88,7 @@ func (s *service) CreateContainer(refid uint, cfg *ContainerConfig) (name string
 	dropCaps := &strslice.StrSlice{"NET_RAW"}
 
 	// Check if the image exists
-	if exists := s.imageExists(cfg.ImageName); !exists {
+	if exists := s.imageExists(imageTag); !exists {
 		return "", "", fmt.Errorf("Image does not exist")
 	}
 
@@ -93,7 +96,7 @@ func (s *service) CreateContainer(refid uint, cfg *ContainerConfig) (name string
 	r, err := s.dcli.ContainerCreate(
 		context.Background(),
 		&container.Config{
-			Image:        cfg.ImageName,
+			Image:        imageTag,
 			Cmd:          []string{"sh"},
 			Tty:          true,
 			AttachStdin:  true,
@@ -150,45 +153,45 @@ func (s *service) Instances(refid uint) []string {
 	return containerList
 }
 
-func (s *service) CreateDockerImage(refid uint, kmiID uint) (string, error) {
+func (s *service) createDockerImage(refid uint, kmiID uint) (string, string, error) {
 
 	buildBuf := bytes.NewBuffer(nil)
 
 	if s.kmiClient == nil {
-		return "", errors.New("No KMI client")
+		return "", "", errors.New("No KMI client")
 	}
 
 	kmiResponse, err := s.kmiClient.GetKMIEndpoint(context.Background(), &kmi.GetKMIRequest{
 		ID: kmiID,
 	})
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	kmi := kmiResponse.(*kmi.GetKMIResponse).KMI
 
-	imageTag := fmt.Sprintf("kro/%s:%d", strings.ToLower(kmi.Name), refid)
+	imageTag := fmt.Sprintf("kro/%s:%d-%d", strings.ToLower(kmi.Name), refid, rand.Int())
 	_, _, err = s.dcli.ImageInspectWithRaw(context.Background(), imageTag)
 
 	if !s.dcli.IsErrImageNotFound(err) {
-		return "", err
+		return "", "", err
 	}
 
 	dockerfile, err := addEnvToDockerfile(kmi.Dockerfile, kmi.Environment)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	buildContext, err := createBuildContext(kmi.Context, dockerfile)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	buildOptions := generateBuildOptions(kmi, refid, imageTag)
 
 	res, err := s.dcli.ImageBuild(context.Background(), buildContext, buildOptions)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	err = jsonmessage.DisplayJSONMessagesStream(res.Body, buildBuf, 1, false, nil)
@@ -198,7 +201,7 @@ func (s *service) CreateDockerImage(refid uint, kmiID uint) (string, error) {
 			if jerr.Code == 0 {
 				jerr.Code = 1
 			}
-			return "", fmt.Errorf("%s", jerr.Message)
+			return "", "", fmt.Errorf("%s", jerr.Message)
 		}
 	}
 
@@ -208,7 +211,7 @@ func (s *service) CreateDockerImage(refid uint, kmiID uint) (string, error) {
 
 	s.logger.Log("msg", "Created image", "ImageID", imageID)
 
-	return imageID, nil
+	return imageID, imageTag, nil
 }
 
 func (s *service) AddKMIClient(ke *kmi.Endpoints) {
