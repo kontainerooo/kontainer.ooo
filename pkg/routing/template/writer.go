@@ -24,6 +24,7 @@ var router = [...]string{
 
 // Writer is
 type Writer interface {
+	CreatePath(refID uint, name string) string
 	CreateFile(*routing.RouterConfig) error
 }
 
@@ -33,8 +34,12 @@ type writer struct {
 	name     string
 }
 
+func (w writer) CreatePath(refID uint, name string) string {
+	return fmt.Sprintf("%s/%d_%s.conf", w.path, refID, name)
+}
+
 func (w writer) CreateFile(c *routing.RouterConfig) error {
-	path := fmt.Sprintf("%s/%d_%s.conf", w.path, c.RefID, c.Name)
+	path := w.CreatePath(c.RefID, c.Name)
 
 	f, err := os.Create(path)
 	if err != nil {
