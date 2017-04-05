@@ -23,25 +23,46 @@ var _ = Describe("Customercontainer", func() {
 	})
 
 	Describe("Create Container", func() {
+		mockKMI := testutils.NewMockKMIClient()
+		mockKMIEndpoints := testutils.NewMockKMIEndpoints(log.NewNopLogger(), *mockKMI)
+		mockKMI.AddMockKMI(0, kmi.KMI{
+			KMDI: kmi.KMDI{
+				ID:          1,
+				Name:        "node",
+				Version:     "",
+				Description: "",
+				Type:        3,
+			},
+			Dockerfile:  "FROM FROM node:7-wheezy",
+			Container:   "./container-test",
+			Commands:    nil,
+			Environment: nil,
+			Frontend:    nil,
+			Imports:     nil,
+			Interfaces:  nil,
+			Mounts:      nil,
+			Variables:   nil,
+			Resources: map[string]interface{}{
+				"cpus": 1,
+				"mem":  500,
+				"swap": 500,
+			},
+		})
+
+		cli := testutils.NewMockDCli()
+		cc := customercontainer.NewService(cli)
+		cc.AddLogger(log.NewNopLogger())
+		cc.AddKMIClient(mockKMIEndpoints)
+
 		It("Should create a new container", func() {
-			cli := testutils.NewMockDCli()
-			cc := customercontainer.NewService(cli)
-			cli.CreateMockImage("testimage")
-			containerName, _, err := cc.CreateContainer(123, &customercontainer.ContainerConfig{
-				ImageName: "testimage",
-			})
+			containerName, _, err := cc.CreateContainer(123, 0)
 
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(strings.HasPrefix(containerName, "123")).Should(BeTrue())
 		})
 
-		It("Should fail with missing container image", func() {
-			cli := testutils.NewMockDCli()
-			cc := customercontainer.NewService(cli)
-
-			containerName, _, err := cc.CreateContainer(123, &customercontainer.ContainerConfig{
-				ImageName: "testimage",
-			})
+		It("Should fail with missing kmi", func() {
+			containerName, _, err := cc.CreateContainer(123, 1)
 
 			Ω(err).Should(HaveOccurred())
 			Ω(containerName).Should(BeZero())
@@ -53,9 +74,7 @@ var _ = Describe("Customercontainer", func() {
 			cli.CreateMockImage("testimage")
 
 			cli.SetDockerOffline()
-			containerName, _, err := cc.CreateContainer(123, &customercontainer.ContainerConfig{
-				ImageName: "testimage",
-			})
+			containerName, _, err := cc.CreateContainer(123, 0)
 
 			Ω(err).Should(HaveOccurred())
 			Ω(containerName).Should(BeZero())
@@ -67,9 +86,7 @@ var _ = Describe("Customercontainer", func() {
 			cli.CreateMockImage("testimage")
 
 			cli.SetIDNotExisting()
-			containerName, _, err := cc.CreateContainer(123, &customercontainer.ContainerConfig{
-				ImageName: "testimage",
-			})
+			containerName, _, err := cc.CreateContainer(123, 0)
 
 			Ω(err).Should(HaveOccurred())
 			Ω(containerName).Should(BeZero())
@@ -84,9 +101,7 @@ var _ = Describe("Customercontainer", func() {
 			tmpSeccomp := customercontainer.SeccompProfile
 			customercontainer.SeccompProfile = ``
 
-			containerName, _, err := cc.CreateContainer(123, &customercontainer.ContainerConfig{
-				ImageName: "testimage",
-			})
+			containerName, _, err := cc.CreateContainer(123, 0)
 
 			Ω(err).Should(HaveOccurred())
 			Ω(containerName).Should(BeZero())
@@ -106,12 +121,38 @@ var _ = Describe("Customercontainer", func() {
 	})
 
 	Describe("Remove container", func() {
+		mockKMI := testutils.NewMockKMIClient()
+		mockKMIEndpoints := testutils.NewMockKMIEndpoints(log.NewNopLogger(), *mockKMI)
+		mockKMI.AddMockKMI(0, kmi.KMI{
+			KMDI: kmi.KMDI{
+				ID:          1,
+				Name:        "node",
+				Version:     "",
+				Description: "",
+				Type:        3,
+			},
+			Dockerfile:  "FROM FROM node:7-wheezy",
+			Container:   "./container-test",
+			Commands:    nil,
+			Environment: nil,
+			Frontend:    nil,
+			Imports:     nil,
+			Interfaces:  nil,
+			Mounts:      nil,
+			Variables:   nil,
+			Resources: map[string]interface{}{
+				"cpus": 1,
+				"mem":  500,
+				"swap": 500,
+			},
+		})
+
 		cli := testutils.NewMockDCli()
 		cc := customercontainer.NewService(cli)
-		cli.CreateMockImage("testimage")
-		_, containerID, _ := cc.CreateContainer(123, &customercontainer.ContainerConfig{
-			ImageName: "testimage",
-		})
+		cc.AddLogger(log.NewNopLogger())
+		cc.AddKMIClient(mockKMIEndpoints)
+
+		_, containerID, _ := cc.CreateContainer(123, 0)
 		It("Should remove container", func() {
 			err := cc.RemoveContainer(containerID)
 
@@ -126,14 +167,39 @@ var _ = Describe("Customercontainer", func() {
 	})
 
 	Describe("Get instances", func() {
+		mockKMI := testutils.NewMockKMIClient()
+		mockKMIEndpoints := testutils.NewMockKMIEndpoints(log.NewNopLogger(), *mockKMI)
+		mockKMI.AddMockKMI(0, kmi.KMI{
+			KMDI: kmi.KMDI{
+				ID:          1,
+				Name:        "node",
+				Version:     "",
+				Description: "",
+				Type:        3,
+			},
+			Dockerfile:  "FROM FROM node:7-wheezy",
+			Container:   "./container-test",
+			Commands:    nil,
+			Environment: nil,
+			Frontend:    nil,
+			Imports:     nil,
+			Interfaces:  nil,
+			Mounts:      nil,
+			Variables:   nil,
+			Resources: map[string]interface{}{
+				"cpus": 1,
+				"mem":  500,
+				"swap": 500,
+			},
+		})
+
 		cli := testutils.NewMockDCli()
 		cc := customercontainer.NewService(cli)
-		cli.CreateMockImage("testimage")
+		cc.AddLogger(log.NewNopLogger())
+		cc.AddKMIClient(mockKMIEndpoints)
 
-		It("Should return intances", func() {
-			_, containerID, err := cc.CreateContainer(123, &customercontainer.ContainerConfig{
-				ImageName: "testimage",
-			})
+		It("Should return instances", func() {
+			_, containerID, err := cc.CreateContainer(123, 0)
 
 			instances := cc.Instances(123)
 
@@ -167,7 +233,7 @@ var _ = Describe("Customercontainer", func() {
 		})
 
 		It("Should error when there is no KMI client", func() {
-			_, err := cc.CreateDockerImage(123, 0)
+			_, _, err := cc.CreateContainer(123, 0)
 			Ω(err).Should(HaveOccurred())
 
 			cc.AddKMIClient(mockKMIEndpoints)
@@ -199,7 +265,7 @@ var _ = Describe("Customercontainer", func() {
 				},
 			})
 
-			id, err := cc.CreateDockerImage(123, 0)
+			id, _, err := cc.CreateContainer(123, 0)
 
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(id).ShouldNot(BeNil())
@@ -232,15 +298,43 @@ var _ = Describe("Customercontainer", func() {
 				},
 			})
 
-			_, err := cc.CreateDockerImage(123, 0)
+			_, _, err := cc.CreateContainer(123, 0)
 			Ω(err).Should(HaveOccurred())
 		})
 	})
 
 	Describe("Endpoints and Transport", func() {
+		mockKMI := testutils.NewMockKMIClient()
+		mockKMIEndpoints := testutils.NewMockKMIEndpoints(log.NewNopLogger(), *mockKMI)
+		mockKMI.AddMockKMI(0, kmi.KMI{
+			KMDI: kmi.KMDI{
+				ID:          1,
+				Name:        "node",
+				Version:     "",
+				Description: "",
+				Type:        3,
+			},
+			Dockerfile:  "FROM FROM node:7-wheezy",
+			Container:   "./container-test",
+			Commands:    nil,
+			Environment: nil,
+			Frontend:    nil,
+			Imports:     nil,
+			Interfaces:  nil,
+			Mounts:      nil,
+			Variables:   nil,
+			Resources: map[string]interface{}{
+				"cpus": 1,
+				"mem":  500,
+				"swap": 500,
+			},
+		})
+
 		cli := testutils.NewMockDCli()
 		cc := customercontainer.NewService(cli)
-		cli.CreateMockImage("testimage")
+		cc.AddLogger(log.NewNopLogger())
+		cc.AddKMIClient(mockKMIEndpoints)
+
 		es := &customercontainer.Endpoints{}
 		ctx := context.Background()
 		gID := ""
@@ -254,12 +348,9 @@ var _ = Describe("Customercontainer", func() {
 
 		Context("CreateContainerEndpoint", func() {
 			It("Should work with CreateContainer request and response", func() {
-				cfg := customercontainer.ContainerConfig{
-					ImageName: "testimage",
-				}
 				res, err := es.CreateContainerEndpoint(ctx, customercontainer.CreateContainerRequest{
 					RefID: 123,
-					Cfg:   &cfg,
+					KMIID: 0,
 				})
 
 				gID = res.(customercontainer.CreateContainerResponse).ID
