@@ -18,7 +18,7 @@ type Endpoints struct {
 // CreateContainerRequest is the request struct for the CreateContainerEndpoint
 type CreateContainerRequest struct {
 	RefID uint
-	Cfg   *ContainerConfig
+	KMIID uint
 }
 
 // CreateContainerResponse is the response struct for the CreateContainerEndpoint
@@ -32,7 +32,7 @@ type CreateContainerResponse struct {
 func MakeCreateContainerEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateContainerRequest)
-		name, id, err := s.CreateContainer(req.RefID, req.Cfg)
+		name, id, err := s.CreateContainer(req.RefID, req.KMIID)
 		return CreateContainerResponse{
 			Error: err,
 			ID:    id,
@@ -101,30 +101,6 @@ func MakeInstancesEndpoint(s Service) endpoint.Endpoint {
 		inst := s.Instances(req.RefID)
 		return InstancesResponse{
 			Instances: inst,
-		}, nil
-	}
-}
-
-// CreateDockerImageRequest is the request struct for the CreateDockerImageEndpoint
-type CreateDockerImageRequest struct {
-	RefID uint
-	KmiID uint
-}
-
-// CreateDockerImageResponse is the response struct for the CreateDockerImageEndpoint
-type CreateDockerImageResponse struct {
-	ID    string
-	Error error
-}
-
-// MakeCreateDockerImageEndpoint creates a gokit endpoint which invokes CreateDockerImage
-func MakeCreateDockerImageEndpoint(s Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(CreateDockerImageRequest)
-		id, err := s.CreateDockerImage(req.RefID, req.KmiID)
-		return CreateDockerImageResponse{
-			Error: err,
-			ID:    id,
 		}, nil
 	}
 }
