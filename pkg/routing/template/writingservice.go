@@ -144,6 +144,12 @@ func (w *writingService) CreateRouterConfig(r *routing.RouterConfig) error {
 	if err != nil {
 		return err
 	}
+
+	err = w.w.CreateFile(w.mem.setConf(r))
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -158,6 +164,12 @@ func (w *writingService) EditRouterConfig(refID uint, name string, r *routing.Ro
 	if err != nil {
 		return err
 	}
+
+	err = w.w.CreateFile(w.mem.editConf(r))
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -172,10 +184,19 @@ func (w *writingService) GetRouterConfig(refID uint, name string, r *routing.Rou
 }
 
 func (w *writingService) RemoveRouterConfig(refID uint, name string) error {
-	err := w.s.RemoveRouterConfig(refID, name)
+	var err error
+	err = w.w.RemoveFile(refID, name)
 	if err != nil {
 		return err
 	}
+
+	err = w.s.RemoveRouterConfig(refID, name)
+	if err != nil {
+		return err
+	}
+
+	w.mem.removeConf(refID, name)
+
 	return nil
 }
 
@@ -190,6 +211,9 @@ func (w *writingService) AddLocationRule(refID uint, name string, lr *routing.Lo
 	if err != nil {
 		return err
 	}
+
+	w.w.CreateFile(w.mem.updateConf(refID, name))
+
 	return nil
 }
 
@@ -198,6 +222,9 @@ func (w *writingService) RemoveLocationRule(refID uint, name string, lid int) er
 	if err != nil {
 		return err
 	}
+
+	w.w.CreateFile(w.mem.updateConf(refID, name))
+
 	return nil
 }
 
@@ -212,6 +239,9 @@ func (w *writingService) ChangeListenStatement(refID uint, name string, ls *rout
 	if err != nil {
 		return err
 	}
+
+	w.w.CreateFile(w.mem.updateConf(refID, name))
+
 	return nil
 }
 
@@ -226,6 +256,9 @@ func (w *writingService) AddServerName(refID uint, name string, sn string) error
 	if err != nil {
 		return err
 	}
+
+	w.w.CreateFile(w.mem.updateConf(refID, name))
+
 	return nil
 }
 
@@ -234,6 +267,9 @@ func (w *writingService) RemoveServerName(refID uint, name string, id int) error
 	if err != nil {
 		return err
 	}
+
+	w.w.CreateFile(w.mem.updateConf(refID, name))
+
 	return nil
 }
 
