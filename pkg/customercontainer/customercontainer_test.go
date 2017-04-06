@@ -184,7 +184,7 @@ var _ = Describe("Customercontainer", func() {
 					Type:        3,
 				},
 				Dockerfile:  "FROM FROM node:7-wheezy",
-				Container:   "./container-test",
+				Context:     "./container-test",
 				Commands:    nil,
 				Environment: nil,
 				Frontend:    nil,
@@ -215,7 +215,7 @@ var _ = Describe("Customercontainer", func() {
 					Type:        3,
 				},
 				Dockerfile: "FROM FROM node:7-wheezy",
-				Container:  "./container-test",
+				Context:    "./container-test",
 				Commands:   nil,
 				Environment: map[string]interface{}{
 					"in valid": "val",
