@@ -145,7 +145,7 @@ func pbConfigToNWConfig(c pb.NetworkConfig) *Config {
 func DecodeGRPCCreatePrimaryNetworkForContainerRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
 	req := grpcReq.(*pb.CreatePrimaryNetworkForContainerRequest)
 	return CreatePrimaryNetworkForContainerRequest{
-		Refid:       uint(req.Refid),
+		RefID:       uint(req.RefID),
 		Config:      pbConfigToNWConfig(*req.Config),
 		ContainerID: req.ContainerID,
 	}, nil
@@ -156,7 +156,7 @@ func DecodeGRPCCreatePrimaryNetworkForContainerRequest(_ context.Context, grpcRe
 func DecodeGRPCCreateNetworkRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
 	req := grpcReq.(*pb.CreateNetworkRequest)
 	return CreateNetworkRequest{
-		Refid:  uint(req.Refid),
+		RefID:  uint(req.RefID),
 		Config: pbConfigToNWConfig(*req.Config),
 	}, nil
 }
@@ -166,7 +166,7 @@ func DecodeGRPCCreateNetworkRequest(_ context.Context, grpcReq interface{}) (int
 func DecodeGRPCRemoveNetworkByNameRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
 	req := grpcReq.(*pb.RemoveNetworkByNameRequest)
 	return RemoveNetworkByNameRequest{
-		Refid: uint(req.Refid),
+		RefID: uint(req.RefID),
 		Name:  req.Name,
 	}, nil
 }
@@ -176,7 +176,7 @@ func DecodeGRPCRemoveNetworkByNameRequest(_ context.Context, grpcReq interface{}
 func DecodeGRPCAddContainerToNetworkRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
 	req := grpcReq.(*pb.AddContainerToNetworkRequest)
 	return AddContainerToNetworkRequest{
-		Refid:       uint(req.Refid),
+		RefID:       uint(req.RefID),
 		Name:        req.Name,
 		ContainerID: req.ContainerID,
 	}, nil
@@ -187,7 +187,7 @@ func DecodeGRPCAddContainerToNetworkRequest(_ context.Context, grpcReq interface
 func DecodeGRPCRemoveContainerFromNetworkRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
 	req := grpcReq.(*pb.RemoveContainerFromNetworkRequest)
 	return RemoveContainerFromNetworkRequest{
-		Refid:       uint(req.Refid),
+		RefID:       uint(req.RefID),
 		Name:        req.Name,
 		ContainerID: req.ContainerID,
 	}, nil
@@ -198,7 +198,7 @@ func DecodeGRPCRemoveContainerFromNetworkRequest(_ context.Context, grpcReq inte
 func DecodeGRPCExposePortToContainerRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
 	req := grpcReq.(*pb.ExposePortToContainerRequest)
 	return ExposePortToContainerRequest{
-		Refid:          uint(req.Refid),
+		RefID:          uint(req.RefID),
 		SrcContainerID: req.SrcContainerID,
 		Port:           uint16(req.Port),
 		Protocol:       req.Protocol,
@@ -211,7 +211,7 @@ func DecodeGRPCExposePortToContainerRequest(_ context.Context, grpcReq interface
 func DecodeGRPCRemovePortFromContainerRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
 	req := grpcReq.(*pb.RemovePortFromContainerRequest)
 	return RemovePortFromContainerRequest{
-		Refid:          uint(req.Refid),
+		RefID:          uint(req.RefID),
 		SrcContainerID: req.SrcContainerID,
 		Port:           uint16(req.Port),
 		Protocol:       req.Protocol,
