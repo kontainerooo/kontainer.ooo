@@ -17,7 +17,7 @@ type Endpoints struct {
 
 // CreateContainerRequest is the request struct for the CreateContainerEndpoint
 type CreateContainerRequest struct {
-	Refid int
+	RefID int
 	Cfg   *ContainerConfig
 }
 
@@ -32,7 +32,7 @@ type CreateContainerResponse struct {
 func MakeCreateContainerEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateContainerRequest)
-		name, id, err := s.CreateContainer(req.Refid, req.Cfg)
+		name, id, err := s.CreateContainer(req.RefID, req.Cfg)
 		return CreateContainerResponse{
 			Error: err,
 			ID:    id,
@@ -86,7 +86,7 @@ func MakeRemoveContainerEndpoint(s Service) endpoint.Endpoint {
 
 // InstancesRequest is the request struct for the InstancesEndpoint
 type InstancesRequest struct {
-	Refid int
+	RefID int
 }
 
 // InstancesResponse is the response struct for the InstancesEndpoint
@@ -98,7 +98,7 @@ type InstancesResponse struct {
 func MakeInstancesEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(InstancesRequest)
-		inst := s.Instances(req.Refid)
+		inst := s.Instances(req.RefID)
 		return InstancesResponse{
 			Instances: inst,
 		}, nil
@@ -107,7 +107,7 @@ func MakeInstancesEndpoint(s Service) endpoint.Endpoint {
 
 // CreateDockerImageRequest is the request struct for the CreateDockerImageEndpoint
 type CreateDockerImageRequest struct {
-	Refid int
+	RefID int
 	KmiID uint
 }
 
@@ -121,7 +121,7 @@ type CreateDockerImageResponse struct {
 func MakeCreateDockerImageEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateDockerImageRequest)
-		id, err := s.CreateDockerImage(req.Refid, req.KmiID)
+		id, err := s.CreateDockerImage(req.RefID, req.KmiID)
 		return CreateDockerImageResponse{
 			Error: err,
 			ID:    id,
