@@ -303,5 +303,48 @@ var _ = Describe("Writer", func() {
 			})
 		})
 
+		Context("Check", func() {
+			Describe("Listen Statement", func() {
+				It("Should validate a Listen Statement", func() {
+					c := template.NewCheck(template.Nginx)
+					err := c.ListenStatement(&routing.ListenStatement{
+						IPAddress: abstraction.Inet("127.0.0.1"),
+						Port:      1337,
+						Keyword:   "ssl",
+					})
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+
+				XIt("Should return an error if the ip is not in the available pool", func() {
+				})
+
+				It("Should return an error if the port is out of range", func() {
+					c := template.NewCheck(template.Nginx)
+					err := c.ListenStatement(&routing.ListenStatement{
+						Port: 80,
+					})
+					Ω(err).Should(BeEquivalentTo(template.ErrPortRange))
+				})
+
+				It("Should return an error if the keyword isnt available in the router", func() {
+					c := template.NewCheck(template.Nginx)
+					err := c.ListenStatement(&routing.ListenStatement{
+						Port:    1337,
+						Keyword: "asdf",
+					})
+					Ω(err).Should(BeEquivalentTo(template.ErrKeyword))
+				})
+
+				It("Should return an error if the keyword isnt available", func() {
+					c := template.NewCheck(2)
+					err := c.ListenStatement(&routing.ListenStatement{
+						Port:    1337,
+						Keyword: "asdf",
+					})
+					Ω(err).Should(BeEquivalentTo(template.ErrKeyword))
+				})
+			})
+		})
+
 	})
 })
