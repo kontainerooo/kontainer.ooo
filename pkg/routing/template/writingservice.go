@@ -5,7 +5,6 @@ import (
 	"regexp"
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/routing"
-	"github.com/lib/pq"
 )
 
 var (
@@ -32,110 +31,12 @@ type writingService struct {
 	w   Writer
 	r   Router
 	mem Cache
-}
-
-func (w *writingService) checkListenStatement(r *routing.ListenStatement) error {
-	// TODO: get IP pool for check: if !pool.In(inet) return err
-	if r.Port <= 1024 {
-		return ErrPortRange
-	}
-
-	switch w.r {
-	case Nginx:
-		regex := regexp.MustCompile(`^ssl$`)
-		if !regex.MatchString(r.Keyword) {
-			return ErrKeyword
-		}
-	default:
-		if r.Keyword != "" {
-			return ErrKeyword
-		}
-	}
-
-	return nil
-}
-
-func (w *writingService) checkServerName(s pq.StringArray) error {
-	for _, n := range s {
-		if !urlRegex.MatchString(n) {
-			return ErrInvalidName
-		}
-	}
-	return nil
-}
-
-func (w *writingService) checkPath(p string) error {
-	return nil
-}
-
-func (w *writingService) checkLog(l *routing.Log) error {
-	return nil
-}
-
-func (w *writingService) checkSSLSettings(s *routing.SSLSettings) error {
-	return nil
-}
-
-func (w *writingService) checkLocationRule(l *routing.LocationRule) error {
-	return nil
-}
-
-func (w *writingService) checkLocationRules(l *routing.LocationRules) error {
-	return nil
-}
-
-func (w *writingService) checkConfig(r *routing.RouterConfig) error {
-	var err error
-
-	if r.RefID == 0 {
-		return ErrNoRefID
-	}
-
-	if r.Name == "" {
-		return ErrNoName
-	}
-
-	err = w.checkListenStatement(r.ListenStatement)
-	if err != nil {
-		return err
-	}
-
-	err = w.checkServerName(r.ServerName)
-	if err != nil {
-		return err
-	}
-
-	err = w.checkLog(&r.AccessLog)
-	if err != nil {
-		return err
-	}
-
-	err = w.checkLog(&r.ErrorLog)
-	if err != nil {
-		return err
-	}
-
-	err = w.checkPath(r.RootPath)
-	if err != nil {
-		return err
-	}
-
-	err = w.checkSSLSettings(&r.SSLSettings)
-	if err != nil {
-		return err
-	}
-
-	err = w.checkLocationRules(&r.LocationRules)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	c   Check
 }
 
 func (w *writingService) CreateRouterConfig(r *routing.RouterConfig) error {
 	var err error
-	err = w.checkConfig(r)
+	err = w.c.Config(r)
 	if err != nil {
 		return err
 	}
@@ -155,7 +56,7 @@ func (w *writingService) CreateRouterConfig(r *routing.RouterConfig) error {
 
 func (w *writingService) EditRouterConfig(refID uint, name string, r *routing.RouterConfig) error {
 	var err error
-	err = w.checkConfig(r)
+	err = w.c.Config(r)
 	if err != nil {
 		return err
 	}
@@ -202,7 +103,7 @@ func (w *writingService) RemoveRouterConfig(refID uint, name string) error {
 
 func (w *writingService) AddLocationRule(refID uint, name string, lr *routing.LocationRule) error {
 	var err error
-	err = w.checkLocationRule(lr)
+	err = w.c.LocationRule(lr)
 	if err != nil {
 		return err
 	}
@@ -230,7 +131,7 @@ func (w *writingService) RemoveLocationRule(refID uint, name string, lid int) er
 
 func (w *writingService) ChangeListenStatement(refID uint, name string, ls *routing.ListenStatement) error {
 	var err error
-	err = w.checkListenStatement(ls)
+	err = w.c.ListenStatement(ls)
 	if err != nil {
 		return err
 	}
@@ -247,7 +148,7 @@ func (w *writingService) ChangeListenStatement(refID uint, name string, ls *rout
 
 func (w *writingService) AddServerName(refID uint, name string, sn string) error {
 	var err error
-	err = w.checkServerName([]string{sn})
+	err = w.c.ServerName([]string{sn})
 	if err != nil {
 		return err
 	}
@@ -289,5 +190,6 @@ func NewWritingService(s routing.Service, r Router, p string) (routing.Service, 
 		w:   w,
 		r:   r,
 		mem: NewCache(s.GetRouterConfig),
+		c:   NewCheck(r),
 	}, nil
 }
