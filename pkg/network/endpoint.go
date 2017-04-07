@@ -19,7 +19,7 @@ type Endpoints struct {
 
 // CreatePrimaryNetworkForContainerRequest is the request struct for the CreatePrimaryNetworkForContainerEndpoint
 type CreatePrimaryNetworkForContainerRequest struct {
-	Refid       uint
+	RefID       uint
 	Config      *Config
 	ContainerID string
 }
@@ -33,7 +33,7 @@ type CreatePrimaryNetworkForContainerResponse struct {
 func MakeCreatePrimaryNetworkForContainerEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreatePrimaryNetworkForContainerRequest)
-		err := s.CreatePrimaryNetworkForContainer(req.Refid, req.Config, req.ContainerID)
+		err := s.CreatePrimaryNetworkForContainer(req.RefID, req.Config, req.ContainerID)
 		return CreatePrimaryNetworkForContainerResponse{
 			Error: err,
 		}, nil
@@ -42,7 +42,7 @@ func MakeCreatePrimaryNetworkForContainerEndpoint(s Service) endpoint.Endpoint {
 
 // CreateNetworkRequest is the request struct for the CreateNetworkEndpoint
 type CreateNetworkRequest struct {
-	Refid  uint
+	RefID  uint
 	Config *Config
 }
 
@@ -55,7 +55,7 @@ type CreateNetworkResponse struct {
 func MakeCreateNetworkEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateNetworkRequest)
-		err := s.CreateNetwork(req.Refid, req.Config)
+		err := s.CreateNetwork(req.RefID, req.Config)
 		return CreateNetworkResponse{
 			Error: err,
 		}, nil
@@ -64,7 +64,7 @@ func MakeCreateNetworkEndpoint(s Service) endpoint.Endpoint {
 
 // RemoveNetworkByNameRequest is the request struct for the RemoveNetworkByNameEndpoint
 type RemoveNetworkByNameRequest struct {
-	Refid uint
+	RefID uint
 	Name  string
 }
 
@@ -77,7 +77,7 @@ type RemoveNetworkByNameResponse struct {
 func MakeRemoveNetworkByNameEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(RemoveNetworkByNameRequest)
-		err := s.RemoveNetworkByName(req.Refid, req.Name)
+		err := s.RemoveNetworkByName(req.RefID, req.Name)
 		return RemoveNetworkByNameResponse{
 			Error: err,
 		}, nil
@@ -86,7 +86,7 @@ func MakeRemoveNetworkByNameEndpoint(s Service) endpoint.Endpoint {
 
 // AddContainerToNetworkRequest is the request struct for the AddContainerToNetworkEndpoint
 type AddContainerToNetworkRequest struct {
-	Refid       uint
+	RefID       uint
 	Name        string
 	ContainerID string
 }
@@ -100,7 +100,7 @@ type AddContainerToNetworkResponse struct {
 func MakeAddContainerToNetworkEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AddContainerToNetworkRequest)
-		err := s.AddContainerToNetwork(req.Refid, req.Name, req.ContainerID)
+		err := s.AddContainerToNetwork(req.RefID, req.Name, req.ContainerID)
 		return AddContainerToNetworkResponse{
 			Error: err,
 		}, nil
@@ -109,7 +109,7 @@ func MakeAddContainerToNetworkEndpoint(s Service) endpoint.Endpoint {
 
 // RemoveContainerFromNetworkRequest is the request struct for the RemoveContainerFromNetworkEndpoint
 type RemoveContainerFromNetworkRequest struct {
-	Refid       uint
+	RefID       uint
 	Name        string
 	ContainerID string
 }
@@ -123,7 +123,7 @@ type RemoveContainerFromNetworkResponse struct {
 func MakeRemoveContainerFromNetworkEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(RemoveContainerFromNetworkRequest)
-		err := s.RemoveContainerFromNetwork(req.Refid, req.Name, req.ContainerID)
+		err := s.RemoveContainerFromNetwork(req.RefID, req.Name, req.ContainerID)
 		return RemoveContainerFromNetworkResponse{
 			Error: err,
 		}, nil
@@ -132,7 +132,7 @@ func MakeRemoveContainerFromNetworkEndpoint(s Service) endpoint.Endpoint {
 
 // ExposePortToContainerRequest is the request struct for the ExposePortToContainerEndpoint
 type ExposePortToContainerRequest struct {
-	Refid          uint
+	RefID          uint
 	SrcContainerID string
 	Port           uint16
 	Protocol       string
@@ -148,7 +148,7 @@ type ExposePortToContainerResponse struct {
 func MakeExposePortToContainerEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(ExposePortToContainerRequest)
-		err := s.ExposePortToContainer(req.Refid, req.SrcContainerID, req.Port, req.Protocol, req.DstContainerID)
+		err := s.ExposePortToContainer(req.RefID, req.SrcContainerID, req.Port, req.Protocol, req.DstContainerID)
 		return ExposePortToContainerResponse{
 			Error: err,
 		}, nil
@@ -157,7 +157,7 @@ func MakeExposePortToContainerEndpoint(s Service) endpoint.Endpoint {
 
 // RemovePortFromContainerRequest is the request struct for the RemovePortFromContainerEndpoint
 type RemovePortFromContainerRequest struct {
-	Refid          uint
+	RefID          uint
 	SrcContainerID string
 	Port           uint16
 	Protocol       string
@@ -173,7 +173,7 @@ type RemovePortFromContainerResponse struct {
 func MakeRemovePortFromContainerEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(RemovePortFromContainerRequest)
-		err := s.RemovePortFromContainer(req.Refid, req.SrcContainerID, req.Port, req.Protocol, req.DstContainerID)
+		err := s.RemovePortFromContainer(req.RefID, req.SrcContainerID, req.Port, req.Protocol, req.DstContainerID)
 		return RemovePortFromContainerResponse{
 			Error: err,
 		}, nil

@@ -60,7 +60,7 @@ func (f FrontendArray) Value() (driver.Value, error) {
 type KMI struct {
 	KMDI
 	Dockerfile  string
-	Container   string
+	Context     string
 	Commands    abstraction.JSON `sql:"type:jsonb"`
 	Environment abstraction.JSON `sql:"type:jsonb"`
 	Frontend    FrontendArray    `sql:"type:jsonb"`
