@@ -29,21 +29,21 @@ func (c *cache) GetConf(refID uint, name string) (*routing.RouterConfig, error) 
 	ref, ok := c.m[refID]
 	if ok {
 		conf, ok := ref[name]
-		if ok {
+		if ok && conf != nil {
 			return conf, nil
 		}
 	} else {
 		c.m[refID] = make(map[string]*routing.RouterConfig)
 	}
 
-	conf := &routing.RouterConfig{}
-	err := c.getRouterConf(refID, name, conf)
+	var conf routing.RouterConfig
+	err := c.getRouterConf(refID, name, &conf)
 	if err != nil {
 		return nil, err
 	}
 
-	c.m[refID][name] = conf
-	return conf, nil
+	c.m[refID][name] = &conf
+	return &conf, nil
 }
 
 func (c *cache) changeConf(r *routing.RouterConfig, edit bool) *routing.RouterConfig {
@@ -115,17 +115,8 @@ func (c *cache) changeConf(r *routing.RouterConfig, edit bool) *routing.RouterCo
 			conf.RootPath = r.RootPath
 		}
 
-	} else if ok {
-		c.m[r.RefID][r.Name] = r
 	} else {
-		conf, err := c.GetConf(r.RefID, r.Name)
-		if err != nil {
-			return nil
-		}
-		c.m[r.RefID][r.Name] = conf
-		if edit {
-			return c.changeConf(r, edit)
-		}
+		c.m[r.RefID][r.Name] = r
 	}
 
 	return c.m[r.RefID][r.Name]
@@ -148,10 +139,11 @@ func (c *cache) RemoveConf(refID uint, name string) {
 
 func (c *cache) UpdateConf(refID uint, name string) *routing.RouterConfig {
 	c.RemoveConf(refID, name)
-	return c.EditConf(&routing.RouterConfig{
-		RefID: refID,
-		Name:  name,
-	})
+	conf, err := c.GetConf(refID, name)
+	if err != nil {
+		return nil
+	}
+	return conf
 }
 
 // NewCache returns a new Cache instance with the help of a get function
