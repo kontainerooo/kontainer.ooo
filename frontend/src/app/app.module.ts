@@ -3,7 +3,7 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpModule } from '@angular/http';
 import { MaterialModule } from '@angular/material';
-import { DashboardModule } from './page-wrappers/dashboard/dashboard.module';
+import { DashboardRoutingModule } from './page-wrappers/dashboard-wrapper/dashboard-routing.module';
 import { RouterModule, Routes } from '@angular/router';
 import 'hammerjs';
 
@@ -11,13 +11,11 @@ import { AppComponent } from './app.component';
 import { SignInComponent } from './sign-in/sign-in.component';
 import { PageNotFoundComponent } from './errors/page-not-found/page-not-found.component';
 import { GatewayComponent } from './page-wrappers/gateway/gateway.component';
-import { DashboardComponent } from './page-wrappers/dashboard/dashboard.component';
+import { DashboardWrapperComponent } from './page-wrappers/dashboard-wrapper/dashboard-wrapper.component';
 import { SidebarNavigationComponent } from './sidebar-navigation/sidebar-navigation.component';
 import { DashboardToolbarComponent } from './dashboard-toolbar/dashboard-toolbar.component';
 import { AccountComponent } from './sidebar-navigation/account/account.component';
 import { AvatarComponent } from './sidebar-navigation/account/avatar/avatar.component';
-import { SettingsComponent } from './pages/user/settings/settings.component';
-import { KioCardFullWidthDirective } from './directives/kio-card.directive';
 
 const appRoutes: Routes = [
   {
@@ -47,13 +45,11 @@ const appRoutes: Routes = [
     SignInComponent,
     PageNotFoundComponent,
     GatewayComponent,
-    DashboardComponent,
+    DashboardWrapperComponent,
     SidebarNavigationComponent,
     DashboardToolbarComponent,
     AccountComponent,
-    AvatarComponent,
-    SettingsComponent,
-    KioCardFullWidthDirective
+    AvatarComponent
   ],
   imports: [
     BrowserModule,
@@ -61,7 +57,7 @@ const appRoutes: Routes = [
     HttpModule,
     MaterialModule.forRoot(),
     RouterModule.forRoot(appRoutes),
-    DashboardModule
+    DashboardRoutingModule
   ],
   providers: [],
   bootstrap: [AppComponent]
