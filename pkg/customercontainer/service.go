@@ -179,7 +179,7 @@ func (s *service) CreateDockerImage(refid int, kmiID uint) (string, error) {
 		return "", err
 	}
 
-	buildContext, err := createBuildContext(kmi.Container, dockerfile)
+	buildContext, err := createBuildContext(kmi.Context, dockerfile)
 	if err != nil {
 		return "", err
 	}

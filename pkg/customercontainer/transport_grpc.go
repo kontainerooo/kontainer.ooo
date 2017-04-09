@@ -92,7 +92,7 @@ func convertContainerConfig(cfg *pb.ContainerConfig) *ContainerConfig {
 func DecodeGRPCCreateContainerRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
 	req := grpcReq.(*pb.CreateContainerRequest)
 	return CreateContainerRequest{
-		Refid: int(req.Refid),
+		RefID: int(req.RefID),
 		Cfg:   convertContainerConfig(req.Cfg),
 	}, nil
 }
@@ -121,7 +121,7 @@ func DecodeGRPCRemoveContainerRequest(_ context.Context, grpcReq interface{}) (i
 func DecodeGRPCInstancesRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
 	req := grpcReq.(*pb.InstancesRequest)
 	return InstancesRequest{
-		Refid: int(req.Refid),
+		RefID: int(req.RefID),
 	}, nil
 }
 
@@ -130,7 +130,7 @@ func DecodeGRPCInstancesRequest(_ context.Context, grpcReq interface{}) (interfa
 func DecodeGRPCCreateDockerImageRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
 	req := grpcReq.(*pb.CreateDockerImageRequest)
 	return CreateDockerImageRequest{
-		Refid: int(req.Refid),
+		RefID: int(req.RefID),
 		KmiID: uint(req.KmiID),
 	}, nil
 }
