@@ -1,3 +1,9 @@
 build/*
 !build/.gitkeep
 *.pb.go
+
+# Ignore all log files
+*.log
+
+# Ignore vagrant data
+.vagrant
