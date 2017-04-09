@@ -3,16 +3,16 @@ package template
 import "github.com/kontainerooo/kontainer.ooo/pkg/routing"
 
 type writingService struct {
-	s   routing.Service
-	w   Writer
-	r   Router
-	mem Cache
-	c   Check
+	s     routing.Service
+	w     Writer
+	r     Router
+	mem   Cache
+	check Check
 }
 
 func (w *writingService) CreateRouterConfig(r *routing.RouterConfig) error {
 	var err error
-	err = w.c.Config(r)
+	err = w.check.Config(r)
 	if err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ func (w *writingService) CreateRouterConfig(r *routing.RouterConfig) error {
 
 func (w *writingService) EditRouterConfig(refID uint, name string, r *routing.RouterConfig) error {
 	var err error
-	err = w.c.Config(r)
+	err = w.check.Config(r)
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func (w *writingService) RemoveRouterConfig(refID uint, name string) error {
 
 func (w *writingService) AddLocationRule(refID uint, name string, lr *routing.LocationRule) error {
 	var err error
-	err = w.c.LocationRule(lr)
+	err = w.check.LocationRule(lr)
 	if err != nil {
 		return err
 	}
@@ -107,7 +107,7 @@ func (w *writingService) RemoveLocationRule(refID uint, name string, lid int) er
 
 func (w *writingService) ChangeListenStatement(refID uint, name string, ls *routing.ListenStatement) error {
 	var err error
-	err = w.c.ListenStatement(ls)
+	err = w.check.ListenStatement(ls)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (w *writingService) ChangeListenStatement(refID uint, name string, ls *rout
 
 func (w *writingService) AddServerName(refID uint, name string, sn string) error {
 	var err error
-	err = w.c.ServerName([]string{sn})
+	err = w.check.ServerName([]string{sn})
 	if err != nil {
 		return err
 	}
@@ -162,10 +162,10 @@ func NewWritingService(s routing.Service, r Router, p string) (routing.Service, 
 	}
 
 	return &writingService{
-		s:   s,
-		w:   w,
-		r:   r,
-		mem: NewCache(s.GetRouterConfig),
-		c:   NewCheck(r),
+		s:     s,
+		w:     w,
+		r:     r,
+		mem:   NewCache(s.GetRouterConfig),
+		check: NewCheck(r),
 	}, nil
 }
