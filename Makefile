@@ -9,9 +9,9 @@ PROTOC_OPTS="-Imessages/"
 
 .PHONY: force
 
-all: fe proto be all-scripts
+all: fe-test fe proto be all-scripts
 
-fe: fe-test
+fe:
 	cd ./frontend && npm install && $(ANGULAR_CLI) build
 
 fe-watch:
