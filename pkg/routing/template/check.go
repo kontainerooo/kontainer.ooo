@@ -15,11 +15,17 @@ var (
 	// ErrNoName is returned, if no name is set in a config
 	ErrNoName = errors.New("no Name set")
 
+	// ErrNoListenStatement is returned, if no listen statment is present
+	ErrNoListenStatement = errors.New("no ListenStatement set")
+
 	// ErrPortRange is returned, if port is <1024
 	ErrPortRange = errors.New("port not in acceptable range")
 
 	// ErrKeyword is returned, if the used keyword is not allowed in the used router
 	ErrKeyword = errors.New("keyword not allowed")
+
+	// ErrEmptyServerName is returned, if the length of the server name is 0
+	ErrEmptyServerName = errors.New("no server name exists")
 
 	// ErrInvalidName is returned, if a servername is no url
 	ErrInvalidName = errors.New("servername no valid url format")
@@ -44,6 +50,10 @@ type check struct {
 }
 
 func (c *check) ListenStatement(r *routing.ListenStatement) error {
+	if r == nil {
+		return ErrNoListenStatement
+	}
+
 	// TODO: get IP pool for check: if !pool.In(inet) return err
 	if r.Port <= 1024 {
 		return ErrPortRange
@@ -65,6 +75,10 @@ func (c *check) ListenStatement(r *routing.ListenStatement) error {
 }
 
 func (c *check) ServerName(s pq.StringArray) error {
+	if len(s) == 0 {
+		return ErrEmptyServerName
+	}
+
 	for _, n := range s {
 		if !urlRegex.MatchString(n) {
 			return ErrInvalidName
