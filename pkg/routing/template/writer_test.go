@@ -358,6 +358,56 @@ var _ = Describe("Writer", func() {
 					Ω(err).Should(BeEquivalentTo(template.ErrInvalidName))
 				})
 			})
+
+			XDescribe("Path", func() {
+				It("Should validate a path", func() {
+					_ = template.NewCheck(template.Nginx)
+				})
+
+				It("Should return an error if ", func() {
+					_ = template.NewCheck(template.Nginx)
+				})
+			})
+
+			XDescribe("Log", func() {
+				It("Should validate a log", func() {
+					_ = template.NewCheck(template.Nginx)
+				})
+
+				It("Should return an error if ", func() {
+					_ = template.NewCheck(template.Nginx)
+				})
+			})
+
+			XDescribe("SSLSettings", func() {
+				It("Should validate ssl settings", func() {
+					_ = template.NewCheck(template.Nginx)
+				})
+
+				It("Should return an error if ", func() {
+					_ = template.NewCheck(template.Nginx)
+				})
+			})
+
+			XDescribe("LocationRule", func() {
+				It("Should validate a location rule", func() {
+					_ = template.NewCheck(template.Nginx)
+				})
+
+				It("Should return an error if ", func() {
+					_ = template.NewCheck(template.Nginx)
+				})
+			})
+
+			XDescribe("LocationRules", func() {
+				It("Should validate LocationRules", func() {
+					_ = template.NewCheck(template.Nginx)
+				})
+
+				It("Should return an error if ", func() {
+					_ = template.NewCheck(template.Nginx)
+				})
+			})
 		})
 
 	})
