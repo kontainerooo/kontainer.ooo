@@ -344,6 +344,20 @@ var _ = Describe("Writer", func() {
 					Ω(err).Should(BeEquivalentTo(template.ErrKeyword))
 				})
 			})
+
+			Describe("ServerName", func() {
+				It("Should validate a ServerName", func() {
+					c := template.NewCheck(template.Nginx)
+					err := c.ServerName(pq.StringArray{"domain.com"})
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+
+				It("Should return an error if the servername holds an invalid name", func() {
+					c := template.NewCheck(template.Nginx)
+					err := c.ServerName(pq.StringArray{"quatsch"})
+					Ω(err).Should(BeEquivalentTo(template.ErrInvalidName))
+				})
+			})
 		})
 
 	})
