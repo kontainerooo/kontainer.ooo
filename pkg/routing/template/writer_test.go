@@ -408,7 +408,130 @@ var _ = Describe("Writer", func() {
 					_ = template.NewCheck(template.Nginx)
 				})
 			})
-		})
 
+			Describe("Config", func() {
+				It("Should validate a config", func() {
+					c := template.NewCheck(template.Nginx)
+					err := c.Config(&routing.RouterConfig{
+						RefID: 1,
+						Name:  "name",
+						ListenStatement: &routing.ListenStatement{
+							IPAddress: abstraction.Inet("127.0.0.1"),
+							Port:      1337,
+							Keyword:   "ssl",
+						},
+						ServerName: pq.StringArray{"domain.com"},
+					})
+					Ω(err).ShouldNot(HaveOccurred())
+				})
+
+				It("Should return an error if the RefID isn't set", func() {
+					c := template.NewCheck(template.Nginx)
+					err := c.Config(&routing.RouterConfig{})
+					Ω(err).Should(BeEquivalentTo(template.ErrNoRefID))
+				})
+
+				It("Should return an error if the Name isn't set", func() {
+					c := template.NewCheck(template.Nginx)
+					err := c.Config(&routing.RouterConfig{
+						RefID: 1,
+					})
+					Ω(err).Should(BeEquivalentTo(template.ErrNoName))
+				})
+
+				It("Should return an error if the ListenStatement isn't set", func() {
+					c := template.NewCheck(template.Nginx)
+					err := c.Config(&routing.RouterConfig{
+						RefID: 1,
+						Name:  "name",
+					})
+					Ω(err).Should(BeEquivalentTo(template.ErrNoListenStatement))
+				})
+
+				It("Should return an error if the ServerName isn't set", func() {
+					c := template.NewCheck(template.Nginx)
+					err := c.Config(&routing.RouterConfig{
+						RefID: 1,
+						Name:  "name",
+						ListenStatement: &routing.ListenStatement{
+							IPAddress: abstraction.Inet("127.0.0.1"),
+							Port:      1337,
+							Keyword:   "ssl",
+						},
+					})
+					Ω(err).Should(BeEquivalentTo(template.ErrEmptyServerName))
+				})
+
+				XIt("Should return an error if the AccesLog isn't set", func() {
+					c := template.NewCheck(template.Nginx)
+					err := c.Config(&routing.RouterConfig{
+						RefID: 1,
+						Name:  "name",
+						ListenStatement: &routing.ListenStatement{
+							IPAddress: abstraction.Inet("127.0.0.1"),
+							Port:      1337,
+							Keyword:   "ssl",
+						},
+					})
+					Ω(err).Should(BeEquivalentTo(template.ErrNoName))
+				})
+
+				XIt("Should return an error if the ErrorLog isn't set", func() {
+					c := template.NewCheck(template.Nginx)
+					err := c.Config(&routing.RouterConfig{
+						RefID: 1,
+						Name:  "name",
+						ListenStatement: &routing.ListenStatement{
+							IPAddress: abstraction.Inet("127.0.0.1"),
+							Port:      1337,
+							Keyword:   "ssl",
+						},
+					})
+					Ω(err).Should(BeEquivalentTo(template.ErrNoName))
+				})
+
+				XIt("Should return an error if the RootPath isn't set", func() {
+					c := template.NewCheck(template.Nginx)
+					err := c.Config(&routing.RouterConfig{
+						RefID: 1,
+						Name:  "name",
+						ListenStatement: &routing.ListenStatement{
+							IPAddress: abstraction.Inet("127.0.0.1"),
+							Port:      1337,
+							Keyword:   "ssl",
+						},
+					})
+					Ω(err).Should(BeEquivalentTo(template.ErrNoName))
+				})
+			})
+
+			XIt("Should return an error if the SSLSettings aren't properly set", func() {
+				c := template.NewCheck(template.Nginx)
+				err := c.Config(&routing.RouterConfig{
+					RefID: 1,
+					Name:  "name",
+					ListenStatement: &routing.ListenStatement{
+						IPAddress: abstraction.Inet("127.0.0.1"),
+						Port:      1337,
+						Keyword:   "ssl",
+					},
+				})
+				Ω(err).Should(BeEquivalentTo(template.ErrNoName))
+			})
+
+			XIt("Should return an error if the LocationRules aren't properly set", func() {
+				c := template.NewCheck(template.Nginx)
+				err := c.Config(&routing.RouterConfig{
+					RefID: 1,
+					Name:  "name",
+					ListenStatement: &routing.ListenStatement{
+						IPAddress: abstraction.Inet("127.0.0.1"),
+						Port:      1337,
+						Keyword:   "ssl",
+					},
+				})
+				Ω(err).Should(BeEquivalentTo(template.ErrNoName))
+			})
+		})
 	})
 })
