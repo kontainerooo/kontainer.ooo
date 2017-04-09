@@ -184,7 +184,7 @@ var _ = Describe("Customercontainer", func() {
 					Type:        3,
 				},
 				Dockerfile:  "FROM FROM node:7-wheezy",
-				Container:   "./container-test",
+				Context:     "./container-test",
 				Commands:    nil,
 				Environment: nil,
 				Frontend:    nil,
@@ -215,7 +215,7 @@ var _ = Describe("Customercontainer", func() {
 					Type:        3,
 				},
 				Dockerfile: "FROM FROM node:7-wheezy",
-				Container:  "./container-test",
+				Context:    "./container-test",
 				Commands:   nil,
 				Environment: map[string]interface{}{
 					"in valid": "val",
@@ -258,7 +258,7 @@ var _ = Describe("Customercontainer", func() {
 					ImageName: "testimage",
 				}
 				res, err := es.CreateContainerEndpoint(ctx, customercontainer.CreateContainerRequest{
-					Refid: 123,
+					RefID: 123,
 					Cfg:   &cfg,
 				})
 
@@ -289,7 +289,7 @@ var _ = Describe("Customercontainer", func() {
 		Context("InstancesEndpoint", func() {
 			It("Should work with Instances request and response", func() {
 				res, err := es.InstancesEndpoint(ctx, customercontainer.InstancesRequest{
-					Refid: 123,
+					RefID: 123,
 				})
 
 				Ω(err).ShouldNot(HaveOccurred())
