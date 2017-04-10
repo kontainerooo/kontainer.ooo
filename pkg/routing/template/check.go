@@ -42,7 +42,7 @@ type Check interface {
 	SSLSettings(s *routing.SSLSettings) error
 	LocationRule(l *routing.LocationRule) error
 	LocationRules(l *routing.LocationRules) error
-	Config(r *routing.RouterConfig) error
+	Config(r *routing.RouterConfig, edit bool) error
 }
 
 type check struct {
@@ -50,7 +50,14 @@ type check struct {
 }
 
 func (c *check) ListenStatement(r *routing.ListenStatement) error {
+	return c.listenStatement(r, false)
+}
+
+func (c *check) listenStatement(r *routing.ListenStatement, edit bool) error {
 	if r == nil {
+		if edit {
+			return nil
+		}
 		return ErrNoListenStatement
 	}
 
@@ -75,7 +82,14 @@ func (c *check) ListenStatement(r *routing.ListenStatement) error {
 }
 
 func (c *check) ServerName(s pq.StringArray) error {
+	return c.serverName(s, false)
+}
+
+func (c *check) serverName(s pq.StringArray, edit bool) error {
 	if len(s) == 0 {
+		if edit {
+			return nil
+		}
 		return ErrEmptyServerName
 	}
 
@@ -107,23 +121,23 @@ func (c *check) LocationRules(l *routing.LocationRules) error {
 	return nil
 }
 
-func (c *check) Config(r *routing.RouterConfig) error {
+func (c *check) Config(r *routing.RouterConfig, edit bool) error {
 	var err error
 
-	if r.RefID == 0 {
+	if r.RefID == 0 && !edit {
 		return ErrNoRefID
 	}
 
-	if r.Name == "" {
+	if r.Name == "" && !edit {
 		return ErrNoName
 	}
 
-	err = c.ListenStatement(r.ListenStatement)
+	err = c.listenStatement(r.ListenStatement, edit)
 	if err != nil {
 		return err
 	}
 
-	err = c.ServerName(r.ServerName)
+	err = c.serverName(r.ServerName, edit)
 	if err != nil {
 		return err
 	}

@@ -12,7 +12,7 @@ type writingService struct {
 
 func (w *writingService) CreateRouterConfig(r *routing.RouterConfig) error {
 	var err error
-	err = w.check.Config(r)
+	err = w.check.Config(r, false)
 	if err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ func (w *writingService) CreateRouterConfig(r *routing.RouterConfig) error {
 
 func (w *writingService) EditRouterConfig(refID uint, name string, r *routing.RouterConfig) error {
 	var err error
-	err = w.check.Config(r)
+	err = w.check.Config(r, true)
 	if err != nil {
 		return err
 	}
