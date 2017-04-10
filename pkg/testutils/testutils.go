@@ -11,6 +11,15 @@ func merge(dst, src reflect.Value, overwriteID bool, depth int) error {
 		return errors.New("too deep")
 	}
 	idRegexp := regexp.MustCompile("ID")
+
+	if isZero(src) {
+		return nil
+	}
+
+	if src.Kind() == reflect.Ptr {
+		src = src.Elem()
+	}
+
 	for i := 0; i < src.NumField(); i++ {
 		if !overwriteID && idRegexp.MatchString(src.Type().Field(i).Name) {
 			continue
