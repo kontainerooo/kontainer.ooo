@@ -14,16 +14,20 @@ import (
 )
 
 var _ = Describe("Writingservice", func() {
-	var completeConfig = &routing.RouterConfig{
-		RefID: 1,
-		Name:  "name",
-		ListenStatement: &routing.ListenStatement{
-			IPAddress: abstraction.Inet("127.0.0.1"),
-			Port:      1337,
-			Keyword:   "ssl",
-		},
-		ServerName: pq.StringArray{"domain.com"},
-	}
+	var (
+		refID          = uint(1)
+		name           = "name"
+		completeConfig = &routing.RouterConfig{
+			RefID: refID,
+			Name:  name,
+			ListenStatement: &routing.ListenStatement{
+				IPAddress: abstraction.Inet("127.0.0.1"),
+				Port:      1337,
+				Keyword:   "ssl",
+			},
+			ServerName: pq.StringArray{"domain.com"},
+		}
+	)
 
 	Describe("NewWritingService", func() {
 		BeforeEach(func() {
@@ -95,6 +99,73 @@ var _ = Describe("Writingservice", func() {
 			w, _ := template.NewWritingService(s, template.Nginx, testPath)
 			os.RemoveAll(testPath)
 			err := w.CreateRouterConfig(completeConfig)
+			Ω(err).Should(HaveOccurred())
+		})
+	})
+
+	Describe("Edit Router Config", func() {
+		BeforeEach(func() {
+			err := os.Mkdir(testPath, os.ModeDir|os.ModePerm)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			err := os.RemoveAll(testPath)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should change Router Config", func() {
+			db := testutils.NewMockDB()
+			s, _ := routing.NewService(db)
+			w, _ := template.NewWritingService(s, template.Nginx, testPath)
+			w.CreateRouterConfig(completeConfig)
+
+			newName := "test2"
+			err := w.EditRouterConfig(refID, name, &routing.RouterConfig{
+				Name: newName,
+			})
+			Ω(err).ShouldNot(HaveOccurred())
+
+			conf := &routing.RouterConfig{}
+			w.GetRouterConfig(refID, newName, conf)
+			Expect(conf.Name).To(BeEquivalentTo(newName))
+		})
+
+		It("Should return an error if the underlying service returns one", func() {
+			db := testutils.NewMockDB()
+			s, _ := routing.NewService(db)
+			w, _ := template.NewWritingService(s, template.Nginx, testPath)
+			w.CreateRouterConfig(completeConfig)
+
+			err := w.EditRouterConfig(refID, name, &routing.RouterConfig{
+				RefID: refID + 2,
+			})
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Should return an error if the config is falsy", func() {
+			db := testutils.NewMockDB()
+			s, _ := routing.NewService(db)
+			w, _ := template.NewWritingService(s, template.Nginx, testPath)
+			w.CreateRouterConfig(completeConfig)
+
+			err := w.EditRouterConfig(refID, name, &routing.RouterConfig{
+				ListenStatement: &routing.ListenStatement{
+					Port: 12,
+				},
+			})
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Should return error if the file could not be updated", func() {
+			db := testutils.NewMockDB()
+			s, _ := routing.NewService(db)
+			w, _ := template.NewWritingService(s, template.Nginx, testPath)
+			w.CreateRouterConfig(completeConfig)
+			os.RemoveAll(testPath)
+			err := w.EditRouterConfig(refID, name, &routing.RouterConfig{
+				Name: "test",
+			})
 			Ω(err).Should(HaveOccurred())
 		})
 	})
