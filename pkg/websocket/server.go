@@ -8,12 +8,15 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// ProtocolMap maps a protocol name to its handler
+type ProtocolMap map[string]ProtocolHandler
+
 // Server is a struct type containing every value needed for a websocket server
 type Server struct {
-	protocolHandler ProtocolHandler
-	logger          log.Logger
-	services        map[ProtoID]*ServiceDescription
-	upgrader        websocket.Upgrader
+	protocols ProtocolMap
+	logger    log.Logger
+	services  map[ProtoID]*ServiceDescription
+	upgrader  websocket.Upgrader
 }
 
 // RegisterService adds the given ServiceDescription to the Server's services map
@@ -55,13 +58,25 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleConnection(conn *websocket.Conn) {
 	defer conn.Close()
+
+	protocolName := conn.Subprotocol()
+	if protocolName == "" {
+		protocolName = "default"
+	}
+	protocolHandler, ok := s.protocols[protocolName]
+
+	if !ok {
+		conn.WriteMessage(websocket.TextMessage, []byte("requested protocol not available"))
+		return
+	}
+
 	for {
 		messageType, request, err := conn.ReadMessage()
 		if err != nil {
 			return
 		}
 
-		srv, me, data, err := s.protocolHandler.Decode(request)
+		srv, me, data, err := protocolHandler.Decode(request)
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
@@ -101,7 +116,7 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 			continue
 		}
 
-		response, err := s.protocolHandler.Encode(srv, me, res)
+		response, err := protocolHandler.Encode(srv, me, res)
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
@@ -121,7 +136,7 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 
 // NewServer returns a pointer to a Server instance
 func NewServer(
-	ph ProtocolHandler,
+	pm ProtocolMap,
 	logger log.Logger,
 	upgrader websocket.Upgrader,
 ) *Server {
@@ -144,10 +159,14 @@ func NewServer(
 		}
 	}
 
+	for name := range pm {
+		upgrader.Subprotocols = append(upgrader.Subprotocols, name)
+	}
+
 	return &Server{
-		protocolHandler: ph,
-		logger:          logger,
-		upgrader:        upgrader,
-		services:        make(map[ProtoID]*ServiceDescription),
+		protocols: pm,
+		logger:    logger,
+		upgrader:  upgrader,
+		services:  make(map[ProtoID]*ServiceDescription),
 	}
 }

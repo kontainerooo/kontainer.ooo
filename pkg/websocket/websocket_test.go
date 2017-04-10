@@ -215,7 +215,7 @@ var _ = Describe("Websocket", func() {
 	Context("Servers", func() {
 		Context("Create", func() {
 			It("Should create a new Server", func() {
-				wsserver = ws.NewServer(protocol{}, log.NewNopLogger(), websocket.Upgrader{})
+				wsserver = ws.NewServer(ws.ProtocolMap{"default": protocol{}}, log.NewNopLogger(), websocket.Upgrader{})
 			})
 		})
 
