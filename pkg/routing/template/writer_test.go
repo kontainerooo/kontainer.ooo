@@ -1,7 +1,6 @@
 package template_test
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -11,6 +10,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+var testPath = "/tmp/test-template-kroo/"
 
 var _ = Describe("Writer", func() {
 	Describe("New Writer", func() {
@@ -37,7 +38,6 @@ var _ = Describe("Writer", func() {
 	})
 
 	Describe("Create File", func() {
-		var testPath = "/tmp/test-template-kroo/"
 		BeforeEach(func() {
 			err := os.Mkdir(testPath, os.ModeDir|os.ModePerm)
 			Ω(err).ShouldNot(HaveOccurred())
@@ -51,14 +51,44 @@ var _ = Describe("Writer", func() {
 		It("Should write Conf file", func() {
 			w, _ := template.NewWriter(template.Nginx, testPath)
 
-			c := &routing.RouterConfig{}
+			refID, name := uint(1), "test"
+			c := &routing.RouterConfig{
+				RefID: refID,
+				Name:  name,
+			}
 
 			err := w.CreateFile(c)
 			Ω(err).ShouldNot(HaveOccurred())
 
-			b, err := ioutil.ReadFile(fmt.Sprintf("%s/%d_%s.conf", testPath, c.RefID, c.Name))
+			b, err := ioutil.ReadFile(w.CreatePath(refID, name))
 			Ω(err).ShouldNot(HaveOccurred())
 			Ω(b).ShouldNot(BeEmpty())
+		})
+	})
+
+	Describe("RemoveFile", func() {
+		BeforeEach(func() {
+			err := os.Mkdir(testPath, os.ModeDir|os.ModePerm)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			err := os.RemoveAll(testPath)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should remove a file", func() {
+			w, _ := template.NewWriter(template.Nginx, testPath)
+
+			refID, name := uint(1), "test"
+			c := &routing.RouterConfig{
+				RefID: refID,
+				Name:  name,
+			}
+			w.CreateFile(c)
+
+			err := w.RemoveFile(refID, name)
+			Ω(err).ShouldNot(HaveOccurred())
 		})
 	})
 })
