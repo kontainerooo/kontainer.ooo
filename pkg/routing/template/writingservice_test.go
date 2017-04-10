@@ -316,4 +316,62 @@ var _ = Describe("Writingservice", func() {
 			Ω(err).Should(HaveOccurred())
 		})
 	})
+
+	Describe("AddServerName", func() {
+		BeforeEach(func() {
+			err := os.Mkdir(testPath, os.ModeDir|os.ModePerm)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			err := os.RemoveAll(testPath)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should change the ServerName", func() {
+			db := testutils.NewMockDB()
+			s, _ := routing.NewService(db)
+			w, _ := template.NewWritingService(s, template.Nginx, testPath)
+			w.CreateRouterConfig(completeConfig)
+
+			err := w.AddServerName(refID, name, "domain2.com")
+			Ω(err).ShouldNot(HaveOccurred())
+
+			conf := &routing.RouterConfig{}
+			w.GetRouterConfig(refID, name, conf)
+			Expect(conf.ServerName).To(HaveLen(2))
+		})
+
+		It("Should change return an error if the server name is falsy", func() {
+			db := testutils.NewMockDB()
+			s, _ := routing.NewService(db)
+			w, _ := template.NewWritingService(s, template.Nginx, testPath)
+			w.CreateRouterConfig(completeConfig)
+
+			err := w.AddServerName(refID, name, "domain2")
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Should change return an error if the underlying service returns an error", func() {
+			db := testutils.NewMockDB()
+			s, _ := routing.NewService(db)
+			w, _ := template.NewWritingService(s, template.Nginx, testPath)
+			w.CreateRouterConfig(completeConfig)
+
+			db.SetError(1)
+			err := w.AddServerName(refID, name, "domain2.com")
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Should change return an error if the underlying service returns an error", func() {
+			db := testutils.NewMockDB()
+			s, _ := routing.NewService(db)
+			w, _ := template.NewWritingService(s, template.Nginx, testPath)
+			w.CreateRouterConfig(completeConfig)
+
+			os.RemoveAll(testPath)
+			err := w.AddServerName(refID, name, "domain2.com")
+			Ω(err).Should(HaveOccurred())
+		})
+	})
 })
