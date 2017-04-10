@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
@@ -179,7 +178,7 @@ var _ = Describe("Websocket", func() {
 	Context("Servers", func() {
 		Context("Create", func() {
 			It("Should create a new Server", func() {
-				wsserver = ws.NewServer(protocol{}, log.NewLogfmtLogger(os.Stdout))
+				wsserver = ws.NewServer(protocol{}, log.NewNopLogger(), websocket.Upgrader{})
 			})
 		})
 

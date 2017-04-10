@@ -13,6 +13,7 @@ type Server struct {
 	protocolHandler ProtocolHandler
 	logger          log.Logger
 	services        map[ProtoID]*ServiceDescription
+	upgrader        websocket.Upgrader
 }
 
 // RegisterService adds the given ServiceDescription to the Server's services map
@@ -42,15 +43,7 @@ func (s *Server) Serve(addr string) error {
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var upgrader = websocket.Upgrader{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
-		CheckOrigin: func(r *http.Request) bool {
-			return true
-		},
-	}
-
-	conn, err := upgrader.Upgrade(w, r, nil)
+	conn, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		s.logger.Log("err", err)
 		return
@@ -130,10 +123,31 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 func NewServer(
 	ph ProtocolHandler,
 	logger log.Logger,
+	upgrader websocket.Upgrader,
 ) *Server {
+	if upgrader.ReadBufferSize == 0 {
+		if upgrader.WriteBufferSize != 0 {
+			upgrader.ReadBufferSize = upgrader.WriteBufferSize
+		} else {
+			upgrader.ReadBufferSize = 1024
+		}
+	}
+
+	if upgrader.WriteBufferSize == 0 {
+		upgrader.WriteBufferSize = upgrader.ReadBufferSize
+	}
+
+	if upgrader.CheckOrigin == nil {
+		logger.Log("caution", "no upgrader provided, every connection will be accepted")
+		upgrader.CheckOrigin = func(r *http.Request) bool {
+			return true
+		}
+	}
+
 	return &Server{
 		protocolHandler: ph,
 		logger:          logger,
+		upgrader:        upgrader,
 		services:        make(map[ProtoID]*ServiceDescription),
 	}
 }
