@@ -3,8 +3,9 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpModule } from '@angular/http';
 import { MaterialModule } from '@angular/material';
-import { DashboardRoutingModule } from './page-wrappers/dashboard-wrapper/dashboard-routing.module';
 import { RouterModule, Routes } from '@angular/router';
+import { DashboardRoutingModule } from './page-wrappers/dashboard-wrapper/dashboard-routing.module';
+import { appRouting } from './app-routing/app.routing';
 import 'hammerjs';
 
 import { AppComponent } from './app.component';
@@ -16,28 +17,6 @@ import { SidebarNavigationComponent } from './sidebar-navigation/sidebar-navigat
 import { DashboardToolbarComponent } from './dashboard-toolbar/dashboard-toolbar.component';
 import { AccountComponent } from './sidebar-navigation/account/account.component';
 import { AvatarComponent } from './sidebar-navigation/account/avatar/avatar.component';
-
-const appRoutes: Routes = [
-  {
-    path: 'sign-in',
-    component: SignInComponent
-  },
-  // { path: 'hero/:id',      component: HeroDetailComponent },
-  // {
-  //   path: 'heroes',
-  //   component: HeroListComponent,
-  //   data: { title: 'Heroes List' }
-  // },
-  {
-    path: '',
-    redirectTo: '/dashboard',
-    pathMatch: 'full'
-  },
-  {
-    path: '**',
-    component: PageNotFoundComponent
-  }
-];
 
 @NgModule({
   declarations: [
@@ -56,7 +35,7 @@ const appRoutes: Routes = [
     FormsModule,
     HttpModule,
     MaterialModule.forRoot(),
-    RouterModule.forRoot(appRoutes),
+    appRouting,
     DashboardRoutingModule
   ],
   providers: [],
