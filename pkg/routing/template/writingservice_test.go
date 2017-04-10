@@ -112,6 +112,7 @@ var _ = Describe("Writingservice", func() {
 		AfterEach(func() {
 			err := os.RemoveAll(testPath)
 			Ω(err).ShouldNot(HaveOccurred())
+			completeConfig.Name = name
 		})
 
 		It("Should change Router Config", func() {
@@ -167,6 +168,40 @@ var _ = Describe("Writingservice", func() {
 				Name: "test",
 			})
 			Ω(err).Should(HaveOccurred())
+		})
+	})
+
+	Describe("GetRouterConfig", func() {
+		BeforeEach(func() {
+			err := os.Mkdir(testPath, os.ModeDir|os.ModePerm)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			err := os.RemoveAll(testPath)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should fill RouterConfig struct", func() {
+			db := testutils.NewMockDB()
+			s, _ := routing.NewService(db)
+			w, _ := template.NewWritingService(s, template.Nginx, testPath)
+			w.CreateRouterConfig(completeConfig)
+
+			conf := &routing.RouterConfig{}
+			err := w.GetRouterConfig(refID, name, conf)
+			Ω(err).ShouldNot(HaveOccurred())
+			Expect(conf.Name).To(BeEquivalentTo(name))
+		})
+
+		It("Should return error if ID does not exist", func() {
+			db := testutils.NewMockDB()
+			s, _ := routing.NewService(db)
+			w, _ := template.NewWritingService(s, template.Nginx, testPath)
+			w.CreateRouterConfig(completeConfig)
+
+			err := w.GetRouterConfig(28, "", &routing.RouterConfig{})
+			Ω(err).Should(BeEquivalentTo(testutils.ErrNotFound))
 		})
 	})
 })
