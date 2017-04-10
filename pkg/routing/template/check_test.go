@@ -128,13 +128,13 @@ var _ = Describe("Check", func() {
 					Keyword:   "ssl",
 				},
 				ServerName: pq.StringArray{"domain.com"},
-			})
+			}, false)
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		It("Should return an error if the RefID isn't set", func() {
 			c := template.NewCheck(template.Nginx)
-			err := c.Config(&routing.RouterConfig{})
+			err := c.Config(&routing.RouterConfig{}, false)
 			Ω(err).Should(BeEquivalentTo(template.ErrNoRefID))
 		})
 
@@ -142,7 +142,7 @@ var _ = Describe("Check", func() {
 			c := template.NewCheck(template.Nginx)
 			err := c.Config(&routing.RouterConfig{
 				RefID: 1,
-			})
+			}, false)
 			Ω(err).Should(BeEquivalentTo(template.ErrNoName))
 		})
 
@@ -151,7 +151,7 @@ var _ = Describe("Check", func() {
 			err := c.Config(&routing.RouterConfig{
 				RefID: 1,
 				Name:  "name",
-			})
+			}, false)
 			Ω(err).Should(BeEquivalentTo(template.ErrNoListenStatement))
 		})
 
@@ -165,7 +165,7 @@ var _ = Describe("Check", func() {
 					Port:      1337,
 					Keyword:   "ssl",
 				},
-			})
+			}, false)
 			Ω(err).Should(BeEquivalentTo(template.ErrEmptyServerName))
 		})
 
@@ -179,7 +179,7 @@ var _ = Describe("Check", func() {
 					Port:      1337,
 					Keyword:   "ssl",
 				},
-			})
+			}, false)
 			Ω(err).Should(BeEquivalentTo(template.ErrNoName))
 		})
 
@@ -193,7 +193,7 @@ var _ = Describe("Check", func() {
 					Port:      1337,
 					Keyword:   "ssl",
 				},
-			})
+			}, false)
 			Ω(err).Should(BeEquivalentTo(template.ErrNoName))
 		})
 
@@ -207,7 +207,7 @@ var _ = Describe("Check", func() {
 					Port:      1337,
 					Keyword:   "ssl",
 				},
-			})
+			}, false)
 			Ω(err).Should(BeEquivalentTo(template.ErrNoName))
 		})
 	})
@@ -222,7 +222,7 @@ var _ = Describe("Check", func() {
 				Port:      1337,
 				Keyword:   "ssl",
 			},
-		})
+		}, false)
 		Ω(err).Should(BeEquivalentTo(template.ErrNoName))
 	})
 
@@ -236,7 +236,7 @@ var _ = Describe("Check", func() {
 				Port:      1337,
 				Keyword:   "ssl",
 			},
-		})
+		}, false)
 		Ω(err).Should(BeEquivalentTo(template.ErrNoName))
 	})
 })
