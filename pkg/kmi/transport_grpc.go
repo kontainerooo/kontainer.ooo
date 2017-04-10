@@ -110,7 +110,7 @@ func convertPBKMI(k *KMI) *pb.KMI {
 	return &pb.KMI{
 		KMDI:        convertPBKMDI(k.KMDI),
 		Dockerfile:  k.Dockerfile,
-		Container:   k.Container,
+		Context:     k.Context,
 		Commands:    k.Commands.ToStringMap(),
 		Environment: k.Environment.ToStringMap(),
 		Frontend:    convertPBFrontendModuleArray(k.Frontend),
