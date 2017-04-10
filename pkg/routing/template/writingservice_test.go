@@ -434,4 +434,27 @@ var _ = Describe("Writingservice", func() {
 			Ω(err).Should(HaveOccurred())
 		})
 	})
+
+	Describe("Configurations", func() {
+		BeforeEach(func() {
+			err := os.Mkdir(testPath, os.ModeDir|os.ModePerm)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			err := os.RemoveAll(testPath)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should return all configurations", func() {
+			db := testutils.NewMockDB()
+			s, _ := routing.NewService(db)
+			w, _ := template.NewWritingService(s, template.Nginx, testPath)
+			w.CreateRouterConfig(completeConfig)
+
+			conf := make([]routing.RouterConfig, 0)
+			w.Configurations(&conf)
+			Expect(conf).To(HaveLen(1))
+		})
+	})
 })
