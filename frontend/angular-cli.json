@@ -26,7 +26,7 @@
         "../node_modules/material-design-lite/material.min.js"
       ],
       "environments": {
-        "source": "environments/enironment.ts",
+        "source": "environments/environment.ts",
         "dev": "environments/environment.ts",
         "prod": "environments/environment.prod.ts"
       }
