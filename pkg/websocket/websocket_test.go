@@ -102,13 +102,44 @@ var _ = Describe("Websocket", func() {
 	Context("Services", func() {
 		Context("Create", func() {
 			It("Should create a new ServiceDescription", func() {
-				service = ws.NewServiceDescription("Test Service", ws.ProtoID{'T', 'S', 'T'})
+				var err error
+				service, err = ws.NewServiceDescription("Test Service", ws.ProtoID{'T', 'S', 'T'})
+				Ω(err).ShouldNot(HaveOccurred())
 				Ω(service).ShouldNot(BeNil())
 			})
 
 			It("Should create a new ServiceEndpoint", func() {
+				var err error
 				e := makeTestEndpoint()
-				endpoint = ws.NewServiceEndpoint("Test Endpoint", ws.ProtoID{'T', 'S', 'T'}, e, decodeTest, encodeTest)
+				endpoint, err = ws.NewServiceEndpoint("Test Endpoint", ws.ProtoID{'T', 'S', 'T'}, e, decodeTest, encodeTest)
+				Ω(err).ShouldNot(HaveOccurred())
+			})
+
+			Context("New function error handling", func() {
+				It("Should return an error if no endpoint name is specified", func() {
+					_, err := ws.NewServiceEndpoint("", ws.ProtoID{}, nil, nil, nil)
+					Ω(err).Should(BeEquivalentTo(ws.ErrNoName))
+				})
+
+				It("Should return an error if no description name is specified", func() {
+					_, err := ws.NewServiceDescription("", ws.ProtoID{})
+					Ω(err).Should(BeEquivalentTo(ws.ErrNoName))
+				})
+
+				It("Should return an error if no valid enpoint protoID is specified", func() {
+					_, err := ws.NewServiceEndpoint("name", ws.ProtoID{}, nil, nil, nil)
+					Ω(err).Should(BeEquivalentTo(ws.ErrInvalidProtoID))
+				})
+
+				It("Should return an error if no valid service protoID is specified", func() {
+					_, err := ws.NewServiceDescription("name", ws.ProtoID{})
+					Ω(err).Should(BeEquivalentTo(ws.ErrInvalidProtoID))
+				})
+
+				It("Should return an error if no endpoint is provided", func() {
+					_, err := ws.NewServiceEndpoint("name", ws.ProtoID{'T'}, nil, nil, nil)
+					Ω(err).Should(BeEquivalentTo(ws.ErrNoEndpoint))
+				})
 			})
 		})
 
@@ -121,6 +152,12 @@ var _ = Describe("Websocket", func() {
 			It("Should return an Error if a Endpoint already exists in a Service", func() {
 				err := service.AddEndpoint(endpoint)
 				Ω(err).Should(HaveOccurred())
+			})
+
+			It("Should return an error if it was called with one", func() {
+				err := errors.New("text")
+				e := service.AddEndpoint(nil, err)
+				Ω(e).Should(BeEquivalentTo(err))
 			})
 		})
 

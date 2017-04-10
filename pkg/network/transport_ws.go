@@ -10,7 +10,7 @@ import (
 
 // MakeWebsocketService makes a set of network Endpoints available as a websocket Service
 func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
-	service := ws.NewServiceDescription("networkService", ws.ProtoIDFromString("network"))
+	service, _ := ws.NewServiceDescription("networkService", ws.ProtoIDFromString("network"))
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
 		"CreatePrimaryNetworkForContainer",

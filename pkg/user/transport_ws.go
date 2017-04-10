@@ -10,7 +10,7 @@ import (
 
 // MakeWebsocketService makes a set of user Endpoints available as a websocket Service
 func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
-	service := ws.NewServiceDescription("userService", ws.ProtoIDFromString("USR"))
+	service, _ := ws.NewServiceDescription("userService", ws.ProtoIDFromString("USR"))
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
 		"CreateUser",

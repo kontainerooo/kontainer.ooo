@@ -179,7 +179,9 @@ func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger,
 
 func startWebsocketTransport(errc chan error, logger log.Logger, wsAddr string, ue user.Endpoints, ke kmi.Endpoints, cle containerlifecycle.Endpoints, cce customercontainer.Endpoints, re routing.Endpoints) {
 	logger = log.With(logger, "transport", "ws")
-	s := ws.NewServer(ws.BasicHandler{}, logger, websocket.Upgrader{})
+	s := ws.NewServer(ws.BasicHandler{}, logger, websocket.Upgrader{
+		EnableCompression: true,
+	})
 
 	userService := user.MakeWebsocketService(ue)
 	s.RegisterService(userService)
