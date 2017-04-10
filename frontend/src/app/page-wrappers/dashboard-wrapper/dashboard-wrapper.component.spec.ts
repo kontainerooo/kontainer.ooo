@@ -5,27 +5,28 @@ import { DebugElement } from '@angular/core';
 
 import { MaterialModule } from '@angular/material';
 
-import { DashboardComponent } from './dashboard.component';
+import { DashboardWrapperComponent } from './dashboard-wrapper.component';
 import { DashboardToolbarComponent } from '../../dashboard-toolbar/dashboard-toolbar.component';
 import { SidebarNavigationComponent } from '../../sidebar-navigation/sidebar-navigation.component';
 import { AccountComponent } from '../../sidebar-navigation/account/account.component';
 import { AvatarComponent } from '../../sidebar-navigation/account/avatar/avatar.component';
 
-import { RouterLinkStubDirective } from '../../../testing/router-stubs';
+import { RouterLinkStubDirective, RouterOutletStubComponent } from '../../../testing/router-stubs';
 
-describe('DashboardComponent', () => {
-  let component: DashboardComponent;
-  let fixture: ComponentFixture<DashboardComponent>;
+describe('DashboardWrapperComponent', () => {
+  let component: DashboardWrapperComponent;
+  let fixture: ComponentFixture<DashboardWrapperComponent>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
       declarations: [
-          DashboardComponent,
+          DashboardWrapperComponent,
           DashboardToolbarComponent,
           SidebarNavigationComponent,
           AccountComponent,
           AvatarComponent,
-          RouterLinkStubDirective
+          RouterLinkStubDirective,
+          RouterOutletStubComponent
       ],
       imports: [
           MaterialModule
@@ -35,7 +36,7 @@ describe('DashboardComponent', () => {
   }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(DashboardComponent);
+    fixture = TestBed.createComponent(DashboardWrapperComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
