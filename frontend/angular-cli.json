@@ -19,9 +19,12 @@
       "tsconfig": "tsconfig.json",
       "prefix": "kro",
       "styles": [
-        "styles.scss"
+        "styles.scss",
+        "../node_modules/material-design-lite/material.min.css"
       ],
-      "scripts": [],
+      "scripts": [
+        "../node_modules/material-design-lite/material.min.js"
+      ],
       "environments": {
         "source": "environments/environment.ts",
         "dev": "environments/environment.ts",
