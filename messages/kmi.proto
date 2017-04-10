@@ -29,7 +29,7 @@ message FrontendModule {
 message KMI {
   KMDI KMDI = 1;
   string dockerfile = 2;
-  string container = 3;
+  string context = 3;
   map<string, string> commands = 4;
   map<string, string> environment = 5;
   repeated FrontendModule frontend = 6;

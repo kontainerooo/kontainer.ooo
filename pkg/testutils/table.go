@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+
+	"github.com/jinzhu/gorm"
 )
 
 // Table simulates a Table in the MockDb
@@ -15,6 +17,7 @@ type table struct {
 	ref        reflect.Type
 	idx        []string
 	count      uint
+	columns    map[string]string
 }
 
 func (t *table) String() string {
@@ -36,6 +39,7 @@ func (t *table) copy() *table {
 		ref:        t.ref,
 		idx:        t.idx,
 		count:      t.count,
+		columns:    t.columns,
 	}
 
 	for _, r := range t.rows {
@@ -54,6 +58,9 @@ func (t *table) all(out interface{}) error {
 }
 
 func (t *table) checkForField(f string) bool {
+	if f == gorm.ToDBName(f) {
+		f = t.columns[f]
+	}
 	_, found := t.ref.FieldByName(f)
 	return found
 }
@@ -85,15 +92,25 @@ func (t *table) insert(row interface{}) error {
 }
 
 func (t *table) find(field string, value interface{}) (reflect.Value, error) {
+	if field == gorm.ToDBName(field) {
+		field = t.columns[field]
+	}
+
 	_, found := t.ref.FieldByName(field)
 	if !found {
-		return reflect.ValueOf(nil), errors.New("field name not in struct")
+		return RNil, errors.New("field name not in struct")
 	}
+
 	result := reflect.MakeSlice(reflect.SliceOf(reflect.PtrTo(t.ref)), 0, 0)
 	for _, row := range t.rows {
 		if reflect.TypeOf(value).Kind() == reflect.Uint {
 			v := reflect.ValueOf(row).Elem().FieldByName(field).Uint()
 			if uint(v) == value {
+				result = reflect.Append(result, reflect.ValueOf(row))
+			}
+		} else if reflect.TypeOf(value).Kind() == reflect.Bool {
+			v := reflect.ValueOf(row).Elem().FieldByName(field).Bool()
+			if bool(v) == value {
 				result = reflect.Append(result, reflect.ValueOf(row))
 			}
 		} else {
@@ -114,6 +131,10 @@ func (t *table) delete(ids map[string]reflect.Value) error {
 	for i, row := range t.rows {
 		match := true
 		for k, v := range ids {
+			if k == gorm.ToDBName(k) {
+				k = t.columns[k]
+			}
+
 			if v.Interface() != reflect.ValueOf(row).Elem().FieldByName(k).Interface() {
 				match = false
 				break
@@ -219,10 +240,43 @@ func (t *table) removeFromArray(query reflect.Value, target string, index int) e
 	return nil
 }
 
+func getPrimaryKeys(ref reflect.Type, prime, idx *[]string, m map[string]string) {
+	primaryRegExp := regexp.MustCompile("primary_key")
+	refRegExp := regexp.MustCompile("Ref")
+
+	for i := 0; i < ref.NumField(); i++ {
+		f := ref.Field(i)
+		t := f.Type
+		if t.Kind() == reflect.Ptr {
+			t = t.Elem()
+		}
+
+		if t.Kind() == reflect.Struct {
+			getPrimaryKeys(t, prime, idx, m)
+			continue
+		}
+
+		dbName := gorm.ToDBName(f.Name)
+		m[dbName] = f.Name
+
+		v, ok := f.Tag.Lookup("gorm")
+		if ok {
+			isPrimary := primaryRegExp.MatchString(v)
+			if isPrimary {
+				*prime = append(*prime, f.Name)
+				if f.Type.Kind() == reflect.Uint && !refRegExp.MatchString(f.Name) {
+					*idx = append(*idx, f.Name)
+				}
+			}
+		}
+	}
+}
+
 func newTable(ref reflect.Type, name string) *table {
 	var (
 		idx     []string
 		primary []string
+		columns = make(map[string]string)
 	)
 
 	idTag := "ID"
@@ -234,26 +288,12 @@ func newTable(ref reflect.Type, name string) *table {
 		}
 	}
 
-	primaryRegExp := regexp.MustCompile("primary_key")
-	refRegExp := regexp.MustCompile("Ref")
-
-	for i := 0; i < ref.NumField(); i++ {
-		f := ref.Field(i)
-		v, ok := f.Tag.Lookup("gorm")
-		if ok {
-			isPrimary := primaryRegExp.MatchString(v)
-			if isPrimary {
-				primary = append(primary, f.Name)
-				if f.Type.Kind() == reflect.Uint && !refRegExp.MatchString(f.Name) {
-					idx = append(idx, f.Name)
-				}
-			}
-		}
-	}
+	getPrimaryKeys(ref, &primary, &idx, columns)
 
 	return &table{
 		Name:       name,
 		PrimaryKey: primary,
+		columns:    columns,
 		ref:        ref,
 		idx:        idx,
 	}
