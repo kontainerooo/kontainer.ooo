@@ -49,8 +49,8 @@ func (l ListenStatement) Value() (driver.Value, error) {
 
 // Log combines a path and a keyword
 type Log struct {
-	path    string
-	keyword string
+	Path    string
+	Keyword string
 }
 
 // Scan implements the sql.Scanner interface.
@@ -84,11 +84,12 @@ func (l Log) Value() (driver.Value, error) {
 
 // SSLSettings represents a set of configurations in terms of ssl transport
 type SSLSettings struct {
-	protocols           []string
-	ciphers             []string
-	preferServerCiphers bool
-	certificate         string
-	certificateKey      string
+	Protocols           []string
+	Ciphers             []string
+	Curve               string
+	PreferServerCiphers bool
+	Certificate         string
+	CertificateKey      string
 }
 
 // LocationRule is a struct which combines a single location (URL path) with a set of rules
