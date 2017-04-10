@@ -38,6 +38,9 @@ func merge(dst, src reflect.Value, overwriteID bool, depth int) error {
 }
 
 func isZero(v reflect.Value) bool {
+	if v == RNil {
+		return true
+	}
 	switch v.Kind() {
 	case reflect.Array, reflect.String:
 		return v.Len() == 0
