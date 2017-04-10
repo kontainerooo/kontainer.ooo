@@ -99,6 +99,10 @@ func (m *MockDB) AppendToArray(query interface{}, target string, values interfac
 
 // RemoveFromArray remove from array
 func (m *MockDB) RemoveFromArray(query interface{}, target string, index int) error {
+	if m.produceError() {
+		return ErrDBFailure
+	}
+
 	v := reflect.ValueOf(query).Elem()
 	t := v.Type()
 	name := t.String()

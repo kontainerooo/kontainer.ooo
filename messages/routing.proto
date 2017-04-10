@@ -32,6 +32,7 @@ message SSLSettings {
   bool preferServerCiphers = 3;
   string certificate = 4;
   string certificateKey = 5;
+  string curve = 6;
 }
 
 message Location {
