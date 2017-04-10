@@ -117,7 +117,10 @@ func (w *writingService) ChangeListenStatement(refID uint, name string, ls *rout
 		return err
 	}
 
-	w.w.CreateFile(w.mem.UpdateConf(refID, name))
+	err = w.w.CreateFile(w.mem.UpdateConf(refID, name))
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
