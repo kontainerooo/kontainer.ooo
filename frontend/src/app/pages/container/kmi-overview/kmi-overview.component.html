@@ -1,0 +1,30 @@
+<div class="mdl-cell mdl-cell--12-col">
+  <mdl-card mdl-shadow="2">
+    <mdl-card-title>
+      <h2 mdl-card-title-text>Your containers</h2>
+    </mdl-card-title>
+    <mdl-card-supporting-text>
+      <mdl-list>
+        <mdl-list-item *ngFor="let module of kmiModules; let i = index" lines="3">
+          <mdl-list-item-primary-content>
+            <mdl-icon mdl-list-item-avatar>view_module</mdl-icon>
+            <span>{{module.name}}</span>
+            <mdl-chip [mdl-label]="module.version.split('+')[0]">
+              <span mdl-chip-contact class="mdl-color--red mdl-color-text--white">V</span>
+            </mdl-chip>
+            <mdl-chip [mdl-label]="module.version.split('+')[1].replace('v', '')">
+              <span mdl-chip-contact class="mdl-color--red mdl-color-text--white">OV</span>
+            </mdl-chip>
+            <mdl-chip [mdl-label]="this.convertType(module.type)"></mdl-chip>
+            <mdl-list-item-text-body>
+              {{module.description}}
+            </mdl-list-item-text-body>
+          </mdl-list-item-primary-content>
+          <mdl-list-item-secondary-content>
+            <mdl-switch mdl-ripple [(ngModel)]="kmiStatus[i]"></mdl-switch>
+          </mdl-list-item-secondary-content>
+        </mdl-list-item>
+      </mdl-list>
+    </mdl-card-supporting-text>
+  </mdl-card>
+</div>

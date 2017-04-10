@@ -20,7 +20,7 @@
       "prefix": "kro",
       "styles": [
         "styles.scss",
-        "../node_modules/material-design-lite/material.min.css"
+        "../node_modules/material-design-lite/dist/material.red-amber.min.css"
       ],
       "scripts": [
         "../node_modules/material-design-lite/material.min.js"

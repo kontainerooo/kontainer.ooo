@@ -20,7 +20,7 @@ export class SidebarNavigationComponent implements OnInit {
       {
         title: "Containers",
         icon: "view_module",
-        route: "/dashboard"
+        route: "/container"
       }
     ];
   }
