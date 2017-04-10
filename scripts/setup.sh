@@ -17,7 +17,7 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 apt-get update
 apt-get install linux-headers-3.13.0-116-generic apt-transport-https ca-certificates curl \
   software-properties-common linux-image-extra-$(uname -r) \
-  linux-image-extra-virtual docker-ce zip unzip -y
+  linux-image-extra-virtual docker-ce zip unzip postgresql postgresql-client -y
 sudo apt-get --no-install-recommends install -y virtualbox-guest-utils
 
 # Install go
