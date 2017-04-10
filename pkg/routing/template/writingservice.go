@@ -137,7 +137,10 @@ func (w *writingService) AddServerName(refID uint, name string, sn string) error
 		return err
 	}
 
-	w.w.CreateFile(w.mem.UpdateConf(refID, name))
+	err = w.w.CreateFile(w.mem.UpdateConf(refID, name))
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
