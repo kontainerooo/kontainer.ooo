@@ -109,7 +109,7 @@ func convertKMI(k *pb.KMI) *kmi.KMI {
 	return &kmi.KMI{
 		KMDI:        convertKMDI(k.KMDI),
 		Dockerfile:  k.Dockerfile,
-		Container:   k.Container,
+		Context:     k.Context,
 		Commands:    abstraction.NewJSONFromMap(k.Commands),
 		Environment: abstraction.NewJSONFromMap(k.Environment),
 		Frontend:    convertFrontendModuleArray(k.Frontend),

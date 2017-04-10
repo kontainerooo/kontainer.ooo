@@ -55,6 +55,7 @@ type MockDB struct {
 	err        int
 	value      reflect.Value
 	multiValue []*result
+	isQuery    bool
 }
 
 // SetError sets the err property to true, causing the next function to be invoked next to return an error
@@ -175,7 +176,7 @@ func (m *MockDB) Where(query interface{}, args ...interface{}) error {
 	for i, part := range and {
 		// get field name out of query
 		s := strings.Split(part, " ")
-		field := strings.Title(s[0])
+		field := s[0] //strings.Title(s[0])
 
 		// init result array
 		mValue := []*result{}
@@ -190,7 +191,7 @@ func (m *MockDB) Where(query interface{}, args ...interface{}) error {
 					return err
 				}
 				// update result array if the result isn't empty
-				if res != reflect.ValueOf(nil) {
+				if res != RNil {
 					mValue = append(mValue, &result{
 						table:  table.Name,
 						values: res,
@@ -201,7 +202,7 @@ func (m *MockDB) Where(query interface{}, args ...interface{}) error {
 
 		if i == 0 {
 			// if nothing is found stop and return
-			if mValue == nil {
+			if mValue == nil || len(mValue) == 0 {
 				return nil
 			}
 
@@ -222,13 +223,12 @@ func (m *MockDB) Where(query interface{}, args ...interface{}) error {
 				}
 				if !intersect {
 					// remove table from the multiValue property if it is not part of the new result array
-					m.multiValue = append(m.multiValue[:i], m.multiValue[i+1:]...)
-
-					// if nothing is left reset everything and return
-					if len(m.multiValue) == 0 {
+					if len(m.multiValue) == 1 {
 						m.multiValue = nil
 						return nil
 					}
+
+					m.multiValue = append(m.multiValue[:i], m.multiValue[i+1:]...)
 				}
 			}
 		}
@@ -238,6 +238,9 @@ func (m *MockDB) Where(query interface{}, args ...interface{}) error {
 	if len(m.multiValue) == 1 {
 		m.value = m.multiValue[0].values
 	}
+
+	m.isQuery = true
+
 	return nil
 }
 
@@ -267,6 +270,7 @@ func (m *MockDB) First(out interface{}, where ...interface{}) error {
 	}
 
 	m.value, m.multiValue = RNil, nil
+	m.isQuery = false
 	return nil
 }
 
@@ -276,12 +280,23 @@ func (m *MockDB) Find(out interface{}, where ...interface{}) error {
 		return ErrDBFailure
 	}
 
+	defer func() { m.isQuery = false }()
+
 	ref := reflect.TypeOf(out).Elem()
 	for _, t := range m.tables {
 		if ref == reflect.SliceOf(t.getRef()) {
-			err := t.all(out)
-			if err != nil {
-				return err
+			if !m.isQuery {
+				err := t.all(out)
+				if err != nil {
+					return err
+				}
+				return nil
+			}
+			if reflect.TypeOf(out).Elem().Kind() == reflect.Slice {
+				for k, v := range m.multiValue {
+					val := v.values.Slice(0, 1).Index(k).Elem()
+					reflect.ValueOf(out).Elem().Set(reflect.Append(reflect.ValueOf(out).Elem(), val))
+				}
 			}
 			break
 		}
@@ -308,9 +323,15 @@ func (m *MockDB) Delete(value interface{}, where ...interface{}) error {
 
 	ref := reflect.TypeOf(value).Elem()
 	name := ref.String()
-	table := m.tables[name]
-	for _, k := range table.PrimaryKey {
-		ids[k] = reflect.ValueOf(value).Elem().FieldByName(k)
+
+	v := reflect.ValueOf(value).Elem()
+
+	for _, f := range m.tables[name].columns {
+		fv := v.FieldByName(f)
+
+		if !isZero(fv) {
+			ids[f] = fv
+		}
 	}
 
 	if len(ids) != 0 {

@@ -2,7 +2,6 @@ package testutils
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 
@@ -29,8 +28,6 @@ func (m *MockIPTService) CreateRule(ruleType int, ruleData interface{}) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Println(m.rules)
 
 	_, ok := m.rules[re.ID]
 	if ok {
@@ -69,11 +66,16 @@ func (m *MockIPTService) ListRules() []string {
 	return []string{}
 }
 
+// RestoreRules is not mocked
+func (m *MockIPTService) RestoreRules() error {
+	return nil
+}
+
 // NewMockIPTService creates a new MockIPTServicet
 func NewMockIPTService() (*MockIPTService, error) {
 	db := NewMockDB()
 	iptables.ExecCommand = fakeExecCommand
-	ipts, err := iptables.NewService("iptables", db)
+	ipts, err := iptables.NewService("iptables", "iptables-restore", db)
 
 	return &MockIPTService{
 		rules: make(map[string]iptables.RuleEntry),

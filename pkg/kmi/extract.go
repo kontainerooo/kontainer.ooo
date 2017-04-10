@@ -148,7 +148,7 @@ type moduleJSON struct {
 	Description string
 	Type        float64
 	Dockerfile  string
-	Container   string
+	Context     string
 	Frontend    interface{}
 	Env         interface{}
 	Interfaces  interface{}
@@ -361,7 +361,7 @@ func GetData(kC *Content, k *KMI) error {
 	k.Version = m.Version
 	k.Description = m.Description
 	k.Type = int(m.Type)
-	k.Container = m.Container
+	k.Context = m.Context
 
 	k.Dockerfile, err = GetDockerfile(m.Dockerfile, kC)
 	if err != nil {
