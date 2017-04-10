@@ -247,4 +247,73 @@ var _ = Describe("Writingservice", func() {
 			Ω(err).Should(HaveOccurred())
 		})
 	})
+
+	Describe("Change Listen Statement", func() {
+		BeforeEach(func() {
+			err := os.Mkdir(testPath, os.ModeDir|os.ModePerm)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			err := os.RemoveAll(testPath)
+			Ω(err).ShouldNot(HaveOccurred())
+		})
+
+		It("Should change Listen Statement", func() {
+			db := testutils.NewMockDB()
+			s, _ := routing.NewService(db)
+			w, _ := template.NewWritingService(s, template.Nginx, testPath)
+			w.CreateRouterConfig(completeConfig)
+
+			port := uint16(1025)
+			err := w.ChangeListenStatement(refID, name, &routing.ListenStatement{
+				IPAddress: abstraction.Inet("127.0.0.1"),
+				Port:      port,
+			})
+			Ω(err).ShouldNot(HaveOccurred())
+
+			conf := &routing.RouterConfig{}
+			w.GetRouterConfig(refID, name, conf)
+			Expect(conf.ListenStatement.Port).To(BeEquivalentTo(port))
+		})
+
+		It("Should return an error if the ListenStatement is falsy", func() {
+			db := testutils.NewMockDB()
+			s, _ := routing.NewService(db)
+			w, _ := template.NewWritingService(s, template.Nginx, testPath)
+			w.CreateRouterConfig(completeConfig)
+
+			err := w.ChangeListenStatement(refID, name, &routing.ListenStatement{
+				Port: 12,
+			})
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Should return an error if the underlying service returns an error", func() {
+			db := testutils.NewMockDB()
+			s, _ := routing.NewService(db)
+			w, _ := template.NewWritingService(s, template.Nginx, testPath)
+			w.CreateRouterConfig(completeConfig)
+			db.SetError(1)
+			err := w.ChangeListenStatement(refID, name, &routing.ListenStatement{
+				IPAddress: abstraction.Inet("127.0.0.1"),
+				Port:      1026,
+			})
+			Ω(err).Should(HaveOccurred())
+		})
+
+		It("Should return an error if the file couldn't be updated", func() {
+			db := testutils.NewMockDB()
+			s, _ := routing.NewService(db)
+			w, _ := template.NewWritingService(s, template.Nginx, testPath)
+			w.CreateRouterConfig(completeConfig)
+
+			os.RemoveAll(testPath)
+			err := w.ChangeListenStatement(refID, name, &routing.ListenStatement{
+				IPAddress: abstraction.Inet("127.0.0.1"),
+				Port:      1026,
+			})
+			Ω(err).Should(HaveOccurred())
+		})
+	})
 })

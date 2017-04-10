@@ -68,7 +68,7 @@ func (c *check) listenStatement(r *routing.ListenStatement, edit bool) error {
 
 	switch c.r {
 	case Nginx:
-		regex := regexp.MustCompile(`^ssl$`)
+		regex := regexp.MustCompile(`^ssl$|^$`)
 		if !regex.MatchString(r.Keyword) {
 			return ErrKeyword
 		}
