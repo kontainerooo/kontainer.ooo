@@ -61,7 +61,7 @@ func main() {
 	if isMock {
 		dbWrapper = testutils.NewMockDB()
 	} else {
-		db, err := gorm.Open("postgres", "host=postgres user=postgres sslmode=disable")
+		db, err := gorm.Open("postgres", "host=postgres database=postgres user=kroo password=kroo sslmode=disable")
 		if err != nil {
 			panic(err)
 		}
@@ -110,7 +110,7 @@ func main() {
 	customercontainerService = customercontainer.NewService(dcliWrapper)
 
 	ccEndpoint := makeCustomerContainerServiceEndpoints(customercontainerService)
-  
+
 	var routingService routing.Service
 	routingService, err = routing.NewService(dbWrapper)
 	if err != nil {
@@ -121,7 +121,7 @@ func main() {
 
 	errc := make(chan error)
 	ctx := context.Background()
-  
+
 	go startGRPCTransport(ctx, errc, logger, grpcAddr, userEndpoints, kmiEndpoints, clsEndpoints, ccEndpoint, routingEndpoints)
 
 	go startWebsocketTransport(errc, logger, wsAddr, userEndpoints, kmiEndpoints, clsEndpoints, ccEndpoint, routingEndpoints)
@@ -147,7 +147,6 @@ func main() {
 	logger.Log("exit", <-errc)
 }
 
-
 func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger, grpcAddr string, ue user.Endpoints, ke kmi.Endpoints, cle containerlifecycle.Endpoints, cce customercontainer.Endpoints, re routing.Endpoints) {
 	logger = log.With(logger, "transport", "gRPC")
 
@@ -172,7 +171,7 @@ func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger,
 
 	routingServer := routing.MakeGRPCServer(ctx, re, logger)
 	pb.RegisterRoutingServiceServer(s, routingServer)
-  
+
 	logger.Log("addr", grpcAddr)
 	errc <- s.Serve(ln)
 }
