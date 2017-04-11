@@ -1,9 +1,12 @@
 /* tslint:disable:no-unused-variable */
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { By, BrowserModule} from '@angular/platform-browser';
+import { FormsModule } from '@angular/forms';
 import { DebugElement } from '@angular/core';
+import { MdlModule } from 'angular2-mdl';
 
 import { KmiOverviewComponent } from './kmi-overview.component';
+import { RouterLinkStubDirective } from '../../../../testing/router-stubs'
 
 describe('KmiOverviewComponent', () => {
   let component: KmiOverviewComponent;
@@ -11,7 +14,15 @@ describe('KmiOverviewComponent', () => {
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ KmiOverviewComponent ]
+      declarations: [
+        KmiOverviewComponent,
+        RouterLinkStubDirective
+      ],
+      imports: [
+        BrowserModule,
+        FormsModule,
+        MdlModule
+      ]
     })
     .compileComponents();
   }));
