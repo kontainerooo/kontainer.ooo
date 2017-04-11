@@ -107,7 +107,10 @@ func main() {
 	clsEndpoints := makeCLServiceEndpoints(containerlifecycleService)
 
 	var customercontainerService customercontainer.Service
-	customercontainerService = customercontainer.NewService(dcliWrapper)
+	customercontainerService, err = customercontainer.NewService(dcliWrapper, dbWrapper)
+	if err != nil {
+		panic(err)
+	}
 
 	ccEndpoint := makeCustomerContainerServiceEndpoints(customercontainerService)
 
@@ -314,18 +317,11 @@ func makeCustomerContainerServiceEndpoints(s customercontainer.Service) customer
 
 	}
 
-	var CreateDockerImageEndpoint endpoint.Endpoint
-	{
-		CreateDockerImageEndpoint = customercontainer.MakeCreateDockerImageEndpoint(s)
-
-	}
-
 	return customercontainer.Endpoints{
-		CreateContainerEndpoint:   CreateContainerEndpoint,
-		EditContainerEndpoint:     EditContainerEndpoint,
-		RemoveContainerEndpoint:   RemoveContainerEndpoint,
-		InstancesEndpoint:         InstancesEndpoint,
-		CreateDockerImageEndpoint: CreateDockerImageEndpoint,
+		CreateContainerEndpoint: CreateContainerEndpoint,
+		EditContainerEndpoint:   EditContainerEndpoint,
+		RemoveContainerEndpoint: RemoveContainerEndpoint,
+		InstancesEndpoint:       InstancesEndpoint,
 	}
 }
 
