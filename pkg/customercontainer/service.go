@@ -49,10 +49,24 @@ type Service interface {
 	AddLogger(l log.Logger)
 }
 
+type dbAdapter interface {
+	abstraction.DBAdapter
+	AutoMigrate(...interface{}) error
+	Where(interface{}, ...interface{}) error
+	Find(interface{}, ...interface{}) error
+	Create(interface{}) error
+	Delete(interface{}, ...interface{}) error
+}
+
 type service struct {
+	db        dbAdapter
 	dcli      abstraction.DCli
 	kmiClient *kmi.Endpoints
 	logger    log.Logger
+}
+
+func (s *service) InitializeDatabases() error {
+	return s.db.AutoMigrate(&ContainerModule{})
 }
 
 // imageExists checks if a docker image exists.
@@ -122,6 +136,17 @@ func (s *service) CreateContainer(refid uint, kmiID uint) (name string, id strin
 	// Name the container $userID-$contaierID
 	containerName := fmt.Sprintf("%d-%s", refid, r.ID)
 	if err := s.dcli.ContainerRename(context.Background(), r.ID, containerName); err != nil {
+		return "", "", err
+	}
+
+	cm := ContainerModule{
+		RefID:       refid,
+		ContainerID: r.ID,
+		ImageID:     imageID,
+		KMI:         kmi,
+	}
+	err = s.db.Create(&cm)
+	if err != nil {
 		return "", "", err
 	}
 
@@ -394,8 +419,16 @@ func envValueEscape(envValue string) string {
 }
 
 // NewService creates a customercontainer with necessary dependencies.
-func NewService(dcli abstraction.DCli) Service {
-	return &service{
+func NewService(dcli abstraction.DCli, db dbAdapter) (Service, error) {
+	s := &service{
 		dcli: dcli,
+		db:   db,
 	}
+
+	err := s.InitializeDatabases()
+	if err != nil {
+		return s, err
+	}
+
+	return s, nil
 }
