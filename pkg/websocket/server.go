@@ -1,12 +1,43 @@
 package websocket
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/websocket"
 )
+
+// MiddlewareFunc is a function type used in the websocket package
+// Its parameters are the service and method id in a message as well as its data
+// Its return value may be an error
+type MiddlewareFunc func(ProtoID, ProtoID, interface{}) error
+
+type position uint8
+
+const (
+	execBefore position = iota
+	execAfter  position = iota
+)
+
+// Middleware is a type, which combines a MiddlewareFunc with a position
+type Middleware struct {
+	mid MiddlewareFunc
+	pos position
+}
+
+// Before returns a middleware, which will be executed in the websocket loop
+// before executing an endpoint, but after using the protocol handler to decode a message
+func Before(m MiddlewareFunc) *Middleware {
+	return &Middleware{m, execBefore}
+}
+
+// After returns a middleware, which will be executed in the websocket loop
+// after executing an endpoint, but before using the protocol handler to encode a message
+func After(m MiddlewareFunc) *Middleware {
+	return &Middleware{m, execAfter}
+}
 
 // SSLConfig is a type containing the path to a certificate and its keyfile
 type SSLConfig struct {
@@ -38,10 +69,10 @@ type Server struct {
 	// There is no need to define Subprotocols, since this will be filled with the help of the ProtocolMap
 	Upgrader websocket.Upgrader
 
-	// SSL is the SSLConfig used for the websocket server
-	SSL SSLConfig
-
+	ssl      SSLConfig
 	services map[ProtoID]*ServiceDescription
+	before   []*Middleware
+	after    []*Middleware
 }
 
 // RegisterService adds the given ServiceDescription to the Server's map of services
@@ -67,15 +98,22 @@ func (s *Server) GetService(name ProtoID) (*ServiceDescription, error) {
 
 // Serve starts the http(s) transport for the websocket, listening on addr
 func (s *Server) Serve(addr string) error {
-	if !s.SSL.Only {
+	var serving bool
+
+	if !s.ssl.Only {
 		err := http.ListenAndServe(addr, s)
 		if err != nil {
 			return err
 		}
+		serving = true
 	}
 
-	if s.SSL.Certificate != "" && s.SSL.Key != "" && s.SSL.Addr != "" {
-		return http.ListenAndServeTLS(s.SSL.Addr, s.SSL.Certificate, s.SSL.Key, s)
+	if s.ssl.Certificate != "" && s.ssl.Key != "" && s.ssl.Addr != "" {
+		return http.ListenAndServeTLS(s.ssl.Addr, s.ssl.Certificate, s.ssl.Key, s)
+	}
+
+	if !serving {
+		return errors.New("incomplete configuration, no server started")
 	}
 
 	return nil
@@ -122,6 +160,18 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 			continue
 		}
 
+		for _, middleware := range s.before {
+			err = middleware.mid(*srv, *me, &data)
+			if err != nil {
+				err = conn.WriteMessage(messageType, []byte(err.Error()))
+				if err != nil {
+					s.Logger.Log("err", err)
+					return
+				}
+				continue
+			}
+		}
+
 		service, err := s.GetService(*srv)
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
@@ -152,6 +202,18 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 			continue
 		}
 
+		for _, middleware := range s.after {
+			err = middleware.mid(*srv, *me, &res)
+			if err != nil {
+				err = conn.WriteMessage(messageType, []byte(err.Error()))
+				if err != nil {
+					s.Logger.Log("err", err)
+					return
+				}
+				continue
+			}
+		}
+
 		response, err := protocolHandler.Encode(srv, me, res)
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
@@ -176,6 +238,7 @@ func NewServer(
 	logger log.Logger,
 	upgrader websocket.Upgrader,
 	ssl SSLConfig,
+	m ...*Middleware,
 ) *Server {
 	if upgrader.ReadBufferSize == 0 {
 		if upgrader.WriteBufferSize != 0 {
@@ -200,11 +263,23 @@ func NewServer(
 		upgrader.Subprotocols = append(upgrader.Subprotocols, name)
 	}
 
+	before, after := make([]*Middleware, 0), make([]*Middleware, 0)
+
+	for _, w := range m {
+		if w.pos == execBefore {
+			before = append(before, w)
+		} else if w.pos == execAfter {
+			after = append(after, w)
+		}
+	}
+
 	return &Server{
 		Protocols: pm,
 		Logger:    logger,
 		Upgrader:  upgrader,
-		SSL:       ssl,
+		ssl:       ssl,
 		services:  make(map[ProtoID]*ServiceDescription),
+		before:    before,
+		after:     after,
 	}
 }
