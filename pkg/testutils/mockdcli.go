@@ -249,9 +249,16 @@ func (d *MockDCli) NetworkConnect(ctx context.Context, networkID, containerID st
 
 	for k, v := range d.networks {
 		if v.ID == networkID {
+			_, ok := d.networks[k]
+			if ok {
+				m := d.networks[k]
+				m.containers = append(d.networks[k].containers, containerID)
+				d.networks[k] = m
+				return nil
+			}
 			d.networks[k] = mockNetwork{
 				ID:         networkID,
-				containers: append(d.networks[k].containers, containerID),
+				containers: []string{containerID},
 			}
 			return nil
 		}
@@ -287,17 +294,23 @@ func (d *MockDCli) NetworkDisconnect(ctx context.Context, networkID, containerID
 
 // NetworkInspect returns network information
 func (d *MockDCli) NetworkInspect(ctx context.Context, networkID string, verbose bool) (types.NetworkResource, error) {
-	cts := make(map[string]types.EndpointResource)
+	for _, v := range d.networks {
+		if v.ID == networkID {
+			cts := make(map[string]types.EndpointResource)
 
-	for k := range d.containers {
-		cts[k] = types.EndpointResource{
-			IPv4Address: "127.0.0.2",
+			for _, containers := range v.containers {
+				cts[containers] = types.EndpointResource{
+					IPv4Address: "127.0.0.2",
+				}
+			}
+			return types.NetworkResource{
+				Containers: cts,
+			}, nil
+
 		}
 	}
+	return types.NetworkResource{}, errors.New("No containers in network")
 
-	return types.NetworkResource{
-		Containers: cts,
-	}, nil
 }
 
 // NewMockDCli returns a new instance of MockDCli
