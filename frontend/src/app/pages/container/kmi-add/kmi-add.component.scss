@@ -1,0 +1,32 @@
+:host {
+  width: 100%;
+}
+
+.mdl-cell {
+  mdl-card {
+    width: 100%;
+
+    mdl-textfield {
+      width: 100%;
+    }
+
+    mdl-list-item-primary-content {
+      mdl-chip {
+        height: 20px;
+        margin-top: -5px;
+
+        /deep/.mdl-chip__contact {
+          height: 20px;
+          vertical-align: top;
+          line-height: 20px;
+        }
+
+        /deep/.mdl-chip__text {
+          height: 20px;
+          margin-top: -5px;
+          vertical-align: top;
+        }
+      }
+    }
+  }
+}
