@@ -8,6 +8,14 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// SSLConfig is a type containing the path to a certificate and its keyfile
+type SSLConfig struct {
+	certificate string
+	key         string
+	addr        string
+	only        bool
+}
+
 // ProtocolMap maps a protocol name to its handler
 type ProtocolMap map[string]ProtocolHandler
 
@@ -17,6 +25,7 @@ type Server struct {
 	logger    log.Logger
 	services  map[ProtoID]*ServiceDescription
 	upgrader  websocket.Upgrader
+	ssl       SSLConfig
 }
 
 // RegisterService adds the given ServiceDescription to the Server's services map
@@ -42,7 +51,18 @@ func (s *Server) GetService(name ProtoID) (*ServiceDescription, error) {
 
 // Serve starts the http transport for the websocket, listening on addr
 func (s *Server) Serve(addr string) error {
-	return http.ListenAndServe(addr, s)
+	if !s.ssl.only {
+		err := http.ListenAndServe(addr, s)
+		if err != nil {
+			return err
+		}
+	}
+
+	if s.ssl.certificate != "" && s.ssl.key != "" && s.ssl.addr != "" {
+		return http.ListenAndServeTLS(s.ssl.addr, s.ssl.certificate, s.ssl.key, s)
+	}
+
+	return nil
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -139,6 +159,7 @@ func NewServer(
 	pm ProtocolMap,
 	logger log.Logger,
 	upgrader websocket.Upgrader,
+	ssl SSLConfig,
 ) *Server {
 	if upgrader.ReadBufferSize == 0 {
 		if upgrader.WriteBufferSize != 0 {
@@ -167,6 +188,7 @@ func NewServer(
 		protocols: pm,
 		logger:    logger,
 		upgrader:  upgrader,
+		ssl:       ssl,
 		services:  make(map[ProtoID]*ServiceDescription),
 	}
 }
