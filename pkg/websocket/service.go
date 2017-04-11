@@ -29,14 +29,23 @@ var stdDencode = func(_ context.Context, i interface{}) (interface{}, error) {
 
 // ServiceEndpoint is a struct type containing every value/function needed for an Endpoint in a Service
 type ServiceEndpoint struct {
-	name         string
-	protocolName ProtoID
-	e            endpoint.Endpoint
-	dec          DecodeRequestFunc
-	enc          EncodeResponseFunc
+	// Name is the Name of the ServiceEndpoint
+	Name string
+
+	// ProtocolName is the ProtoID used for the ServiceEndpoint
+	ProtocolName ProtoID
+
+	// E is the go-kit endpoint used in the ServiceEndpoint
+	E endpoint.Endpoint
+
+	// Dec is the DecodeRequestFunc used to convert incoming data for use with E
+	Dec DecodeRequestFunc
+
+	// Enc is the EncodeResponse func used to convert the return value of E
+	Enc EncodeResponseFunc
 }
 
-// NewServiceEndpoint returns a pointer to a ServiceEdnpoint instance
+// NewServiceEndpoint returns a pointer to a ServiceEndpoint instance, given its dependencis
 func NewServiceEndpoint(
 	name string,
 	protocolName ProtoID,
@@ -65,33 +74,37 @@ func NewServiceEndpoint(
 	}
 
 	return &ServiceEndpoint{
-		name:         name,
-		protocolName: protocolName,
-		e:            e,
-		dec:          dec,
-		enc:          enc,
+		Name:         name,
+		ProtocolName: protocolName,
+		E:            e,
+		Dec:          dec,
+		Enc:          enc,
 	}, nil
 }
 
 // ServiceDescription is a struct type containing every value needed for a Service in a Websocket Server
 type ServiceDescription struct {
-	name         string
-	protocolName ProtoID
-	endpoints    map[ProtoID]*ServiceEndpoint
+	// Name is the Name of the ServiceDescription
+	Name string
+
+	// ProtocolName is the ProtoID used for the ServiceDescription
+	ProtocolName ProtoID
+
+	endpoints map[ProtoID]*ServiceEndpoint
 }
 
-// AddEndpoint takes a ServiceEndpoint and adds it to the ServiceDescription's endpoint map
+// AddEndpoint takes a ServiceEndpoint and adds it to the ServiceDescription's map of endpoints
 func (s *ServiceDescription) AddEndpoint(se *ServiceEndpoint, err ...error) error {
 	if len(err) != 0 {
 		return err[0]
 	}
 
-	_, exist := s.endpoints[se.protocolName]
+	_, exist := s.endpoints[se.ProtocolName]
 	if exist {
-		return fmt.Errorf("Service Endpoint %s already exists", se.protocolName)
+		return fmt.Errorf("Service Endpoint %s already exists", se.ProtocolName)
 	}
 
-	s.endpoints[se.protocolName] = se
+	s.endpoints[se.ProtocolName] = se
 	return nil
 }
 
@@ -104,21 +117,21 @@ func (s *ServiceDescription) GetEndpointHandler(name ProtoID) (EndpointHandler, 
 
 	return func(message interface{}) (interface{}, error) {
 		ctx := context.Background()
-		req, err := e.dec(ctx, message)
+		req, err := e.Dec(ctx, message)
 		if err != nil {
 			return nil, err
 		}
 
-		res, err := e.e(ctx, req)
+		res, err := e.E(ctx, req)
 		if err != nil {
 			return nil, err
 		}
 
-		return e.enc(ctx, res)
+		return e.Enc(ctx, res)
 	}, nil
 }
 
-// NewServiceDescription returns a pointer to a ServiceDescription instance
+// NewServiceDescription returns a pointer to a ServiceDescription instance given its dependencies
 func NewServiceDescription(
 	name string,
 	protocolName ProtoID,
@@ -132,8 +145,8 @@ func NewServiceDescription(
 	}
 
 	return &ServiceDescription{
-		name:         name,
-		protocolName: protocolName,
+		Name:         name,
+		ProtocolName: protocolName,
 		endpoints:    make(map[ProtoID]*ServiceEndpoint),
 	}, nil
 }

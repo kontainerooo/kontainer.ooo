@@ -7,7 +7,7 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-// ProtoID is a byte array with length 3 used for identification in a protocol
+// ProtoID is a byte array with a length of 3 used for identification in a protocol
 type ProtoID [3]byte
 
 func (p ProtoID) String() string {
@@ -21,11 +21,16 @@ func ProtoIDFromString(id string) ProtoID {
 
 // ProtocolHandler is an interface defining the needed functionality to Decode and Encode
 type ProtocolHandler interface {
+	// Decode is function which extracts a service and method identifier as well as a data instance out of a message
+	// If the message is malformatted an error should be returned
 	Decode(message []byte) (service *ProtoID, method *ProtoID, data interface{}, err error)
+
+	// Encode is a function which converts a service and a method identifier as well as a data instance into a message
+	// If the message components are malformatted an error should be returned
 	Encode(service *ProtoID, method *ProtoID, data interface{}) (message []byte, err error)
 }
 
-// BasicHandler is a basic protocolHandler for use with ProtoBuf messages
+// BasicHandler is a basic protocolHandler which encodes the responses uses protobuf
 type BasicHandler struct{}
 
 // Decode implements the ProtocolHandler Decode function

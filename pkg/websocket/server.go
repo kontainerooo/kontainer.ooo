@@ -10,10 +10,17 @@ import (
 
 // SSLConfig is a type containing the path to a certificate and its keyfile
 type SSLConfig struct {
-	certificate string
-	key         string
-	addr        string
-	only        bool
+	// Path to the Certificate, which should be used to serve via ssl
+	Certificate string
+
+	// Path to the key, which belongs to the certificate
+	Key string
+
+	// Addr is the address on which the ssl server should listen
+	Addr string
+
+	// Only specfies if the transport should be ssl only
+	Only bool
 }
 
 // ProtocolMap maps a protocol name to its handler
@@ -21,21 +28,30 @@ type ProtocolMap map[string]ProtocolHandler
 
 // Server is a struct type containing every value needed for a websocket server
 type Server struct {
-	protocols ProtocolMap
-	logger    log.Logger
-	services  map[ProtoID]*ServiceDescription
-	upgrader  websocket.Upgrader
-	ssl       SSLConfig
+	// Protocols is a ProtocolMap including the proctols supported by the websocket server
+	Protocols ProtocolMap
+
+	// Logger is the log.Logger instance used to log websocket related output
+	Logger log.Logger
+
+	// Upgrader is the websocket.Upgrader instance used for the websocket server
+	// There is no need to define Subprotocols, since this will be filled with the help of the ProtocolMap
+	Upgrader websocket.Upgrader
+
+	// SSL is the SSLConfig used for the websocket server
+	SSL SSLConfig
+
+	services map[ProtoID]*ServiceDescription
 }
 
-// RegisterService adds the given ServiceDescription to the Server's services map
+// RegisterService adds the given ServiceDescription to the Server's map of services
 func (s *Server) RegisterService(sd *ServiceDescription) error {
-	_, exist := s.services[sd.protocolName]
+	_, exist := s.services[sd.ProtocolName]
 	if exist {
-		return fmt.Errorf("Service Endpoint %s already exists", sd.protocolName)
+		return fmt.Errorf("Service Endpoint %s already exists", sd.ProtocolName)
 	}
 
-	s.services[sd.protocolName] = sd
+	s.services[sd.ProtocolName] = sd
 	return nil
 }
 
@@ -49,30 +65,30 @@ func (s *Server) GetService(name ProtoID) (*ServiceDescription, error) {
 	return sd, nil
 }
 
-// Serve starts the http transport for the websocket, listening on addr
+// Serve starts the http(s) transport for the websocket, listening on addr
 func (s *Server) Serve(addr string) error {
-	if !s.ssl.only {
+	if !s.SSL.Only {
 		err := http.ListenAndServe(addr, s)
 		if err != nil {
 			return err
 		}
 	}
 
-	if s.ssl.certificate != "" && s.ssl.key != "" && s.ssl.addr != "" {
-		return http.ListenAndServeTLS(s.ssl.addr, s.ssl.certificate, s.ssl.key, s)
+	if s.SSL.Certificate != "" && s.SSL.Key != "" && s.SSL.Addr != "" {
+		return http.ListenAndServeTLS(s.SSL.Addr, s.SSL.Certificate, s.SSL.Key, s)
 	}
 
 	return nil
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	conn, err := s.upgrader.Upgrade(w, r, nil)
+	conn, err := s.Upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		s.logger.Log("err", err)
+		s.Logger.Log("err", err)
 		return
 	}
 
-	s.logger.Log("conn", conn.RemoteAddr())
+	s.Logger.Log("conn", conn.RemoteAddr())
 	go s.handleConnection(conn)
 }
 
@@ -83,7 +99,7 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 	if protocolName == "" {
 		protocolName = "default"
 	}
-	protocolHandler, ok := s.protocols[protocolName]
+	protocolHandler, ok := s.Protocols[protocolName]
 
 	if !ok {
 		conn.WriteMessage(websocket.TextMessage, []byte("requested protocol not available"))
@@ -100,7 +116,7 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
-				s.logger.Log("err", err)
+				s.Logger.Log("err", err)
 				return
 			}
 			continue
@@ -110,7 +126,7 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
-				s.logger.Log("err", err)
+				s.Logger.Log("err", err)
 				return
 			}
 			continue
@@ -120,7 +136,7 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
-				s.logger.Log("err", err)
+				s.Logger.Log("err", err)
 				return
 			}
 			continue
@@ -130,7 +146,7 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
-				s.logger.Log("err", err)
+				s.Logger.Log("err", err)
 				return
 			}
 			continue
@@ -140,7 +156,7 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
-				s.logger.Log("err", err)
+				s.Logger.Log("err", err)
 				return
 			}
 			continue
@@ -148,13 +164,13 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 
 		err = conn.WriteMessage(messageType, response)
 		if err != nil {
-			s.logger.Log("err", err)
+			s.Logger.Log("err", err)
 			return
 		}
 	}
 }
 
-// NewServer returns a pointer to a Server instance
+// NewServer returns a pointer to a Server instance, given its dependencies
 func NewServer(
 	pm ProtocolMap,
 	logger log.Logger,
@@ -185,10 +201,10 @@ func NewServer(
 	}
 
 	return &Server{
-		protocols: pm,
-		logger:    logger,
-		upgrader:  upgrader,
-		ssl:       ssl,
+		Protocols: pm,
+		Logger:    logger,
+		Upgrader:  upgrader,
+		SSL:       ssl,
 		services:  make(map[ProtoID]*ServiceDescription),
 	}
 }
