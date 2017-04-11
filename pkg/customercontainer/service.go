@@ -81,7 +81,12 @@ func (s *service) imageExists(image string) bool {
 }
 
 func (s *service) CreateContainer(refid uint, kmiID uint) (name string, id string, err error) {
-	_, imageTag, err := s.createDockerImage(refid, kmiID)
+	kmi, err := s.getKMI(kmiID)
+	if err != nil {
+		return "", "", err
+	}
+
+	imageID, imageTag, err := s.createDockerImage(refid, kmi)
 	if err != nil {
 		return "", "", err
 	}
@@ -159,44 +164,60 @@ func (s *service) EditContainer(id string, cfg *ContainerConfig) error {
 }
 
 func (s *service) RemoveContainer(id string) error {
+	cm := ContainerModule{
+		ContainerID: id,
+	}
+	err := s.db.Delete(&cm)
+	if err != nil {
+		return err
+	}
+
 	return s.dcli.ContainerRemove(context.Background(), id, types.ContainerRemoveOptions{})
 }
 
 func (s *service) Instances(refid uint) []string {
+	s.db.Where("refid = ?", refid)
 
-	containers, _ := s.dcli.ContainerList(context.Background(), types.ContainerListOptions{})
+	cms := []ContainerModule{}
+	err := s.db.Find(&cms)
+	if err != nil {
+		return []string{}
+	}
 
 	var containerList []string
-	userid := fmt.Sprintf("%d", refid)
-	for _, v := range containers {
-		if len(v.Names) > 0 && strings.HasPrefix(v.Names[0], userid) {
-			entry := v.ID
-			containerList = append(containerList, entry)
-		}
+	for _, v := range cms {
+		containerList = append(containerList, v.ContainerID)
 	}
 
 	return containerList
 }
 
-func (s *service) createDockerImage(refid uint, kmiID uint) (string, string, error) {
-
-	buildBuf := bytes.NewBuffer(nil)
-
+func (s *service) getKMI(kmiID uint) (kmi.KMI, error) {
 	if s.kmiClient == nil {
-		return "", "", errors.New("No KMI client")
+		return kmi.KMI{}, errors.New("No KMI client")
 	}
 
 	kmiResponse, err := s.kmiClient.GetKMIEndpoint(context.Background(), &kmi.GetKMIRequest{
 		ID: kmiID,
 	})
 	if err != nil {
-		return "", "", err
+		return kmi.KMI{}, err
+	}
+	if kmiResponse.(*kmi.GetKMIResponse).Error != nil {
+		return kmi.KMI{}, kmiResponse.(*kmi.GetKMIResponse).Error
 	}
 
 	kmi := kmiResponse.(*kmi.GetKMIResponse).KMI
 
+	return *kmi, nil
+}
+
+func (s *service) createDockerImage(refid uint, kmi kmi.KMI) (string, string, error) {
+
+	buildBuf := bytes.NewBuffer(nil)
+
 	imageTag := fmt.Sprintf("kro/%s:%d-%d", strings.ToLower(kmi.Name), refid, rand.Int())
-	_, _, err = s.dcli.ImageInspectWithRaw(context.Background(), imageTag)
+	_, _, err := s.dcli.ImageInspectWithRaw(context.Background(), imageTag)
 
 	if !s.dcli.IsErrImageNotFound(err) {
 		return "", "", err
@@ -212,7 +233,7 @@ func (s *service) createDockerImage(refid uint, kmiID uint) (string, string, err
 		return "", "", err
 	}
 
-	buildOptions := generateBuildOptions(kmi, refid, imageTag)
+	buildOptions := generateBuildOptions(&kmi, refid, imageTag)
 
 	res, err := s.dcli.ImageBuild(context.Background(), buildContext, buildOptions)
 	if err != nil {
