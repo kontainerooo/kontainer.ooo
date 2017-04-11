@@ -18,14 +18,14 @@ export class KmiOverviewComponent {
         description: 'Event-driven I/O server-side JavaScript environment based on V8. Includes API documentation, change-log, examples and announcements.',
         name: 'Node.js',
         type: kmi.Type.WEBSERVER,
-        version: '1.0.0+v7.8.0'
+        version: '1.0.0+7.8.0'
       }),
       new kmi.KMDI({
         ID: 1,
         description: 'Building on the Best of Relational with the Innovations of NoSQL',
         name: 'MongoDB',
         type: kmi.Type.WEBSERVER,
-        version: '1.0.0+v3.4.3'
+        version: '1.0.0+3.4.3'
       })
     ];
 
