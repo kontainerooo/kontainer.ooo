@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/customercontainer"
+	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
 	"github.com/kontainerooo/kontainer.ooo/pkg/network"
 	"github.com/kontainerooo/kontainer.ooo/pkg/testutils"
 )
@@ -86,17 +87,41 @@ var _ = Describe("Network", func() {
 		dcli := testutils.NewMockDCli()
 		db := testutils.NewMockDB()
 		networkService, _ := network.NewService(dcli, db, mockFwEndpoints)
-		ccs := customercontainer.NewService(dcli)
-		dcli.CreateMockImage("testimage")
-		_, containerID, _ := ccs.CreateContainer(123, &customercontainer.ContainerConfig{
-			ImageName: "testimage",
+		ccs, _ := customercontainer.NewService(dcli, db)
+		mockKMI := testutils.NewMockKMIClient()
+		mockKMIEndpoints := testutils.NewMockKMIEndpoints(log.NewNopLogger(), *mockKMI)
+		mockKMI.AddMockKMI(0, kmi.KMI{
+			KMDI: kmi.KMDI{
+				ID:          1,
+				Name:        "node",
+				Version:     "",
+				Description: "",
+				Type:        3,
+			},
+			Dockerfile:  "FROM FROM node:7-wheezy",
+			Context:     "./container-test",
+			Commands:    nil,
+			Environment: nil,
+			Frontend:    nil,
+			Imports:     nil,
+			Interfaces:  nil,
+			Mounts:      nil,
+			Variables:   nil,
+			Resources: map[string]interface{}{
+				"cpus": 1,
+				"mem":  500,
+				"swap": 500,
+			},
 		})
+
+		ccs.AddLogger(log.NewNopLogger())
+		ccs.AddKMIClient(mockKMIEndpoints)
+		_, containerID, _ := ccs.CreateContainer(123, 0)
 		It("Should remove a network", func() {
 			networkService.CreatePrimaryNetworkForContainer(123, &network.Config{
 				Driver: "bridge",
 				Name:   "network1",
 			}, containerID)
-
 			err := networkService.RemoveNetworkByName(123, "network1")
 
 			Ω(err).ShouldNot(HaveOccurred())
@@ -140,12 +165,37 @@ var _ = Describe("Network", func() {
 		mockFwEndpoints := testutils.NewMockFirewallEndpoints(log.NewNopLogger(), *mockFw)
 		dcli := testutils.NewMockDCli()
 		db := testutils.NewMockDB()
-		ccs := customercontainer.NewService(dcli)
+		ccs, _ := customercontainer.NewService(dcli, db)
 		networkService, _ := network.NewService(dcli, db, mockFwEndpoints)
-		dcli.CreateMockImage("testimage")
-		_, containerID, _ := ccs.CreateContainer(123, &customercontainer.ContainerConfig{
-			ImageName: "testimage",
+		mockKMI := testutils.NewMockKMIClient()
+		mockKMIEndpoints := testutils.NewMockKMIEndpoints(log.NewNopLogger(), *mockKMI)
+		mockKMI.AddMockKMI(0, kmi.KMI{
+			KMDI: kmi.KMDI{
+				ID:          1,
+				Name:        "node",
+				Version:     "",
+				Description: "",
+				Type:        3,
+			},
+			Dockerfile:  "FROM FROM node:7-wheezy",
+			Context:     "./container-test",
+			Commands:    nil,
+			Environment: nil,
+			Frontend:    nil,
+			Imports:     nil,
+			Interfaces:  nil,
+			Mounts:      nil,
+			Variables:   nil,
+			Resources: map[string]interface{}{
+				"cpus": 1,
+				"mem":  500,
+				"swap": 500,
+			},
 		})
+
+		ccs.AddLogger(log.NewNopLogger())
+		ccs.AddKMIClient(mockKMIEndpoints)
+		_, containerID, _ := ccs.CreateContainer(123, 0)
 
 		It("Should add a container to a network", func() {
 			_ = networkService.CreateNetwork(123, &network.Config{
@@ -159,9 +209,7 @@ var _ = Describe("Network", func() {
 		})
 
 		It("Should error when primary network already has a container", func() {
-			_, containerTwo, _ := ccs.CreateContainer(123, &customercontainer.ContainerConfig{
-				ImageName: "testimage",
-			})
+			_, containerTwo, _ := ccs.CreateContainer(123, 0)
 
 			networkService.CreatePrimaryNetworkForContainer(123, &network.Config{
 				Driver: "bridge",
@@ -211,12 +259,37 @@ var _ = Describe("Network", func() {
 		mockFwEndpoints := testutils.NewMockFirewallEndpoints(log.NewNopLogger(), *mockFw)
 		dcli := testutils.NewMockDCli()
 		db := testutils.NewMockDB()
-		ccs := customercontainer.NewService(dcli)
+		ccs, _ := customercontainer.NewService(dcli, db)
 		networkService, _ := network.NewService(dcli, db, mockFwEndpoints)
-		dcli.CreateMockImage("testimage")
-		containerID, _, _ := ccs.CreateContainer(123, &customercontainer.ContainerConfig{
-			ImageName: "testimage",
+		mockKMI := testutils.NewMockKMIClient()
+		mockKMIEndpoints := testutils.NewMockKMIEndpoints(log.NewNopLogger(), *mockKMI)
+		mockKMI.AddMockKMI(0, kmi.KMI{
+			KMDI: kmi.KMDI{
+				ID:          1,
+				Name:        "node",
+				Version:     "",
+				Description: "",
+				Type:        3,
+			},
+			Dockerfile:  "FROM FROM node:7-wheezy",
+			Context:     "./container-test",
+			Commands:    nil,
+			Environment: nil,
+			Frontend:    nil,
+			Imports:     nil,
+			Interfaces:  nil,
+			Mounts:      nil,
+			Variables:   nil,
+			Resources: map[string]interface{}{
+				"cpus": 1,
+				"mem":  500,
+				"swap": 500,
+			},
 		})
+
+		ccs.AddLogger(log.NewNopLogger())
+		ccs.AddKMIClient(mockKMIEndpoints)
+		_, containerID, _ := ccs.CreateContainer(123, 0)
 
 		It("Should remove a container from a network", func() {
 			_ = networkService.CreateNetwork(123, &network.Config{
@@ -273,16 +346,39 @@ var _ = Describe("Network", func() {
 		mockFwEndpoints := testutils.NewMockFirewallEndpoints(log.NewNopLogger(), *mockFw)
 		dcli := testutils.NewMockDCli()
 		db := testutils.NewMockDB()
-		ccs := customercontainer.NewService(dcli)
 		networkService, _ := network.NewService(dcli, db, mockFwEndpoints)
-		dcli.CreateMockImage("testimage")
+		ccs, _ := customercontainer.NewService(dcli, db)
+		mockKMI := testutils.NewMockKMIClient()
+		mockKMIEndpoints := testutils.NewMockKMIEndpoints(log.NewNopLogger(), *mockKMI)
+		mockKMI.AddMockKMI(0, kmi.KMI{
+			KMDI: kmi.KMDI{
+				ID:          1,
+				Name:        "node",
+				Version:     "",
+				Description: "",
+				Type:        3,
+			},
+			Dockerfile:  "FROM FROM node:7-wheezy",
+			Context:     "./container-test",
+			Commands:    nil,
+			Environment: nil,
+			Frontend:    nil,
+			Imports:     nil,
+			Interfaces:  nil,
+			Mounts:      nil,
+			Variables:   nil,
+			Resources: map[string]interface{}{
+				"cpus": 1,
+				"mem":  500,
+				"swap": 500,
+			},
+		})
 
-		_, containerIDOne, _ := ccs.CreateContainer(123, &customercontainer.ContainerConfig{
-			ImageName: "testimage",
-		})
-		_, containerIDTwo, _ := ccs.CreateContainer(123, &customercontainer.ContainerConfig{
-			ImageName: "testimage",
-		})
+		ccs.AddLogger(log.NewNopLogger())
+		ccs.AddKMIClient(mockKMIEndpoints)
+
+		_, containerIDOne, _ := ccs.CreateContainer(123, 0)
+		_, containerIDTwo, _ := ccs.CreateContainer(123, 0)
 
 		It("Should expose port from container to container", func() {
 			networkService.CreatePrimaryNetworkForContainer(123, &network.Config{
@@ -294,16 +390,13 @@ var _ = Describe("Network", func() {
 				Driver: "bridge",
 				Name:   "network2",
 			}, containerIDTwo)
-
 			err := networkService.ExposePortToContainer(123, containerIDOne, 8080, "tcp", containerIDTwo)
 
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 
 		It("Should remove a port exposure", func() {
-
 			err := networkService.RemovePortFromContainer(123, containerIDOne, 8080, "tcp", containerIDTwo)
-
 			Ω(err).ShouldNot(HaveOccurred())
 		})
 	})
