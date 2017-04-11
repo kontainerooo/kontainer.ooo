@@ -39,7 +39,7 @@ func (s *service) StopContainer(id string) error {
 	return s.dcli.ContainerKill(context.Background(), id, "SIGKILL")
 }
 
-// NewService creates a UserService with necessary dependencies.
+// NewService creates a containerlifecycle service with necessary dependencies.
 func NewService(dcli abstraction.DCli) Service {
 	return &service{
 		dcli: dcli,
