@@ -17,12 +17,14 @@ var _ = Describe("Customercontainer", func() {
 
 	Describe("Create service", func() {
 		It("Should create a new service", func() {
-			cc := customercontainer.NewService(testutils.NewMockDCli())
+			cc, err := customercontainer.NewService(testutils.NewMockDCli(), testutils.NewMockDB())
 			Ω(cc).ShouldNot(BeZero())
+			Ω(err).ShouldNot(HaveOccurred())
 		})
 	})
 
 	Describe("Create Container", func() {
+		db := testutils.NewMockDB()
 		mockKMI := testutils.NewMockKMIClient()
 		mockKMIEndpoints := testutils.NewMockKMIEndpoints(log.NewNopLogger(), *mockKMI)
 		mockKMI.AddMockKMI(0, kmi.KMI{
@@ -50,7 +52,7 @@ var _ = Describe("Customercontainer", func() {
 		})
 
 		cli := testutils.NewMockDCli()
-		cc := customercontainer.NewService(cli)
+		cc, _ := customercontainer.NewService(cli, db)
 		cc.AddLogger(log.NewNopLogger())
 		cc.AddKMIClient(mockKMIEndpoints)
 
@@ -70,7 +72,7 @@ var _ = Describe("Customercontainer", func() {
 
 		It("Should fail creating the docker container", func() {
 			cli := testutils.NewMockDCli()
-			cc := customercontainer.NewService(cli)
+			cc, _ := customercontainer.NewService(cli, db)
 			cli.CreateMockImage("testimage")
 
 			cli.SetDockerOffline()
@@ -82,7 +84,7 @@ var _ = Describe("Customercontainer", func() {
 
 		It("Should fail on renaming the container", func() {
 			cli := testutils.NewMockDCli()
-			cc := customercontainer.NewService(cli)
+			cc, _ := customercontainer.NewService(cli, db)
 			cli.CreateMockImage("testimage")
 
 			cli.SetIDNotExisting()
@@ -94,7 +96,7 @@ var _ = Describe("Customercontainer", func() {
 
 		It("Should fail decoding seccomp profile", func() {
 			cli := testutils.NewMockDCli()
-			cc := customercontainer.NewService(cli)
+			cc, _ := customercontainer.NewService(cli, db)
 			cli.CreateMockImage("testimage")
 
 			// Save seccomp and remove
@@ -111,8 +113,9 @@ var _ = Describe("Customercontainer", func() {
 	})
 
 	Describe("Edit Container", func() {
+		db := testutils.NewMockDB()
 		cli := testutils.NewMockDCli()
-		cc := customercontainer.NewService(cli)
+		cc, _ := customercontainer.NewService(cli, db)
 		It("Should edit container", func() {
 			err := cc.EditContainer("123", &customercontainer.ContainerConfig{})
 
@@ -121,6 +124,7 @@ var _ = Describe("Customercontainer", func() {
 	})
 
 	Describe("Remove container", func() {
+		db := testutils.NewMockDB()
 		mockKMI := testutils.NewMockKMIClient()
 		mockKMIEndpoints := testutils.NewMockKMIEndpoints(log.NewNopLogger(), *mockKMI)
 		mockKMI.AddMockKMI(0, kmi.KMI{
@@ -148,7 +152,7 @@ var _ = Describe("Customercontainer", func() {
 		})
 
 		cli := testutils.NewMockDCli()
-		cc := customercontainer.NewService(cli)
+		cc, _ := customercontainer.NewService(cli, db)
 		cc.AddLogger(log.NewNopLogger())
 		cc.AddKMIClient(mockKMIEndpoints)
 
@@ -167,6 +171,7 @@ var _ = Describe("Customercontainer", func() {
 	})
 
 	Describe("Get instances", func() {
+		db := testutils.NewMockDB()
 		mockKMI := testutils.NewMockKMIClient()
 		mockKMIEndpoints := testutils.NewMockKMIEndpoints(log.NewNopLogger(), *mockKMI)
 		mockKMI.AddMockKMI(0, kmi.KMI{
@@ -194,7 +199,7 @@ var _ = Describe("Customercontainer", func() {
 		})
 
 		cli := testutils.NewMockDCli()
-		cc := customercontainer.NewService(cli)
+		cc, _ := customercontainer.NewService(cli, db)
 		cc.AddLogger(log.NewNopLogger())
 		cc.AddKMIClient(mockKMIEndpoints)
 
@@ -217,8 +222,9 @@ var _ = Describe("Customercontainer", func() {
 	})
 
 	Describe("Create image", func() {
+		db := testutils.NewMockDB()
 		cli := testutils.NewMockDCli()
-		cc := customercontainer.NewService(cli)
+		cc, _ := customercontainer.NewService(cli, db)
 		cc.AddLogger(log.NewNopLogger())
 
 		os.Mkdir("container-test", 0777)
@@ -304,6 +310,7 @@ var _ = Describe("Customercontainer", func() {
 	})
 
 	Describe("Endpoints and Transport", func() {
+		db := testutils.NewMockDB()
 		mockKMI := testutils.NewMockKMIClient()
 		mockKMIEndpoints := testutils.NewMockKMIEndpoints(log.NewNopLogger(), *mockKMI)
 		mockKMI.AddMockKMI(0, kmi.KMI{
@@ -331,7 +338,7 @@ var _ = Describe("Customercontainer", func() {
 		})
 
 		cli := testutils.NewMockDCli()
-		cc := customercontainer.NewService(cli)
+		cc, _ := customercontainer.NewService(cli, db)
 		cc.AddLogger(log.NewNopLogger())
 		cc.AddKMIClient(mockKMIEndpoints)
 
