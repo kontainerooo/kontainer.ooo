@@ -10,14 +10,17 @@ import (
 
 // Service is awesome
 type Service interface {
-	// StartContainer
+	// StartContainer starts a container
 	StartContainer(id string) error
 
-	// StartCommand
+	// StartCommand starts a command in a given container
 	StartCommand(id string, cmd string) (string, error)
 
-	// StopContainer
+	// StopContainer stops a container
 	StopContainer(id string) error
+
+	// IsRunning checks if a container is running
+	IsRunning(id string) bool
 }
 
 type service struct {
@@ -37,6 +40,15 @@ func (s *service) StartCommand(id string, cmd string) (string, error) {
 
 func (s *service) StopContainer(id string) error {
 	return s.dcli.ContainerKill(context.Background(), id, "SIGKILL")
+}
+
+func (s *service) IsRunning(id string) bool {
+	info, err := s.dcli.ContainerInspect(context.Background(), id)
+	if err != nil {
+		return false
+	}
+
+	return info.State.Running
 }
 
 // NewService creates a containerlifecycle service with necessary dependencies.
