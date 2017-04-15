@@ -7,6 +7,7 @@ service CustomerContainerService {
     rpc EditContainer (EditContainerRequest) returns (EditContainerResponse);
     rpc RemoveContainer (RemoveContainerRequest) returns (RemoveContainerResponse);
     rpc Instances (InstancesRequest) returns (InstancesResponse);
+    rpc GetContainerID (GetContainerIDRequest) returns (GetContainerIDResponse);
 }
 
 message ContainerConfig {
@@ -47,4 +48,14 @@ message InstancesRequest {
 
 message InstancesResponse {
     repeated string Instances = 1;
+}
+
+message GetContainerIDRequest {
+    uint32 RefID = 1;
+    string ContainerName = 2;
+}
+
+message GetContainerIDResponse {
+    string ContainerID = 1;
+    string Error = 2;
 }
