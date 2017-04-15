@@ -38,6 +38,7 @@ type MockDCli struct {
 	images          map[string]bool
 	err             bool
 	idNotExist      bool
+	isRunning       bool
 	dockerIsOffline bool
 	networks        map[string]mockNetwork
 }
@@ -68,6 +69,11 @@ func (d *MockDCli) produceError() bool {
 		return true
 	}
 	return false
+}
+
+// SetRunning sets the mock container to running = true
+func (d *MockDCli) SetRunning(r bool) {
+	d.isRunning = r
 }
 
 // GetNetworks returns available networks
@@ -311,6 +317,19 @@ func (d *MockDCli) NetworkInspect(ctx context.Context, networkID string, verbose
 	}
 	return types.NetworkResource{}, errors.New("No containers in network")
 
+}
+
+// ContainerInspect returns information about a mock container
+func (d *MockDCli) ContainerInspect(ctx context.Context, containerID string) (types.ContainerJSON, error) {
+	json := types.ContainerJSON{
+		ContainerJSONBase: &types.ContainerJSONBase{
+			State: &types.ContainerState{
+				Running: d.isRunning,
+			},
+		},
+	}
+
+	return json, nil
 }
 
 // NewMockDCli returns a new instance of MockDCli

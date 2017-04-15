@@ -20,6 +20,7 @@ type DCli interface {
 	ContainerRename(ctx context.Context, containerID, newContainerName string) error
 	ContainerRemove(ctx context.Context, containerID string, options types.ContainerRemoveOptions) error
 	ContainerList(ctx context.Context, options types.ContainerListOptions) ([]types.Container, error)
+	ContainerInspect(ctx context.Context, containerID string) (types.ContainerJSON, error)
 	ImageInspectWithRaw(ctx context.Context, imageID string) (types.ImageInspect, []byte, error)
 	ImageBuild(ctx context.Context, buildContext io.Reader, options types.ImageBuildOptions) (types.ImageBuildResponse, error)
 	IsErrImageNotFound(err error) bool
@@ -61,6 +62,10 @@ func (d dcliAbstract) ContainerRemove(ctx context.Context, containerID string, o
 
 func (d dcliAbstract) ContainerList(ctx context.Context, options types.ContainerListOptions) ([]types.Container, error) {
 	return d.cli.ContainerList(ctx, options)
+}
+
+func (d dcliAbstract) ContainerInspect(ctx context.Context, containerID string) (types.ContainerJSON, error) {
+	return d.cli.ContainerInspect(ctx, containerID)
 }
 
 func (d dcliAbstract) ImageInspectWithRaw(ctx context.Context, imageID string) (types.ImageInspect, []byte, error) {
