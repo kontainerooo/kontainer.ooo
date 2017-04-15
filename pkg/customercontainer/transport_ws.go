@@ -43,6 +43,14 @@ func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
 		DecodeWSInstancesRequest,
 		EncodeGRPCInstancesResponse,
 	))
+
+	service.AddEndpoint(ws.NewServiceEndpoint(
+		"GetContainerID",
+		ws.ProtoIDFromString("ALL"),
+		endpoints.GetContainerIDEndpoint,
+		DecodeWSGetContainerIDRequest,
+		EncodeGRPCGetContainerIDResponse,
+	))
 	return service
 }
 
@@ -92,4 +100,16 @@ func DecodeWSInstancesRequest(ctx context.Context, data interface{}) (interface{
 	}
 
 	return DecodeGRPCInstancesRequest(ctx, req)
+}
+
+// DecodeWSGetContainerIDRequest is a websocket.DecodeRequestFunc that converts a
+// WS GetContainerID request to a messages/customercontainer.proto-domain getcontainerid request.
+func DecodeWSGetContainerIDRequest(ctx context.Context, data interface{}) (interface{}, error) {
+	req := &pb.GetContainerIDRequest{}
+	err := proto.Unmarshal(data.([]byte), req)
+	if err != nil {
+		return nil, err
+	}
+
+	return DecodeGRPCGetContainerIDRequest(ctx, req)
 }

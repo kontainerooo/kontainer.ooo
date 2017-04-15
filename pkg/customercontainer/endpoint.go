@@ -8,11 +8,11 @@ import (
 
 // Endpoints is a struct which collects all endpoints for the customercontainer service
 type Endpoints struct {
-	CreateContainerEndpoint   endpoint.Endpoint
-	EditContainerEndpoint     endpoint.Endpoint
-	RemoveContainerEndpoint   endpoint.Endpoint
-	InstancesEndpoint         endpoint.Endpoint
-	CreateDockerImageEndpoint endpoint.Endpoint
+	CreateContainerEndpoint endpoint.Endpoint
+	EditContainerEndpoint   endpoint.Endpoint
+	RemoveContainerEndpoint endpoint.Endpoint
+	InstancesEndpoint       endpoint.Endpoint
+	GetContainerIDEndpoint  endpoint.Endpoint
 }
 
 // CreateContainerRequest is the request struct for the CreateContainerEndpoint
@@ -101,6 +101,30 @@ func MakeInstancesEndpoint(s Service) endpoint.Endpoint {
 		inst := s.Instances(req.RefID)
 		return InstancesResponse{
 			Instances: inst,
+		}, nil
+	}
+}
+
+// GetContainerIDRequest is the request struct for the GetContainerIDEndpoint
+type GetContainerIDRequest struct {
+	RefID         uint
+	ContainerName string
+}
+
+// GetContainerIDResponse is the response struct for the GetContainerIDEndpoint
+type GetContainerIDResponse struct {
+	ContainerID string
+	Error       error
+}
+
+// MakeGetContainerIDEndpoint creates a gokit endpoint which invokes GetContainerID
+func MakeGetContainerIDEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GetContainerIDRequest)
+		i, err := s.GetContainerID(req.RefID, req.ContainerName)
+		return GetContainerIDResponse{
+			ContainerID: i,
+			Error:       err,
 		}, nil
 	}
 }

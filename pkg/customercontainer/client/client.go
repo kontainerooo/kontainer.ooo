@@ -59,12 +59,24 @@ func New(conn *grpc.ClientConn, logger log.Logger) *customercontainer.Endpoints 
 			pb.InstancesResponse{},
 		).Endpoint()
 	}
+	var GetContainerIDEndpoint endpoint.Endpoint
+	{
+		GetContainerIDEndpoint = grpctransport.NewClient(
+			conn,
+			"customercontainerService",
+			"GetContainerID",
+			EncodeGRPCGetContainerIDRequest,
+			DecodeGRPCGetContainerIDResponse,
+			pb.GetContainerIDResponse{},
+		).Endpoint()
+	}
 
 	return &customercontainer.Endpoints{
 		CreateContainerEndpoint: CreateContainerEndpoint,
 		EditContainerEndpoint:   EditContainerEndpoint,
 		RemoveContainerEndpoint: RemoveContainerEndpoint,
 		InstancesEndpoint:       InstancesEndpoint,
+		GetContainerIDEndpoint:  GetContainerIDEndpoint,
 	}
 }
 
@@ -86,7 +98,7 @@ func configToPbConfig(cfg *customercontainer.ContainerConfig) *pb.ContainerConfi
 func EncodeGRPCCreateContainerRequest(_ context.Context, request interface{}) (interface{}, error) {
 	req := request.(*customercontainer.CreateContainerRequest)
 	return &pb.CreateContainerRequest{
-		Refid: uint32(req.Refid),
+		RefID: uint32(req.RefID),
 		KmiID: uint32(req.KMIID),
 	}, nil
 }
@@ -144,7 +156,7 @@ func DecodeGRPCRemoveContainerResponse(_ context.Context, grpcResponse interface
 func EncodeGRPCInstancesRequest(_ context.Context, request interface{}) (interface{}, error) {
 	req := request.(*customercontainer.InstancesRequest)
 	return &pb.InstancesRequest{
-		Refid: uint32(req.Refid),
+		RefID: uint32(req.RefID),
 	}, nil
 }
 
@@ -154,5 +166,25 @@ func DecodeGRPCInstancesResponse(_ context.Context, grpcResponse interface{}) (i
 	response := grpcResponse.(*pb.InstancesResponse)
 	return &customercontainer.InstancesResponse{
 		Instances: response.Instances,
+	}, nil
+}
+
+// EncodeGRPCGetContainerIDRequest is a transport/grpc.EncodeRequestFunc that converts a
+// messages/customercontainer.proto-domain getcontainerid request to a gRPC GetContainerID request.
+func EncodeGRPCGetContainerIDRequest(_ context.Context, request interface{}) (interface{}, error) {
+	req := request.(*customercontainer.GetContainerIDRequest)
+	return &pb.GetContainerIDRequest{
+		RefID:         uint32(req.RefID),
+		ContainerName: req.ContainerName,
+	}, nil
+}
+
+// DecodeGRPCGetContainerIDResponse is a transport/grpc.DecodeResponseFunc that converts a
+// gRPC GetContainerID response to a messages/customercontainer.proto-domain getcontainerid response.
+func DecodeGRPCGetContainerIDResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
+	response := grpcResponse.(*pb.GetContainerIDResponse)
+	return &customercontainer.GetContainerIDResponse{
+		ContainerID: response.ContainerID,
+		Error:       getError(response.Error),
 	}, nil
 }
