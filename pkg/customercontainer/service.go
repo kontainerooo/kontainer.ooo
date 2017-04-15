@@ -42,6 +42,9 @@ type Service interface {
 	// Instances returns a list of instances of an user by id
 	Instances(refid uint) []string
 
+	// GetContainerID returns the container id for a given container name
+	GetContainerID(refid uint, containerName string) (string, error)
+
 	// AddKMIClient adds the kmi Endpoints to the service
 	AddKMIClient(ke *kmi.Endpoints)
 
@@ -190,6 +193,18 @@ func (s *service) Instances(refid uint) []string {
 	}
 
 	return containerList
+}
+
+func (s *service) GetContainerID(refid uint, containerName string) (string, error) {
+	s.db.Where("refid = ? AND container_name = ?", refid, containerName)
+
+	cm := ContainerModule{}
+	err := s.db.Find(&cm)
+	if err != nil {
+		return "", err
+	}
+
+	return cm.ContainerID, nil
 }
 
 func (s *service) getKMI(kmiID uint) (kmi.KMI, error) {

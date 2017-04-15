@@ -10,8 +10,9 @@ type ContainerConfig struct {
 // ContainerModule is the DB entry for each container module with its
 // corresponding KMI
 type ContainerModule struct {
-	ImageID     string `gorm:"primary_key"`
-	RefID       uint
-	ContainerID string
-	KMI         kmi.KMI
+	ImageID       string `gorm:"primary_key"`
+	RefID         uint
+	ContainerID   string
+	ContainerName string
+	KMI           kmi.KMI
 }
