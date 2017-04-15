@@ -24,6 +24,7 @@ var _ = Describe("Container Lifecycle", func() {
 		It("Should start a container", func() {
 			container := "test"
 			err := cls.StartContainer(container)
+			dcli.SetRunning(true)
 			Ω(dcli.IsRunning(container)).Should(BeTrue())
 			Ω(err).ShouldNot(HaveOccurred())
 		})
@@ -52,6 +53,7 @@ var _ = Describe("Container Lifecycle", func() {
 
 		It("Should start a command", func() {
 			command := "/bin/sh -c grep"
+			dcli.SetRunning(true)
 			cmd, err := cls.StartCommand(container, command)
 
 			Ω(cmd).Should(Equal(command))
@@ -61,6 +63,7 @@ var _ = Describe("Container Lifecycle", func() {
 		It("Should return an error if command won't execute", func() {
 			command := "/bin/sh -c grep"
 			dcli.SetError()
+			dcli.SetRunning(true)
 			cmd, err := cls.StartCommand(container, command)
 
 			Ω(cmd).Should(BeEmpty())
@@ -70,6 +73,7 @@ var _ = Describe("Container Lifecycle", func() {
 		It("Should return an error if container is not started", func() {
 			container := "test2"
 			command := "/bin/sh -c grep"
+			dcli.SetRunning(false)
 			cmd, err := cls.StartCommand(container, command)
 
 			Ω(cmd).Should(BeEmpty())
@@ -108,6 +112,7 @@ var _ = Describe("Container Lifecycle", func() {
 
 		Context("StartContainerEndpoint", func() {
 			It("Should work with StartContainer request and response", func() {
+				dcli.SetRunning(true)
 				res, err := es.StartContainerEndpoint(ctx, containerlifecycle.StartContainerRequest{
 					ID: "123",
 				})
