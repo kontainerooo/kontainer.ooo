@@ -58,7 +58,7 @@ func NewServiceEndpoint(
 		return nil, ErrNoName
 	}
 
-	if protocolName[0] == 0 && protocolName[1] == 0 && protocolName[2] == 0 {
+	if len(protocolName) < 3 || (protocolName[0] == 0 && protocolName[1] == 0 && protocolName[2] == 0) {
 		return nil, ErrInvalidProtoID
 	}
 
