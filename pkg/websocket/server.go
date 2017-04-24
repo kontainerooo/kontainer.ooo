@@ -11,8 +11,9 @@ import (
 
 // MiddlewareFunc is a function type used in the websocket package
 // Its parameters are the service and method id in a message as well as its data
+// furthermore the session information is added
 // Its return value may be an error
-type MiddlewareFunc func(ProtoID, ProtoID, interface{}) error
+type MiddlewareFunc func(ProtoID, ProtoID, interface{}, interface{}) error
 
 type position uint8
 
@@ -69,6 +70,7 @@ type Server struct {
 	// There is no need to define Subprotocols, since this will be filled with the help of the ProtocolMap
 	Upgrader websocket.Upgrader
 
+	auth     Authenticator
 	ssl      SSLConfig
 	services map[ProtoID]*ServiceDescription
 	before   []*Middleware
@@ -120,6 +122,18 @@ func (s *Server) Serve(addr string) error {
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var (
+		session interface{}
+		abort   bool
+	)
+
+	if s.auth != nil {
+		session, abort = s.auth.Mux(w, r)
+		if abort {
+			return
+		}
+	}
+
 	conn, err := s.Upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		s.Logger.Log("err", err)
@@ -127,10 +141,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.Logger.Log("conn", conn.RemoteAddr())
-	go s.handleConnection(conn)
+	go s.handleConnection(conn, session)
 }
 
-func (s *Server) handleConnection(conn *websocket.Conn) {
+func (s *Server) handleConnection(conn *websocket.Conn, session interface{}) {
 	defer conn.Close()
 
 	protocolName := conn.Subprotocol()
@@ -161,7 +175,7 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 		}
 
 		for _, middleware := range s.before {
-			err = middleware.mid(*srv, *me, &data)
+			err = middleware.mid(*srv, *me, &data, &session)
 			if err != nil {
 				err = conn.WriteMessage(messageType, []byte(err.Error()))
 				if err != nil {
@@ -203,7 +217,7 @@ func (s *Server) handleConnection(conn *websocket.Conn) {
 		}
 
 		for _, middleware := range s.after {
-			err = middleware.mid(*srv, *me, &res)
+			err = middleware.mid(*srv, *me, &res, &session)
 			if err != nil {
 				err = conn.WriteMessage(messageType, []byte(err.Error()))
 				if err != nil {
@@ -237,9 +251,17 @@ func NewServer(
 	pm ProtocolMap,
 	logger log.Logger,
 	upgrader websocket.Upgrader,
+	auth Authenticator,
 	ssl SSLConfig,
 	m ...*Middleware,
 ) *Server {
+	var (
+		before   = make([]*Middleware, 0)
+		after    = make([]*Middleware, 0)
+		services = make(map[ProtoID]*ServiceDescription)
+		server   *Server
+	)
+
 	if upgrader.ReadBufferSize == 0 {
 		if upgrader.WriteBufferSize != 0 {
 			upgrader.ReadBufferSize = upgrader.WriteBufferSize
@@ -263,8 +285,6 @@ func NewServer(
 		upgrader.Subprotocols = append(upgrader.Subprotocols, name)
 	}
 
-	before, after := make([]*Middleware, 0), make([]*Middleware, 0)
-
 	for _, w := range m {
 		if w.pos == execBefore {
 			before = append(before, w)
@@ -273,13 +293,22 @@ func NewServer(
 		}
 	}
 
-	return &Server{
+	server = &Server{
 		Protocols: pm,
 		Logger:    logger,
 		Upgrader:  upgrader,
 		ssl:       ssl,
-		services:  make(map[ProtoID]*ServiceDescription),
+		auth:      auth,
+		services:  services,
 		before:    before,
 		after:     after,
 	}
+
+	if auth != nil {
+		authService, _ := NewServiceDescription("Authentification", auth.GetID())
+		authService.AddEndpoint(auth.GetEndpoint())
+		server.RegisterService(authService)
+	}
+
+	return server
 }
