@@ -96,7 +96,7 @@ type ServiceDescription struct {
 
 // AddEndpoint takes a ServiceEndpoint and adds it to the ServiceDescription's map of endpoints
 func (s *ServiceDescription) AddEndpoint(se *ServiceEndpoint, err ...error) error {
-	if len(err) != 0 {
+	if len(err) != 0 && err[0] != nil {
 		return err[0]
 	}
 
@@ -113,7 +113,7 @@ func (s *ServiceDescription) AddEndpoint(se *ServiceEndpoint, err ...error) erro
 func (s *ServiceDescription) GetEndpointHandler(name ProtoID) (EndpointHandler, error) {
 	e, exist := s.endpoints[name]
 	if !exist {
-		return nil, fmt.Errorf("Service Endpoint %s does not exists", name)
+		return nil, fmt.Errorf("Service Endpoint %s does not exist", name)
 	}
 
 	return func(message interface{}) (interface{}, error) {
@@ -141,7 +141,7 @@ func NewServiceDescription(
 		return nil, ErrNoName
 	}
 
-	if protocolName[0] == 0 && protocolName[1] == 0 && protocolName[2] == 0 {
+	if len(protocolName) < 3 || (protocolName[0] == 0 && protocolName[1] == 0 && protocolName[2] == 0) {
 		return nil, ErrInvalidProtoID
 	}
 

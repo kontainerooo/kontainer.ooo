@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/go-kit/kit/endpoint"
@@ -12,6 +15,18 @@ import (
 	. "github.com/onsi/gomega"
 
 	"testing"
+)
+
+var (
+	errEndpoint       = errors.New("endpoint error")
+	errDecode         = errors.New("decode error")
+	errEncode         = errors.New("encode error")
+	errService        = errors.New("service error")
+	errMethod         = errors.New("method error")
+	errProtocolEncode = errors.New("protocol encode error")
+	protocolMap       = ws.ProtocolMap{
+		"default": protocol{},
+	}
 )
 
 func TestWebsocket(t *testing.T) {
@@ -31,34 +46,58 @@ type response struct {
 	res interface{}
 }
 
+type testAuth struct{}
+
+func (testAuth) Mux(http.ResponseWriter, *http.Request) (interface{}, bool) {
+	return nil, false
+}
+
+func (testAuth) GetID() ws.ProtoID {
+	return ws.ProtoIDFromString("AUT")
+}
+
+func (testAuth) GetEndpoint() *ws.ServiceEndpoint {
+	return &ws.ServiceEndpoint{}
+}
+
 type protocol struct{}
 
 func (p protocol) Decode(message []byte) (*ws.ProtoID, *ws.ProtoID, interface{}, error) {
-	var (
-		service ws.ProtoID
-		method  ws.ProtoID
-		data    request
-	)
 	m := string(message)
 	mparts := strings.Split(m, " ")
-	switch mparts[0] {
-	case "TST":
-		service = ws.ProtoIDFromString(mparts[0])
-		switch mparts[1] {
-		case "TST":
-			method = ws.ProtoIDFromString(mparts[1])
-			data.req = mparts[2]
-		default:
-			return nil, nil, nil, errors.New("method")
-		}
-	default:
-		return nil, nil, nil, fmt.Errorf("service %s doesnt exist", mparts[0])
+
+	services := regexp.MustCompile("TST|NYI")
+	methods := services
+
+	if services.FindString(mparts[0]) == "" {
+		return nil, nil, nil, errService
 	}
+	service := ws.ProtoIDFromString(mparts[0])
+
+	if methods.FindString(mparts[1]) == "" {
+		return nil, nil, nil, errMethod
+	}
+	method := ws.ProtoIDFromString(mparts[1])
+
+	data := request{
+		req: mparts[2],
+	}
+
+	number, err := strconv.ParseUint(mparts[2], 10, 64)
+	if err == nil {
+		data.req = number
+	}
+
 	return &service, &method, data, nil
 }
 
 func (p protocol) Encode(service *ws.ProtoID, method *ws.ProtoID, data interface{}) ([]byte, error) {
-	return []byte(fmt.Sprintf("%s %s %s", *service, *method, data.(response).res)), nil
+	res := data.(response).res
+	if res.(string) == "error" {
+		return nil, errProtocolEncode
+	}
+
+	return []byte(fmt.Sprintf("%s %s %s", *service, *method, res)), nil
 }
 
 func makeTestEndpoint() endpoint.Endpoint {
@@ -66,7 +105,7 @@ func makeTestEndpoint() endpoint.Endpoint {
 		reqStruct := request.(domainRequest)
 		switch reqStruct.req.(type) {
 		case error:
-			return nil, errors.New("endpoint error")
+			return nil, errEndpoint
 		default:
 			return reqStruct.req, nil
 		}
@@ -77,7 +116,7 @@ func decodeTest(ctx context.Context, req interface{}) (interface{}, error) {
 	reqStruct := req.(request)
 	switch reqStruct.req.(type) {
 	case bool:
-		return nil, errors.New("decode error")
+		return nil, errDecode
 	default:
 		return domainRequest{
 			req: reqStruct.req,
@@ -88,7 +127,7 @@ func decodeTest(ctx context.Context, req interface{}) (interface{}, error) {
 func encodeTest(ctx context.Context, res interface{}) (interface{}, error) {
 	switch res.(type) {
 	case uint64:
-		return nil, errors.New("encode error")
+		return nil, errEncode
 	default:
 		return response{
 			res: res,

@@ -92,7 +92,7 @@ func (s *Server) RegisterService(sd *ServiceDescription) error {
 func (s *Server) GetService(name ProtoID) (*ServiceDescription, error) {
 	sd, exist := s.services[name]
 	if !exist {
-		return nil, fmt.Errorf("Service Description %s does not exists", name)
+		return nil, fmt.Errorf("Service Description %s does not exist", name)
 	}
 
 	return sd, nil
@@ -153,7 +153,7 @@ func (s *Server) handleConnection(conn *websocket.Conn, session interface{}) {
 	}
 	protocolHandler, ok := s.Protocols[protocolName]
 
-	if !ok {
+	if !ok || protocolHandler == nil {
 		conn.WriteMessage(websocket.TextMessage, []byte("requested protocol not available"))
 		return
 	}
@@ -275,7 +275,7 @@ func NewServer(
 	}
 
 	if upgrader.CheckOrigin == nil {
-		logger.Log("caution", "no upgrader provided, every connection will be accepted")
+		logger.Log("caution", "no CheckOrigin function provided, every connection will be accepted")
 		upgrader.CheckOrigin = func(r *http.Request) bool {
 			return true
 		}

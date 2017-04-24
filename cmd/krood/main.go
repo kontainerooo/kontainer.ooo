@@ -183,7 +183,7 @@ func startWebsocketTransport(errc chan error, logger log.Logger, wsAddr string, 
 		"v1": ws.BasicHandler{},
 	}, logger, websocket.Upgrader{
 		EnableCompression: true,
-	}, ws.Config{})
+	}, ws.NewTokenAuth(), ws.SSLConfig{})
 
 	userService := user.MakeWebsocketService(ue)
 	s.RegisterService(userService)
