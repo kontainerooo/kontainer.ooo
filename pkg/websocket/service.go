@@ -23,7 +23,8 @@ var (
 // and returns the encoded response or an error
 type EndpointHandler func(message interface{}) (response interface{}, err error)
 
-var stdDencode = func(_ context.Context, i interface{}) (interface{}, error) {
+// StdDencode is a standard de/encode function which is used in an endpoint is no function was provided
+var StdDencode = func(_ context.Context, i interface{}) (interface{}, error) {
 	return i, nil
 }
 
@@ -66,11 +67,11 @@ func NewServiceEndpoint(
 	}
 
 	if dec == nil {
-		dec = stdDencode
+		dec = StdDencode
 	}
 
 	if enc == nil {
-		enc = stdDencode
+		enc = StdDencode
 	}
 
 	return &ServiceEndpoint{
