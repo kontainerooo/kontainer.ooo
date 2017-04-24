@@ -16,7 +16,14 @@ func (p ProtoID) String() string {
 
 // ProtoIDFromString creates a ProtoID from a string
 func ProtoIDFromString(id string) ProtoID {
-	return ProtoID{id[0], id[1], id[2]}
+	p := ProtoID{}
+	for i, d := range []byte(id) {
+		if i > 2 {
+			break
+		}
+		p[i] = d
+	}
+	return p
 }
 
 // ProtocolHandler is an interface defining the needed functionality to Decode and Encode
