@@ -3,6 +3,7 @@ package user
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"errors"
 
 	"golang.org/x/crypto/bcrypt"
@@ -60,19 +61,21 @@ func (s *service) getDB() abstraction.DBAdapter {
 }
 
 func (s *service) CreateUser(username string, cfg *Config, adr *Address) (uint, error) {
-	s.db.Where("username = ?", username)
-	res := s.db.GetValue()
-	if res != nil && res != (&User{}) {
+	user, err := s.GetUserByUsername(username)
+	if user != nil && user.ID != 0 {
 		return 0, errors.New("username already used")
 	}
+	if err != nil {
+		return 0, err
+	}
 
-	err := s.db.Create(adr)
+	err = s.db.Create(adr)
 	if err != nil {
 		return 0, err
 	}
 
 	cfg.AddressID = adr.ID
-	user := &User{Username: username}
+	user = &User{Username: username}
 	user.setConfig(cfg)
 
 	count := 512
@@ -81,7 +84,8 @@ func (s *service) CreateUser(username string, cfg *Config, adr *Address) (uint, 
 	if err != nil {
 		return 0, err
 	}
-	user.Salt = string(salt)
+	json, _ := json.Marshal(salt) // HACK sorry 🙈
+	user.Salt = string(json)
 
 	password, err := bcrypt.GenerateFromPassword([]byte(user.Password+user.Salt), s.bcryptCost)
 	if err != nil {
@@ -148,15 +152,23 @@ func (s *service) GetUser(id uint, user *User) error {
 	return nil
 }
 
-func (s *service) CheckLoginCredentials(username string, password string) bool {
-	var user *User
+func (s *service) GetUserByUsername(username string) (*User, error) {
+	user := &User{}
 	err := s.db.Where("Username = ?", username)
 	if err != nil {
-		return false
+		return nil, err
+	}
+	err = s.db.First(user)
+	if err != nil && !s.db.IsNotFound(err) {
+		return nil, err
 	}
 
-	err = s.db.First(user)
-	if err != nil {
+	return user, nil
+}
+
+func (s *service) CheckLoginCredentials(username string, password string) bool {
+	user, err := s.GetUserByUsername(username)
+	if err != nil || user == nil {
 		return false
 	}
 

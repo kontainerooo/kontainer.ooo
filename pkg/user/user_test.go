@@ -76,7 +76,7 @@ var _ = Describe("User", func() {
 		})
 
 		It("Should return error on db failure", func() {
-			id, _ := userService.CreateUser("foo", &user.Config{}, &user.Address{})
+			id, _ := userService.CreateUser("bar", &user.Config{}, &user.Address{})
 			db.SetError(1)
 			err := userService.EditUser(id, &user.Config{Email: "email"})
 			Ω(err).Should(HaveOccurred())
@@ -147,12 +147,6 @@ var _ = Describe("User", func() {
 			err := userService.GetUser(id, user)
 			Ω(err).ShouldNot(HaveOccurred())
 			Expect(user.Username).To(BeEquivalentTo(username))
-		})
-
-		It("Should return error if ID does not exist", func() {
-			user := &user.User{}
-			err := userService.GetUser(28, user)
-			Ω(err).Should(BeEquivalentTo(testutils.ErrNotFound))
 		})
 
 		It("Should return error on db failure", func() {
