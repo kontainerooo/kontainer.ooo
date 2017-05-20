@@ -1,0 +1,19 @@
+mdl-card {
+  min-height: 0;
+}
+
+mdl-icon.status {
+  color: #F44336;
+
+  &.transition {
+    color: #FFC107;
+  }
+
+  &.running {
+    color: #4CAF50;
+  }
+}
+
+button.toggle {
+  margin-top: -16px;
+}

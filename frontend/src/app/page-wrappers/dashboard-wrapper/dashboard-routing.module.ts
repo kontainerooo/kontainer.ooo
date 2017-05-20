@@ -5,13 +5,18 @@ import { RouterModule, Routes } from '@angular/router';
 import { MaterialModule } from '@angular/material';
 import { MdlModule } from 'angular2-mdl';
 
+import { SearchKmiPipe } from '../../pipes/search-kmi.pipe';
+
+import { SocketService } from '../../services/socket.service';
+import { KmiService } from '../../services/kmi.service';
+
 import { DashboardWrapperComponent } from './dashboard-wrapper.component';
 import { DashboardComponent } from '../../pages/dashboard/dashboard.component';
 import { SettingsComponent } from '../../pages/user/settings/settings.component';
 import { KmiOverviewComponent } from '../../pages/container/kmi-overview/kmi-overview.component';
 import { KmiAddComponent } from '../../pages/container/kmi-add/kmi-add.component';
-
-import { SearchKmiPipe } from '../../pipes/search-kmi.pipe';
+import { KmiDetailComponent } from './../../pages/container/kmi-detail/kmi-detail.component';
+import { KmiStatusComponent } from './../../pages/container/templates/kmi-status/kmi-status.component';
 
 const dashboardRoutes = [
   {
@@ -37,6 +42,10 @@ const dashboardRoutes = [
       {
         path: 'container/add',
         component: KmiAddComponent
+      },
+      {
+        path: 'container/:id',
+        component: KmiDetailComponent
       }
     ]
   }
@@ -48,7 +57,9 @@ const dashboardRoutes = [
     SettingsComponent,
     KmiOverviewComponent,
     KmiAddComponent,
-    SearchKmiPipe
+    SearchKmiPipe,
+    KmiDetailComponent,
+    KmiStatusComponent
   ],
   imports: [
     BrowserModule,
@@ -59,6 +70,10 @@ const dashboardRoutes = [
   ],
   exports: [
     RouterModule
+  ],
+  providers: [
+    SocketService,
+    KmiService
   ]
 })
 export class DashboardRoutingModule { }

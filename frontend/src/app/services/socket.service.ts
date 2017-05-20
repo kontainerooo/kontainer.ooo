@@ -7,6 +7,7 @@ import { OpcodeConverter } from '../classes/opcode-converter';
 export class SocketService {
   private socket: Rx.Subject<MessageEvent>;
   private opcodeConverter: OpcodeConverter;
+  private sendWhenOpen: Array<Uint8Array>;
   private readonly PROTOCOL_VERSION: string;
 
   constructor() { 
@@ -25,7 +26,14 @@ export class SocketService {
   private create(url): Rx.Subject<MessageEvent> {
     // TODO add protocol when supported
     let ws = new WebSocket(url/*, this.PROTOCOL_VERSION*/);
+    this.sendWhenOpen = [];
+
     ws.binaryType = 'arraybuffer';
+    ws.onopen = () => {
+      for(let data of this.sendWhenOpen) {
+        ws.send(data);
+      }
+    };
 
     let observable: Rx.Observable<MessageEvent> = Rx.Observable.create(
       (obs: Rx.Observer<MessageEvent>) => {
@@ -41,6 +49,8 @@ export class SocketService {
       next: (data: Uint8Array) => {
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(data);
+        } else {
+          this.sendWhenOpen.push(data);
         }
       }
     };
@@ -70,7 +80,7 @@ export class SocketService {
     }
   }
 
-  public decodeMessage(encodedMessage: Uint8Array, pkgWanted: string): object {
+  public decodeMessage(encodedMessage: Uint8Array, pkgWanted: string): { message: string, data: object } {
     const pkgArray: Uint8Array = encodedMessage.slice(0, 3);
     const messageArray: Uint8Array = encodedMessage.slice(3, 6);
     let pkg: string = '';
@@ -81,7 +91,10 @@ export class SocketService {
     }
     const identifiers: { pkg: string, message: string } = this.opcodeConverter.getIdentifiers(pkg, message);
     if(identifiers.pkg == pkgWanted) {
-      return pb[identifiers.pkg][`${identifiers.message}Response`].decode(encodedMessage.slice(6)).toObject();
+      return {
+        message: `${identifiers.message}Response`,
+        data: pb[identifiers.pkg][`${identifiers.message}Response`].decode(encodedMessage.slice(6)).toObject()
+      };
     } else {
       return null;
     }

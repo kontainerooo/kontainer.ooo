@@ -10,10 +10,10 @@ Vagrant.configure(2) do |config|
   config.vm.network "private_network", ip: "172.30.1.2"
 
   # GRPC Port
-  config.vm.network "forwarded_port", guest: 8082, host: 9092
+  config.vm.network "forwarded_port", guest: 8082, host: 8082
 
   # Websocket Port
-  config.vm.network "forwarded_port", guest: 8081, host: 9091
+  config.vm.network "forwarded_port", guest: 8081, host: 8081
 
   # Docker Port
   # In the future docker will not listen to tcp. Sorry.
