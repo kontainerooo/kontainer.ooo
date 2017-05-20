@@ -2,7 +2,10 @@
 package user
 
 import (
+	"crypto/rand"
 	"errors"
+
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 )
@@ -27,6 +30,9 @@ type Service interface {
 	// GetUser is used to gather a users data set by id
 	GetUser(id uint, user *User) error
 
+	// CheckLoginCredentials is used to check the login credentials of a user
+	CheckLoginCredentials(username string, password string) bool
+
 	getDB() abstraction.DBAdapter
 }
 
@@ -41,7 +47,8 @@ type dbAdapter interface {
 }
 
 type service struct {
-	db dbAdapter
+	db         dbAdapter
+	bcryptCost int
 }
 
 func (s *service) InitializeDatabases() error {
@@ -67,6 +74,22 @@ func (s *service) CreateUser(username string, cfg *Config, adr *Address) (uint, 
 	cfg.AddressID = adr.ID
 	user := &User{Username: username}
 	user.setConfig(cfg)
+
+	count := 512
+	salt := make([]byte, count)
+	_, err = rand.Read(salt)
+	if err != nil {
+		return 0, err
+	}
+	user.Salt = string(salt)
+
+	password, err := bcrypt.GenerateFromPassword([]byte(user.Password+user.Salt), s.bcryptCost)
+	if err != nil {
+		return 0, err
+	}
+
+	user.Password = string(password)
+
 	err = s.db.Create(user)
 	if err != nil {
 		return 0, err
@@ -125,10 +148,30 @@ func (s *service) GetUser(id uint, user *User) error {
 	return nil
 }
 
+func (s *service) CheckLoginCredentials(username string, password string) bool {
+	var user *User
+	err := s.db.Where("Username = ?", username)
+	if err != nil {
+		return false
+	}
+
+	err = s.db.First(user)
+	if err != nil {
+		return false
+	}
+
+	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password+user.Salt)) == nil {
+		return true
+	}
+
+	return false
+}
+
 // NewService creates a UserService with necessary dependencies.
-func NewService(db dbAdapter) (Service, error) {
+func NewService(db dbAdapter, bcryptCost int) (Service, error) {
 	s := &service{
-		db: db,
+		db:         db,
+		bcryptCost: bcryptCost,
 	}
 
 	err := s.InitializeDatabases()

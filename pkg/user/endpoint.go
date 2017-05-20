@@ -8,12 +8,13 @@ import (
 
 // Endpoints is a struct which collects all endpoints for the user service
 type Endpoints struct {
-	CreateUserEndpoint     endpoint.Endpoint
-	EditUserEndpoint       endpoint.Endpoint
-	ChangeUsernameEndpoint endpoint.Endpoint
-	DeleteUserEndpoint     endpoint.Endpoint
-	ResetPasswordEndpoint  endpoint.Endpoint
-	GetUserEndpoint        endpoint.Endpoint
+	CreateUserEndpoint            endpoint.Endpoint
+	EditUserEndpoint              endpoint.Endpoint
+	ChangeUsernameEndpoint        endpoint.Endpoint
+	DeleteUserEndpoint            endpoint.Endpoint
+	ResetPasswordEndpoint         endpoint.Endpoint
+	GetUserEndpoint               endpoint.Endpoint
+	CheckLoginCredentialsEndpoint endpoint.Endpoint
 }
 
 // CreateUserRequest is the request struct for the CreateUserEndpoint
@@ -147,6 +148,28 @@ func MakeGetUserEndpoint(s Service) endpoint.Endpoint {
 		return GetUserResponse{
 			User:  user,
 			Error: err,
+		}, nil
+	}
+}
+
+// CheckLoginCredentialsRequest is the request struct for the CheckLoginCredentialsEndpoint
+type CheckLoginCredentialsRequest struct {
+	Username string
+	Password string
+}
+
+// CheckLoginCredentialsResponse is the response struct for the CheckLoginCredentialsEndpoint
+type CheckLoginCredentialsResponse struct {
+	Success bool
+}
+
+// MakeCheckLoginCredentialsEndpoint creates a gokit endpoiint which invokes GetUser
+func MakeCheckLoginCredentialsEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		checkRequest := request.(CheckLoginCredentialsRequest)
+		success := s.CheckLoginCredentials(checkRequest.Username, checkRequest.Password)
+		return CheckLoginCredentialsResponse{
+			Success: success,
 		}, nil
 	}
 }

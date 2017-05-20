@@ -3,6 +3,8 @@ package user_test
 import (
 	"context"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/kontainerooo/kontainer.ooo/pkg/testutils"
 	"github.com/kontainerooo/kontainer.ooo/pkg/user"
 
@@ -13,7 +15,7 @@ import (
 var _ = Describe("User", func() {
 	Describe("Create Service", func() {
 		It("Should create service", func() {
-			userService, err := user.NewService(testutils.NewMockDB())
+			userService, err := user.NewService(testutils.NewMockDB(), bcrypt.MinCost)
 			Ω(err).ShouldNot(HaveOccurred())
 			Expect(userService).ToNot(BeZero())
 		})
@@ -21,14 +23,14 @@ var _ = Describe("User", func() {
 		It("Should return db error", func() {
 			db := testutils.NewMockDB()
 			db.SetError(1)
-			_, err := user.NewService(db)
+			_, err := user.NewService(db, bcrypt.MinCost)
 			Ω(err).Should(HaveOccurred())
 		})
 	})
 
 	Describe("Create User", func() {
 		db := testutils.NewMockDB()
-		userService, _ := user.NewService(db)
+		userService, _ := user.NewService(db, bcrypt.MinCost)
 		userService = user.NewTransactionBasedService(userService)
 		It("Should create user with new username", func() {
 			id, err := userService.CreateUser("username", &user.Config{}, &user.Address{})
@@ -55,11 +57,13 @@ var _ = Describe("User", func() {
 			db.Where("city = ?", city)
 			Ω(db.GetValue()).Should(BeNil())
 		})
+
+		XIt("Should generate a Salt and hash password")
 	})
 
 	Describe("Edit User", func() {
 		db := testutils.NewMockDB()
-		userService, _ := user.NewService(db)
+		userService, _ := user.NewService(db, bcrypt.MinCost)
 		userService = user.NewTransactionBasedService(userService)
 		It("Should change User Config", func() {
 			id, _ := userService.CreateUser("foo", &user.Config{Email: "test@abc.com"}, &user.Address{})
@@ -85,7 +89,7 @@ var _ = Describe("User", func() {
 
 	Describe("Change Username", func() {
 		db := testutils.NewMockDB()
-		userService, _ := user.NewService(db)
+		userService, _ := user.NewService(db, bcrypt.MinCost)
 		userService = user.NewTransactionBasedService(userService)
 		It("Should rename User", func() {
 			id, _ := userService.CreateUser("foo", &user.Config{}, &user.Address{})
@@ -111,7 +115,7 @@ var _ = Describe("User", func() {
 
 	Describe("Delete User", func() {
 		db := testutils.NewMockDB()
-		userService, _ := user.NewService(db)
+		userService, _ := user.NewService(db, bcrypt.MinCost)
 		userService = user.NewTransactionBasedService(userService)
 		It("Should remove User from DB", func() {
 			id, _ := userService.CreateUser("username", &user.Config{}, &user.Address{})
@@ -134,7 +138,7 @@ var _ = Describe("User", func() {
 
 	Describe("GetUser", func() {
 		db := testutils.NewMockDB()
-		userService, _ := user.NewService(db)
+		userService, _ := user.NewService(db, bcrypt.MinCost)
 		userService = user.NewTransactionBasedService(userService)
 		It("Should fill user struct", func() {
 			username := "username"
@@ -159,9 +163,13 @@ var _ = Describe("User", func() {
 		})
 	})
 
+	XDescribe("CheckLoginCredentials", func() {
+
+	})
+
 	Describe("Endpoints and Transport", func() {
 		db := testutils.NewMockDB()
-		s, _ := user.NewService(db)
+		s, _ := user.NewService(db, bcrypt.MinCost)
 		s = user.NewTransactionBasedService(s)
 		es := &user.Endpoints{}
 		ctx := context.Background()
@@ -172,6 +180,7 @@ var _ = Describe("User", func() {
 			es.DeleteUserEndpoint = user.MakeDeleteUserEndpoint(s)
 			es.ResetPasswordEndpoint = user.MakeResetPasswordEndpoint(s)
 			es.GetUserEndpoint = user.MakeGetUserEndpoint(s)
+			es.CheckLoginCredentialsEndpoint = user.MakeCheckLoginCredentialsEndpoint(s)
 		})
 
 		Context("CreateUserEndpoint", func() {
@@ -230,6 +239,8 @@ var _ = Describe("User", func() {
 				Expect(res.(user.DeleteUserResponse).Error).NotTo(HaveOccurred())
 			})
 		})
+
+		XContext("CheckLoginCredentialsEndpoint", func() {})
 
 	})
 

@@ -51,6 +51,10 @@ func (t *transactionBasedService) DeleteUser(id uint) error {
 	return nil
 }
 
+func (t *transactionBasedService) CheckLoginCredentials(username string, password string) bool {
+	return t.s.CheckLoginCredentials(username, password)
+}
+
 func (t *transactionBasedService) ResetPassword(email string) error {
 	t.db.Begin()
 	err := t.s.ResetPassword(email)
