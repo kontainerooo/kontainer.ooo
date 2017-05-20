@@ -134,3 +134,15 @@ func DecodeWSGetUserRequest(ctx context.Context, data interface{}) (interface{},
 
 	return DecodeGRPCGetUserRequest(ctx, req)
 }
+
+// DecodeWSCheckLoginCredentialsRequest is a websocket.DecodeRequestFunc that converts a
+// WS CheckLoginCredentials request to a messages/user.proto-domain CheckLoginCredentials request.
+func DecodeWSCheckLoginCredentialsRequest(ctx context.Context, data interface{}) (interface{}, error) {
+	req := &pb.CheckLoginCredentialsRequest{}
+	err := proto.Unmarshal(data.([]byte), req)
+	if err != nil {
+		return nil, err
+	}
+
+	return DecodeGRPCCheckLoginCredentialsRequest(ctx, req)
+}

@@ -23,6 +23,7 @@ import (
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 	"github.com/kontainerooo/kontainer.ooo/pkg/containerlifecycle"
 	"github.com/kontainerooo/kontainer.ooo/pkg/customercontainer"
+	"github.com/kontainerooo/kontainer.ooo/pkg/kentheguru"
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
 	kmiClient "github.com/kontainerooo/kontainer.ooo/pkg/kmi/client"
 	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
@@ -35,12 +36,14 @@ import (
 func main() {
 
 	var (
-		grpcAddr    = ":8082"
-		wsAddr      = ":8081"
-		dockerHost  = "http://127.0.0.1:2375"
-		isMock      bool
-		dbWrapper   abstraction.DB
-		dcliWrapper abstraction.DCli
+		grpcAddr     = ":8082"
+		wsAddr       = ":8083"
+		wsAddrSecure = ":8084"
+		dockerHost   = "http://127.0.0.1:2375"
+		bcryptCost   = 15
+		isMock       bool
+		dbWrapper    abstraction.DB
+		dcliWrapper  abstraction.DCli
 	)
 
 	/* The krood binary can now be given a flag called `--mock`. With this
@@ -86,7 +89,7 @@ func main() {
 	}
 
 	var userService user.Service
-	userService, err := user.NewService(dbWrapper)
+	userService, err := user.NewService(dbWrapper, bcryptCost)
 	if err != nil {
 		panic(err)
 	}
@@ -125,8 +128,6 @@ func main() {
 
 	go startGRPCTransport(ctx, errc, logger, grpcAddr, userEndpoints, kmiEndpoints, clsEndpoints, ccEndpoint, routingEndpoints)
 
-	go startWebsocketTransport(errc, logger, wsAddr, userEndpoints, kmiEndpoints, clsEndpoints, ccEndpoint, routingEndpoints)
-
 	conn, err := grpc.Dial(grpcAddr, grpc.WithInsecure(), grpc.WithTimeout(time.Second))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v", err)
@@ -137,6 +138,20 @@ func main() {
 
 	customercontainerService.AddKMIClient(ke)
 	customercontainerService.AddLogger(logger)
+
+	kenTheGuruService := kentheguru.NewService(
+		"bu", "bu", "bu", // TODO: generate keys
+		websocket.Upgrader{
+			EnableCompression: true,
+		},
+		ws.SSLConfig{
+			Addr: wsAddrSecure,
+			// TODO: generate certificate and key
+		},
+		userEndpoints, kmiEndpoints, clsEndpoints, ccEndpoint, routingEndpoints,
+	)
+
+	go kenTheGuruService.StartWebsocketTransport(errc, logger, wsAddr)
 
 	// Interrupt handler.
 	go func() {
@@ -177,33 +192,6 @@ func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger,
 	errc <- s.Serve(ln)
 }
 
-func startWebsocketTransport(errc chan error, logger log.Logger, wsAddr string, ue user.Endpoints, ke kmi.Endpoints, cle containerlifecycle.Endpoints, cce customercontainer.Endpoints, re routing.Endpoints) {
-	logger = log.With(logger, "transport", "ws")
-	s := ws.NewServer(ws.ProtocolMap{
-		"v1": ws.BasicHandler{},
-	}, logger, websocket.Upgrader{
-		EnableCompression: true,
-	}, ws.NewTokenAuth(), ws.SSLConfig{})
-
-	userService := user.MakeWebsocketService(ue)
-	s.RegisterService(userService)
-
-	kmiService := kmi.MakeWebsocketService(ke)
-	s.RegisterService(kmiService)
-
-	clsServer := containerlifecycle.MakeWebsocketService(cle)
-	s.RegisterService(clsServer)
-
-	ccsServer := customercontainer.MakeWebsocketService(cce)
-	s.RegisterService(ccsServer)
-
-	routingServer := routing.MakeWebsocketService(re)
-	s.RegisterService(routingServer)
-
-	logger.Log("addr", wsAddr)
-	errc <- s.Serve(wsAddr)
-}
-
 func makeUserServiceEndpoints(s user.Service) user.Endpoints {
 	var createUserEndpoint endpoint.Endpoint
 	{
@@ -235,13 +223,19 @@ func makeUserServiceEndpoints(s user.Service) user.Endpoints {
 		getUserEndpoint = user.MakeGetUserEndpoint(s)
 	}
 
+	var checkLoginCredentialsEndpoint endpoint.Endpoint
+	{
+		checkLoginCredentialsEndpoint = user.MakeCheckLoginCredentialsEndpoint(s)
+	}
+
 	return user.Endpoints{
-		CreateUserEndpoint:     createUserEndpoint,
-		EditUserEndpoint:       editUserEndpoint,
-		ChangeUsernameEndpoint: changeUsernaemEndpoint,
-		DeleteUserEndpoint:     deleteUserEndpoint,
-		ResetPasswordEndpoint:  resetPasswordEndpoint,
-		GetUserEndpoint:        getUserEndpoint,
+		CreateUserEndpoint:            createUserEndpoint,
+		EditUserEndpoint:              editUserEndpoint,
+		ChangeUsernameEndpoint:        changeUsernaemEndpoint,
+		DeleteUserEndpoint:            deleteUserEndpoint,
+		ResetPasswordEndpoint:         resetPasswordEndpoint,
+		GetUserEndpoint:               getUserEndpoint,
+		CheckLoginCredentialsEndpoint: checkLoginCredentialsEndpoint,
 	}
 }
 
