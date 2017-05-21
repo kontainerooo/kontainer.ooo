@@ -60,7 +60,7 @@ func (t *tokenAuth) Mux(w http.ResponseWriter, r *http.Request) (interface{}, bo
 			return nil, true
 		}
 
-		token, err := jwt.ParseWithClaims(tokenString, &claims{}, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(tokenString, &TokenAuthClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return t.SigningKey, nil
 		})
 
@@ -69,7 +69,7 @@ func (t *tokenAuth) Mux(w http.ResponseWriter, r *http.Request) (interface{}, bo
 			return nil, true
 		}
 
-		claims, ok := token.Claims.(*claims)
+		claims, ok := token.Claims.(*TokenAuthClaims)
 		if !ok || !token.Valid {
 			http.Error(w, "token invalid", http.StatusForbidden)
 			return nil, true
@@ -115,7 +115,8 @@ func (t *tokenAuth) GetID() ProtoID {
 	return t.ServiceID
 }
 
-type claims struct {
+// TokenAuthClaims is the jwt Claims Type used by the TokenAuth
+type TokenAuthClaims struct {
 	Data interface{}
 	jwt.StandardClaims
 }
@@ -127,7 +128,7 @@ func (t *tokenAuth) tokenEndpoint() endpoint.Endpoint {
 			return nil, err
 		}
 
-		c := claims{
+		c := TokenAuthClaims{
 			Data: values,
 		}
 

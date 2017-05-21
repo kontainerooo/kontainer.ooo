@@ -38,7 +38,7 @@ type service struct {
 
 func (s *service) StartWebsocketTransport(errc chan error, logger log.Logger, wsAddr string) {
 	logger = log.With(logger, "transport", "ws")
-	wss := ws.NewServer(s.ProtocolMap, logger, s.WebsocketUpgrader, s.TokenAuth, s.SSLConfig, ws.Before(s.BartBus.GetOff))
+	wss := ws.NewServer(s.ProtocolMap, logger, s.WebsocketUpgrader, s.TokenAuth, s.SSLConfig, ws.Before(s.BartBus.GetOff), ws.After(s.BartBus.GetOn))
 
 	userService := user.MakeWebsocketService(s.UserEndpoints)
 	wss.RegisterService(userService)
@@ -90,7 +90,7 @@ func (s *service) MakeEndpoint() endpoint.Endpoint {
 			return nil, errors.New("not authenticated")
 		}
 
-		return Claims{
+		return bart.Claims{
 			Username: request.(user.CheckLoginCredentialsRequest).Username,
 			ID:       response.ID,
 		}, nil
@@ -113,7 +113,7 @@ func NewService(
 			"v1": ws.BasicHandler{},
 		},
 		WebsocketUpgrader:           upgrader,
-		BartBus:                     bart.NewBus(ue),
+		BartBus:                     bart.NewBus(signingKey, ue),
 		SSLConfig:                   sslConfig,
 		UserEndpoints:               ue,
 		KMIEndpoints:                ke,

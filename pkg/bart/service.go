@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"regexp"
 
+	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
 	"github.com/kontainerooo/kontainer.ooo/pkg/user"
 	ws "github.com/kontainerooo/kontainer.ooo/pkg/websocket"
 )
@@ -23,10 +25,11 @@ type Bus interface {
 }
 
 type bus struct {
-	ue      user.Endpoints
-	admins  map[uint]bool
-	tiers   map[uint]string
-	fieldID map[string]int
+	ue         user.Endpoints
+	signingKey []byte
+	admins     map[uint]bool
+	tiers      map[uint]string
+	fieldID    map[string]int
 }
 
 func (b *bus) IsAdmin(id uint) bool {
@@ -146,16 +149,42 @@ func (b *bus) GetOff(srv, me ws.ProtoID, data interface{}, session interface{}) 
 }
 
 func (b *bus) GetOn(srv, me ws.ProtoID, data interface{}, session interface{}) error {
+	if srv == ws.ProtoIDFromString("KTG") && me == ws.ProtoIDFromString("AUT") {
+		res, ok := data.(*pb.AuthenticationResponse)
+		if !ok {
+			return errors.New("malformatted response")
+		}
+
+		if res.Error != "" {
+			return nil
+		}
+
+		token, err := jwt.ParseWithClaims(res.Token, &ws.TokenAuthClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return b.signingKey, nil
+		})
+		if err != nil {
+			return err
+		}
+
+		claimsWrapper, ok := token.Claims.(*ws.TokenAuthClaims)
+		if !ok || !token.Valid {
+			return errors.New("token invalid")
+		}
+
+		val := reflect.ValueOf(session).Elem()
+		val.Set(reflect.ValueOf(claimsWrapper.Data))
+	}
 
 	return nil
 }
 
 // NewBus returns a new bus
-func NewBus(ue user.Endpoints) Bus {
+func NewBus(signingKey string, ue user.Endpoints) Bus {
 	return &bus{
-		ue:      ue,
-		admins:  make(map[uint]bool),
-		tiers:   make(map[uint]string),
-		fieldID: make(map[string]int),
+		ue:         ue,
+		signingKey: []byte(signingKey),
+		admins:     make(map[uint]bool),
+		tiers:      make(map[uint]string),
+		fieldID:    make(map[string]int),
 	}
 }
