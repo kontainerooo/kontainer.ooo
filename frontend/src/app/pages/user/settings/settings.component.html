@@ -129,7 +129,7 @@
       </form>
     </mdl-card-supporting-text>
     <mdl-card-actions mdl-card-border>
-      <button mdl-button mdl-colored="primary" mdl-ripple mdl-button-type="raised">Save</button>
+      <button mdl-button mdl-colored="primary" mdl-ripple mdl-button-type="raised" [disabled]="!form.valid" (click)="onSubmit()">Save</button>
     </mdl-card-actions>
   </mdl-card>
 </div>

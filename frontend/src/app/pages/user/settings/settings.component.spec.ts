@@ -6,6 +6,8 @@ import { DebugElement } from '@angular/core';
 import { MdlModule } from 'angular2-mdl';
 
 import { SettingsComponent } from './settings.component';
+import { SocketService } from '../../../services/socket.service';
+import { UserService } from '../../../services/user.service';
 
 describe('SettingsComponent', () => {
   let component: SettingsComponent;
@@ -18,6 +20,10 @@ describe('SettingsComponent', () => {
         MdlModule,
         FormsModule,
         ReactiveFormsModule
+      ],
+      providers: [
+        SocketService,
+        UserService
       ]
     })
     .compileComponents();

@@ -12,7 +12,7 @@ export class SocketService {
 
   constructor() { 
     this.opcodeConverter = new OpcodeConverter();
-    this.PROTOCOL_VERSION = 'kroov1';
+    this.PROTOCOL_VERSION = 'v1';
   }
 
   public connect(url): Rx.Subject<MessageEvent> {
@@ -24,8 +24,7 @@ export class SocketService {
   }
 
   private create(url): Rx.Subject<MessageEvent> {
-    // TODO add protocol when supported
-    let ws = new WebSocket(url/*, this.PROTOCOL_VERSION*/);
+    let ws = new WebSocket(url, this.PROTOCOL_VERSION);
     this.sendWhenOpen = [];
 
     ws.binaryType = 'arraybuffer';

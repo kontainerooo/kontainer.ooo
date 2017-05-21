@@ -3,7 +3,7 @@ import { Observable, Subject, Subscription } from 'rxjs/Rx';
 import { PartialObserver } from 'rxjs/Observer';
 import { SocketService } from './socket.service'
 
-const SOCKET_URL = 'ws://localhost:8081';
+const SOCKET_URL = 'ws://localhost:8083';
 const USER_TYPE = 'kmi';
 
 @Injectable()
