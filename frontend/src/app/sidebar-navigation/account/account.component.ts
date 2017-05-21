@@ -19,7 +19,7 @@ export class AccountComponent implements OnChanges {
       {
         title: "Profile Settings",
         icon: "settings",
-        route: "#"
+        route: "/user/settings"
       },
       {
         title: "Logout",

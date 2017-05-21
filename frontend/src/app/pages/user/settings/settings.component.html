@@ -1,8 +1,135 @@
-<md-grid-list cols="2">
-  <md-grid-tile colspan="1">
-    <md-card kio-card-full-width>
-      Testkarte
-    </md-card>
-  </md-grid-tile>
-  <md-grid-tile colspan="1">Test</md-grid-tile>
-</md-grid-list>
+<div class="mdl-cell mdl-cell--12-col">
+  <mdl-card mdl-shadow="2">
+    <mdl-card-title>
+      <img class="settings-avatar" src="http://static.giantbomb.com/uploads/scale_small/0/9517/2816097-tumblr_n45cr8dmj61ty0km0o7_1280.png">
+      <h2 mdl-card-title-text>Morty Smith</h2>
+      <h3 mdl-card-title-text>m.smith</h3>
+    </mdl-card-title>
+    <mdl-card-supporting-text>
+      <form [formGroup]="form">
+        <div class="mdl-grid">
+          <div class="mdl-cell mdl-cell--12-col mdl-cell--8-col-tablet mdl-cell--4-col-phone">
+            <h2>General Information</h2>
+          </div>
+          <div class="mdl-cell mdl-cell--6-col mdl-cell--4-col-tablet mdl-cell--4-col-phone">
+            <mdl-textfield
+              label="First Name"
+              type="text"
+              formControlName="firstName"
+              floating-label
+              [class.is-invalid]="isFieldValid('firstName')"
+              error-msg="Please provide a first name"></mdl-textfield>
+          </div>
+          <div class="mdl-cell mdl-cell--6-col mdl-cell--4-col-tablet mdl-cell--4-col-phone">
+            <mdl-textfield
+              label="Last Name"
+              type="text"
+              formControlName="lastName"
+              floating-label
+              [class.is-invalid]="isFieldValid('lastName')"
+              error-msg="Please provide a last name"></mdl-textfield>
+          </div>
+          <div class="mdl-cell mdl-cell--6-col mdl-cell--4-col-tablet mdl-cell--4-col-phone">
+            <mdl-textfield
+              label="Email"
+              name="email"
+              type="text"
+              formControlName="email"
+              floating-label
+              [class.is-invalid]="isFieldValid('email')"
+              error-msg="Please provide a correct email"></mdl-textfield>
+          </div>
+          <div class="mdl-cell mdl-cell--6-col mdl-cell--4-col-tablet mdl-cell--4-col-phone">
+            <mdl-textfield
+              label="Username"
+              type="text"
+              formControlName="username"
+              floating-label
+              [class.is-invalid]="isFieldValid('username')"
+              error-msg="Please provide a username"></mdl-textfield>
+          </div>
+          <div class="mdl-cell mdl-cell--6-col mdl-cell--4-col-tablet mdl-cell--4-col-phone">
+            <mdl-textfield
+              label="Password"
+              type="password"
+              formControlName="password"
+              floating-label></mdl-textfield>
+          </div>
+          <div class="mdl-cell mdl-cell--6-col mdl-cell--4-col-tablet mdl-cell--4-col-phone">
+            <mdl-textfield
+              label="Repeat Password"
+              type="password"
+              formControlName="rpassword"
+              floating-label></mdl-textfield>
+          </div>
+          <div class="mdl-cell mdl-cell--6-col mdl-cell--4-col-tablet mdl-cell--4-col-phone">
+            <mdl-textfield
+              label="Phone"
+              type="text"
+              formControlName="phone"
+              floating-label></mdl-textfield>
+          </div>
+          <div class="mdl-cell mdl-cell--6-col mdl-cell--4-col-tablet mdl-cell--4-col-phone">
+            <mdl-textfield
+              label="Country"
+              type="text"
+              formControlName="country"
+              floating-label
+              [class.is-invalid]="isFieldValid('country')"
+              error-msg="Please provide a country"></mdl-textfield>
+          </div>
+
+          <div class="mdl-cell mdl-cell--12-col mdl-cell--8-col-tablet mdl-cell--4-col-phone">
+            <h2>Billing Address</h2>
+          </div>
+          <div class="mdl-cell mdl-cell--8-col mdl-cell--8-col-tablet mdl-cell--4-col-phone">
+            <mdl-textfield
+              label="Street"
+              type="text"
+              formControlName="street"
+              floating-label
+              [class.is-invalid]="isFieldValid('street')"
+              error-msg="Please provide a street"></mdl-textfield>
+          </div>
+          <div class="mdl-cell mdl-cell--2-col mdl-cell--4-col-tablet mdl-cell--2-col-phone">
+            <mdl-textfield
+              label="Housenumber"
+              type="number"
+              formControlName="housenumber"
+              floating-label
+              [class.is-invalid]="isFieldValid('housenumber')"
+              error-msg="Please provide a correct housenumber"></mdl-textfield>
+          </div>
+          <div class="mdl-cell mdl-cell--2-col mdl-cell--4-col-tablet mdl-cell--2-col-phone">
+            <mdl-textfield
+              label="Additional"
+              type="text"
+              formControlName="additional"
+              floating-label></mdl-textfield>
+          </div>
+          <div class="mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--4-col-phone">
+            <mdl-textfield
+              label="Zip Code"
+              type="number"
+              formControlName="zip"
+              floating-label
+              [class.is-invalid]="isFieldValid('zip')"
+              error-msg="Please provide a correct zip code"></mdl-textfield>
+          </div>
+          <div class="mdl-cell mdl-cell--8-col mdl-cell--5-col-tablet mdl-cell--4-col-phone">
+            <mdl-textfield
+              label="City"
+              type="text"
+              formControlName="city"
+              floating-label
+              [class.is-invalid]="isFieldValid('city')"
+              error-msg="Please provide a city"></mdl-textfield>
+          </div>
+        </div>
+      </form>
+    </mdl-card-supporting-text>
+    <mdl-card-actions mdl-card-border>
+      <button mdl-button mdl-colored="primary" mdl-ripple mdl-button-type="raised">Save</button>
+    </mdl-card-actions>
+  </mdl-card>
+</div>

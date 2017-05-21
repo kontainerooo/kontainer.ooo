@@ -1,8 +1,9 @@
 /* tslint:disable:no-unused-variable */
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DebugElement } from '@angular/core';
-import { MaterialModule } from '@angular/material';
+import { MdlModule } from 'angular2-mdl';
 
 import { SettingsComponent } from './settings.component';
 
@@ -14,7 +15,9 @@ describe('SettingsComponent', () => {
     TestBed.configureTestingModule({
       declarations: [ SettingsComponent ],
       imports: [
-        MaterialModule
+        MdlModule,
+        FormsModule,
+        ReactiveFormsModule
       ]
     })
     .compileComponents();

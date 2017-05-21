@@ -1,0 +1,59 @@
+:host {
+  width: 100%;
+}
+
+.mdl-cell {
+  mdl-card {
+    width: 100%;
+
+    mdl-card-title {
+      height: 200px;
+      background: url("https://www.whatswithtech.com/wp-content/uploads/2015/09/paper-color-material-design-wallpaper.png") top center;
+      background-size: cover;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+
+      & > * {
+        margin: 5px;
+      }
+
+      .settings-avatar {
+        height: 100px;
+        width: 100px;
+        border-radius: 50px;
+      }
+
+      .mdl-card__title-text {
+        align-self: unset;
+        overflow: unset;
+      }
+
+      h3 {
+        &.mdl-card__title-text {
+          font-size: 1.2em;
+        }
+      }
+    }
+
+    mdl-card-supporting-text {
+      width: calc(100% - 32px);
+
+      h2 {
+        font-size: 1.5em;
+        margin: 0;
+      }
+
+      mdl-textfield {
+        width: 100%;
+      }
+    }
+
+    mdl-card-actions {
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-end;
+    }
+  }
+}
