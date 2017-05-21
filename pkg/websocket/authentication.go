@@ -24,11 +24,12 @@ type Authenticator interface {
 	GetEndpoint() *ServiceEndpoint
 }
 
+// TODO: Add Token Invalidator
 type tokenAuth struct {
 	SessionStore *sessions.CookieStore
 	ServiceID    ProtoID
 	EndpointID   ProtoID
-	SigningKey   string
+	SigningKey   []byte
 	SessionName  string
 	ValidTokens  []string
 	DecodeFunc   DecodeRequestFunc
@@ -37,8 +38,13 @@ type tokenAuth struct {
 }
 
 func (t *tokenAuth) Mux(w http.ResponseWriter, r *http.Request) (interface{}, bool) {
-	if r.URL.Path == "auth" {
-		tokenString := r.Form.Get("token")
+	if r.URL.Path == "/auth" {
+		err := r.ParseForm()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return nil, true
+		}
+		tokenString := r.PostForm.Get("token")
 		valid := false
 
 		for i, r := range t.ValidTokens {
@@ -74,14 +80,21 @@ func (t *tokenAuth) Mux(w http.ResponseWriter, r *http.Request) (interface{}, bo
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return nil, true
 		}
-
-		val := reflect.ValueOf(claims.data)
-		typ := val.Type()
-
-		for i := 0; i < typ.NumField(); i++ {
-			session.Values[typ.Field(i).Name] = val.Field(i).Interface()
+		session.Options = &sessions.Options{
+			Path:     "/",
+			MaxAge:   86400 * 7,
+			HttpOnly: true,
 		}
+
+		val := reflect.ValueOf(claims.Data)
+
+		for _, key := range val.MapKeys() {
+			session.Values[key.String()] = val.MapIndex(key)
+		}
+
 		session.Save(r, w)
+		w.Write([]byte("Authenticated!"))
+
 		return nil, true
 	}
 
@@ -90,6 +103,7 @@ func (t *tokenAuth) Mux(w http.ResponseWriter, r *http.Request) (interface{}, bo
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return nil, true
 	}
+
 	if session.IsNew {
 		return nil, false
 	}
@@ -102,7 +116,7 @@ func (t *tokenAuth) GetID() ProtoID {
 }
 
 type claims struct {
-	data interface{}
+	Data interface{}
 	jwt.StandardClaims
 }
 
@@ -112,14 +126,18 @@ func (t *tokenAuth) tokenEndpoint() endpoint.Endpoint {
 		if err != nil {
 			return nil, err
 		}
+
 		c := claims{
-			data: values,
+			Data: values,
 		}
+
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, c)
+
 		s, err := token.SignedString(t.SigningKey)
 		if err != nil {
 			return nil, err
 		}
+
 		t.ValidTokens = append(t.ValidTokens, s)
 		return s, nil
 	}
@@ -145,7 +163,7 @@ func NewTokenAuth(
 		SessionStore: sessions.NewCookieStore([]byte(authenticationKey), []byte(encryptionKey)),
 		ServiceID:    serviceID,
 		EndpointID:   endpointID,
-		SigningKey:   signingKey,
+		SigningKey:   []byte(signingKey),
 		SessionName:  sessionName,
 		DecodeFunc:   dec,
 		EncodeFunc:   enc,
