@@ -1,11 +1,17 @@
 package kentheguru
 
 import (
+	"context"
+	"errors"
+
+	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
+	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
 	"github.com/kontainerooo/kontainer.ooo/pkg/containerlifecycle"
 	"github.com/kontainerooo/kontainer.ooo/pkg/customercontainer"
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
+	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
 	"github.com/kontainerooo/kontainer.ooo/pkg/routing"
 	"github.com/kontainerooo/kontainer.ooo/pkg/user"
 	ws "github.com/kontainerooo/kontainer.ooo/pkg/websocket"
@@ -51,6 +57,44 @@ func (s *service) StartWebsocketTransport(errc chan error, logger log.Logger, ws
 	errc <- wss.Serve(wsAddr)
 }
 
+func (s *service) DecodeFunc(_ context.Context, data interface{}) (interface{}, error) {
+	request := &pb.AuthenticationRequest{}
+	err := proto.Unmarshal(data.([]byte), request)
+	if err != nil {
+		return nil, err
+	}
+
+	return user.CheckLoginCredentialsRequest{
+		Username: request.Username,
+		Password: request.Password,
+	}, nil
+}
+
+func (s *service) EncodeFunc(_ context.Context, res interface{}) (interface{}, error) {
+	token := res.(string)
+	return &pb.AuthenticationResponse{
+		Token: token,
+	}, nil
+}
+
+func (s *service) MakeEndpoint() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		res, err := s.UserEndpoints.CheckLoginCredentialsEndpoint(ctx, request)
+		if err != nil {
+			return nil, err
+		}
+		response := res.(user.CheckLoginCredentialsResponse)
+		if response.ID == 0 {
+			return nil, errors.New("not authenticated")
+		}
+
+		return Claims{
+			Username: request.(user.CheckLoginCredentialsRequest).Username,
+			ID:       response.ID,
+		}, nil
+	}
+}
+
 // NewService returns a new KenTheGuru.Service instance
 func NewService(
 	authenticationKey, encryptionKey, signingKey string,
@@ -62,20 +106,11 @@ func NewService(
 	cce customercontainer.Endpoints,
 	re routing.Endpoints,
 ) Service {
-	return &service{
+	s := &service{
 		ProtocolMap: ws.ProtocolMap{
 			"v1": ws.BasicHandler{},
 		},
-		WebsocketUpgrader: upgrader,
-		TokenAuth: ws.NewTokenAuth(
-			ws.ProtoIDFromString("AUT"), ws.ProtoIDFromString("AUT"),
-			authenticationKey, encryptionKey,
-			signingKey,
-			"KenTheGuru",
-			user.DecodeWSCheckLoginCredentialsRequest,
-			user.EncodeGRPCCheckLoginCredentialsResponse,
-			ue.CheckLoginCredentialsEndpoint,
-		),
+		WebsocketUpgrader:           upgrader,
 		SSLConfig:                   sslConfig,
 		UserEndpoints:               ue,
 		KMIEndpoints:                ke,
@@ -83,4 +118,16 @@ func NewService(
 		CustomerContainerEndpoints:  cce,
 		RoutingEndpoints:            re,
 	}
+
+	s.TokenAuth = ws.NewTokenAuth(
+		ws.ProtoIDFromString("AUT"), ws.ProtoIDFromString("AUT"),
+		authenticationKey, encryptionKey,
+		signingKey,
+		"KenTheGuru",
+		s.DecodeFunc,
+		s.EncodeFunc,
+		s.MakeEndpoint(),
+	)
+
+	return s
 }

@@ -97,5 +97,5 @@ message CheckLoginCredentialsRequest {
 }
 
 message CheckLoginCredentialsResponse {
-  bool success = 1;
+  uint32 ID = 1;
 }
