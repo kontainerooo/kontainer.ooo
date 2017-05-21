@@ -8,6 +8,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
+	"github.com/kontainerooo/kontainer.ooo/pkg/bart"
 	"github.com/kontainerooo/kontainer.ooo/pkg/containerlifecycle"
 	"github.com/kontainerooo/kontainer.ooo/pkg/customercontainer"
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
@@ -26,6 +27,7 @@ type service struct {
 	ProtocolMap                 ws.ProtocolMap
 	WebsocketUpgrader           websocket.Upgrader
 	TokenAuth                   ws.Authenticator
+	BartBus                     bart.Bus
 	SSLConfig                   ws.SSLConfig
 	UserEndpoints               user.Endpoints
 	KMIEndpoints                kmi.Endpoints
@@ -36,7 +38,7 @@ type service struct {
 
 func (s *service) StartWebsocketTransport(errc chan error, logger log.Logger, wsAddr string) {
 	logger = log.With(logger, "transport", "ws")
-	wss := ws.NewServer(s.ProtocolMap, logger, s.WebsocketUpgrader, s.TokenAuth, s.SSLConfig)
+	wss := ws.NewServer(s.ProtocolMap, logger, s.WebsocketUpgrader, s.TokenAuth, s.SSLConfig, ws.Before(s.BartBus.GetOff))
 
 	userService := user.MakeWebsocketService(s.UserEndpoints)
 	wss.RegisterService(userService)
@@ -111,6 +113,7 @@ func NewService(
 			"v1": ws.BasicHandler{},
 		},
 		WebsocketUpgrader:           upgrader,
+		BartBus:                     bart.NewBus(ue),
 		SSLConfig:                   sslConfig,
 		UserEndpoints:               ue,
 		KMIEndpoints:                ke,

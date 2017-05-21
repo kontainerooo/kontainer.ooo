@@ -15,8 +15,8 @@ var refRegexp = regexp.MustCompile("ref")
 
 // Bus is a permission management system
 type Bus interface {
-	// GetOn should be used as a websocket before middleware
-	GetOn(ws.ProtoID, ws.ProtoID, interface{}, interface{}) error
+	// GetOff should be used as a websocket before middleware
+	GetOff(ws.ProtoID, ws.ProtoID, interface{}, interface{}) error
 }
 
 type bus struct {
@@ -96,7 +96,7 @@ func (b *bus) CheckID(srv, me string, data interface{}, id uint) error {
 	return nil
 }
 
-func (b *bus) GetOn(srv, me ws.ProtoID, data interface{}, session interface{}) error {
+func (b *bus) GetOff(srv, me ws.ProtoID, data interface{}, session interface{}) error {
 	service := srv.String()
 	method := me.String()
 
