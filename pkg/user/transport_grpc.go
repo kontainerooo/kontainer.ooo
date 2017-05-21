@@ -317,7 +317,7 @@ func EncodeGRPCGetUserResponse(_ context.Context, response interface{}) (interfa
 func EncodeGRPCCheckLoginCredentialsResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(CheckLoginCredentialsResponse)
 	gRPCRes := &pb.CheckLoginCredentialsResponse{
-		Success: res.Success,
+		ID: uint32(res.ID),
 	}
 	return gRPCRes, nil
 }

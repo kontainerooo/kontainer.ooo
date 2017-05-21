@@ -32,7 +32,7 @@ type Service interface {
 	GetUser(id uint, user *User) error
 
 	// CheckLoginCredentials is used to check the login credentials of a user
-	CheckLoginCredentials(username string, password string) bool
+	CheckLoginCredentials(username string, password string) uint
 
 	getDB() abstraction.DBAdapter
 }
@@ -166,17 +166,17 @@ func (s *service) GetUserByUsername(username string) (*User, error) {
 	return user, nil
 }
 
-func (s *service) CheckLoginCredentials(username string, password string) bool {
+func (s *service) CheckLoginCredentials(username string, password string) uint {
 	user, err := s.GetUserByUsername(username)
 	if err != nil || user == nil {
-		return false
+		return 0
 	}
 
 	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password+user.Salt)) == nil {
-		return true
+		return user.ID
 	}
 
-	return false
+	return 0
 }
 
 // NewService creates a UserService with necessary dependencies.

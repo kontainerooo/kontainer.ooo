@@ -160,16 +160,16 @@ type CheckLoginCredentialsRequest struct {
 
 // CheckLoginCredentialsResponse is the response struct for the CheckLoginCredentialsEndpoint
 type CheckLoginCredentialsResponse struct {
-	Success bool
+	ID uint
 }
 
 // MakeCheckLoginCredentialsEndpoint creates a gokit endpoiint which invokes GetUser
 func MakeCheckLoginCredentialsEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		checkRequest := request.(CheckLoginCredentialsRequest)
-		success := s.CheckLoginCredentials(checkRequest.Username, checkRequest.Password)
+		id := s.CheckLoginCredentials(checkRequest.Username, checkRequest.Password)
 		return CheckLoginCredentialsResponse{
-			Success: success,
+			ID: id,
 		}, nil
 	}
 }
