@@ -26,7 +26,7 @@ type CreateUserRequest struct {
 
 // CreateUserResponse is the response struct for the CreateUserEndpoint
 type CreateUserResponse struct {
-	ID    uint
+	ID    uint `bart:"ref"`
 	Error error
 }
 
@@ -44,7 +44,7 @@ func MakeCreateUserEndpoint(s Service) endpoint.Endpoint {
 
 // EditUserRequest is the request struct for the EditUserEndpoint
 type EditUserRequest struct {
-	ID  uint
+	ID  uint `bart:"ref"`
 	Cfg *Config
 }
 
@@ -66,7 +66,7 @@ func MakeEditUserEndpoint(s Service) endpoint.Endpoint {
 
 // ChangeUsernameRequest is the request struct for the ChangeUsernameEndpoint
 type ChangeUsernameRequest struct {
-	ID       uint
+	ID       uint `bart:"ref"`
 	Username string
 }
 
@@ -88,7 +88,7 @@ func MakeChangeUsernameEndpoint(s Service) endpoint.Endpoint {
 
 // DeleteUserRequest is the request struct for the DeleteUserEndpoint
 type DeleteUserRequest struct {
-	ID uint
+	ID uint `bart:"ref"`
 }
 
 // DeleteUserResponse is the response struct for the DeleteUserEndpoint
@@ -130,7 +130,7 @@ func MakeResetPasswordEndpoint(s Service) endpoint.Endpoint {
 
 // GetUserRequest is the request struct for the GetUserEndpoint
 type GetUserRequest struct {
-	ID uint
+	ID uint `bart:"ref"`
 }
 
 // GetUserResponse is the response struct for the GetUserEndpoint
