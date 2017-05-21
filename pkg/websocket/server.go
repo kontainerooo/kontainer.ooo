@@ -158,6 +158,7 @@ func (s *Server) handleConnection(conn *websocket.Conn, session interface{}) {
 		return
 	}
 
+HANDLER:
 	for {
 		messageType, request, err := conn.ReadMessage()
 		if err != nil {
@@ -177,12 +178,13 @@ func (s *Server) handleConnection(conn *websocket.Conn, session interface{}) {
 		for _, middleware := range s.before {
 			err = middleware.mid(*srv, *me, &data, &session)
 			if err != nil {
+				fmt.Println(err)
 				err = conn.WriteMessage(messageType, []byte(err.Error()))
 				if err != nil {
 					s.Logger.Log("err", err)
 					return
 				}
-				continue
+				continue HANDLER
 			}
 		}
 
@@ -224,7 +226,7 @@ func (s *Server) handleConnection(conn *websocket.Conn, session interface{}) {
 					s.Logger.Log("err", err)
 					return
 				}
-				continue
+				continue HANDLER
 			}
 		}
 
