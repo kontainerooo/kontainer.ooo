@@ -123,7 +123,7 @@ func NewService(
 	}
 
 	s.TokenAuth = ws.NewTokenAuth(
-		ws.ProtoIDFromString("AUT"), ws.ProtoIDFromString("AUT"),
+		ws.ProtoIDFromString("KTG"), ws.ProtoIDFromString("AUT"),
 		authenticationKey, encryptionKey,
 		signingKey,
 		"KenTheGuru",

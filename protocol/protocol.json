@@ -51,5 +51,11 @@
       "RemoveServerName": "RSN",
       "Configurations": "CON"
     }
+  },
+  "kentheguru": {
+    "id": "KTG",
+    "methods": {
+      "Authentication": "AUT"
+    }
   }
 }

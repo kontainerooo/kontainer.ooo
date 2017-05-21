@@ -17,6 +17,9 @@ var refRegexp = regexp.MustCompile("ref")
 type Bus interface {
 	// GetOff should be used as a websocket before middleware
 	GetOff(ws.ProtoID, ws.ProtoID, interface{}, interface{}) error
+
+	// GetOn should be used as a websocket after middleware
+	GetOn(ws.ProtoID, ws.ProtoID, interface{}, interface{}) error
 }
 
 type bus struct {
@@ -100,7 +103,7 @@ func (b *bus) GetOff(srv, me ws.ProtoID, data interface{}, session interface{}) 
 	service := srv.String()
 	method := me.String()
 
-	if service == method && service == "AUT" {
+	if service == "KTG" && method == "AUT" {
 		return nil
 	}
 
@@ -138,6 +141,11 @@ func (b *bus) GetOff(srv, me ws.ProtoID, data interface{}, session interface{}) 
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (b *bus) GetOn(srv, me ws.ProtoID, data interface{}, session interface{}) error {
 
 	return nil
 }
