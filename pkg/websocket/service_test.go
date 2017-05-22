@@ -115,7 +115,7 @@ var _ = Describe("Service", func() {
 				e, _ := ws.NewServiceEndpoint("name", protoID, makeTestEndpoint(), decodeTest, encodeTest)
 				sd.AddEndpoint(e)
 
-				eh, err := sd.GetEndpointHandler(protoID)
+				eh, err := sd.GetEndpointHandler(protoID, nil, nil)
 				Ω(eh).ShouldNot(BeNil())
 				Ω(err).ShouldNot(HaveOccurred())
 			})
@@ -126,7 +126,7 @@ var _ = Describe("Service", func() {
 					sd, _ := ws.NewServiceDescription("name", protoID)
 					e, _ := ws.NewServiceEndpoint("name", protoID, makeTestEndpoint(), decodeTest, encodeTest)
 					sd.AddEndpoint(e)
-					eh, _ := sd.GetEndpointHandler(protoID)
+					eh, _ := sd.GetEndpointHandler(protoID, nil, nil)
 
 					val := 0
 					req := request{val}
@@ -141,7 +141,7 @@ var _ = Describe("Service", func() {
 					sd, _ := ws.NewServiceDescription("name", protoID)
 					e, _ := ws.NewServiceEndpoint("name", protoID, makeTestEndpoint(), decodeTest, encodeTest)
 					sd.AddEndpoint(e)
-					eh, _ := sd.GetEndpointHandler(protoID)
+					eh, _ := sd.GetEndpointHandler(protoID, nil, nil)
 
 					val := true
 					req := request{val}
@@ -155,7 +155,7 @@ var _ = Describe("Service", func() {
 					sd, _ := ws.NewServiceDescription("name", protoID)
 					e, _ := ws.NewServiceEndpoint("name", protoID, makeTestEndpoint(), decodeTest, encodeTest)
 					sd.AddEndpoint(e)
-					eh, _ := sd.GetEndpointHandler(protoID)
+					eh, _ := sd.GetEndpointHandler(protoID, nil, nil)
 
 					val := errEndpoint
 					req := request{val}
@@ -169,7 +169,7 @@ var _ = Describe("Service", func() {
 					sd, _ := ws.NewServiceDescription("name", protoID)
 					e, _ := ws.NewServiceEndpoint("name", protoID, makeTestEndpoint(), decodeTest, encodeTest)
 					sd.AddEndpoint(e)
-					eh, _ := sd.GetEndpointHandler(protoID)
+					eh, _ := sd.GetEndpointHandler(protoID, nil, nil)
 
 					val := uint64(1)
 					req := request{val}
@@ -182,7 +182,7 @@ var _ = Describe("Service", func() {
 			Context("Error Handling", func() {
 				It("Should return an error if the requested endpoint does not exist", func() {
 					sd, _ := ws.NewServiceDescription("name", ws.ProtoIDFromString("TST"))
-					_, err := sd.GetEndpointHandler(ws.ProtoIDFromString("TST"))
+					_, err := sd.GetEndpointHandler(ws.ProtoIDFromString("TST"), nil, nil)
 					Ω(err).Should(HaveOccurred())
 				})
 			})

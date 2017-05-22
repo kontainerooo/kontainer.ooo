@@ -110,7 +110,7 @@ func (s *ServiceDescription) AddEndpoint(se *ServiceEndpoint, err ...error) erro
 }
 
 // GetEndpointHandler returns an EndpointHandler if an endpoint with name name exists, if not an error is returned
-func (s *ServiceDescription) GetEndpointHandler(name ProtoID) (EndpointHandler, error) {
+func (s *ServiceDescription) GetEndpointHandler(name ProtoID, before []*Middleware, session interface{}) (EndpointHandler, error) {
 	e, exist := s.endpoints[name]
 	if !exist {
 		return nil, fmt.Errorf("Service Endpoint %s does not exist", name)
@@ -121,6 +121,13 @@ func (s *ServiceDescription) GetEndpointHandler(name ProtoID) (EndpointHandler, 
 		req, err := e.Dec(ctx, message)
 		if err != nil {
 			return nil, err
+		}
+
+		for _, middleware := range before {
+			err = middleware.mid(s.ProtocolName, name, &req, session)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		res, err := e.E(ctx, req)

@@ -175,19 +175,6 @@ HANDLER:
 			continue
 		}
 
-		for _, middleware := range s.before {
-			err = middleware.mid(*srv, *me, &data, &session)
-			if err != nil {
-				fmt.Println(err)
-				err = conn.WriteMessage(messageType, []byte(err.Error()))
-				if err != nil {
-					s.Logger.Log("err", err)
-					return
-				}
-				continue HANDLER
-			}
-		}
-
 		service, err := s.GetService(*srv)
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
@@ -198,7 +185,7 @@ HANDLER:
 			continue
 		}
 
-		handler, err := service.GetEndpointHandler(*me)
+		handler, err := service.GetEndpointHandler(*me, s.before, session)
 		if err != nil {
 			err = conn.WriteMessage(messageType, []byte(err.Error()))
 			if err != nil {
@@ -219,7 +206,7 @@ HANDLER:
 		}
 
 		for _, middleware := range s.after {
-			err = middleware.mid(*srv, *me, &res, &session)
+			err = middleware.mid(*srv, *me, res, &session)
 			if err != nil {
 				err = conn.WriteMessage(messageType, []byte(err.Error()))
 				if err != nil {
