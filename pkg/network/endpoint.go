@@ -19,7 +19,7 @@ type Endpoints struct {
 
 // CreatePrimaryNetworkForContainerRequest is the request struct for the CreatePrimaryNetworkForContainerEndpoint
 type CreatePrimaryNetworkForContainerRequest struct {
-	RefID       uint
+	RefID       uint `bart:"ref"`
 	Config      *Config
 	ContainerID string
 }
@@ -42,7 +42,7 @@ func MakeCreatePrimaryNetworkForContainerEndpoint(s Service) endpoint.Endpoint {
 
 // CreateNetworkRequest is the request struct for the CreateNetworkEndpoint
 type CreateNetworkRequest struct {
-	RefID  uint
+	RefID  uint `bart:"ref"`
 	Config *Config
 }
 
@@ -64,7 +64,7 @@ func MakeCreateNetworkEndpoint(s Service) endpoint.Endpoint {
 
 // RemoveNetworkByNameRequest is the request struct for the RemoveNetworkByNameEndpoint
 type RemoveNetworkByNameRequest struct {
-	RefID uint
+	RefID uint `bart:"ref"`
 	Name  string
 }
 
@@ -86,7 +86,7 @@ func MakeRemoveNetworkByNameEndpoint(s Service) endpoint.Endpoint {
 
 // AddContainerToNetworkRequest is the request struct for the AddContainerToNetworkEndpoint
 type AddContainerToNetworkRequest struct {
-	RefID       uint
+	RefID       uint `bart:"ref"`
 	Name        string
 	ContainerID string
 }
@@ -109,7 +109,7 @@ func MakeAddContainerToNetworkEndpoint(s Service) endpoint.Endpoint {
 
 // RemoveContainerFromNetworkRequest is the request struct for the RemoveContainerFromNetworkEndpoint
 type RemoveContainerFromNetworkRequest struct {
-	RefID       uint
+	RefID       uint `bart:"ref"`
 	Name        string
 	ContainerID string
 }
@@ -132,7 +132,7 @@ func MakeRemoveContainerFromNetworkEndpoint(s Service) endpoint.Endpoint {
 
 // ExposePortToContainerRequest is the request struct for the ExposePortToContainerEndpoint
 type ExposePortToContainerRequest struct {
-	RefID          uint
+	RefID          uint `bart:"ref"`
 	SrcContainerID string
 	Port           uint16
 	Protocol       string
@@ -157,7 +157,7 @@ func MakeExposePortToContainerEndpoint(s Service) endpoint.Endpoint {
 
 // RemovePortFromContainerRequest is the request struct for the RemovePortFromContainerEndpoint
 type RemovePortFromContainerRequest struct {
-	RefID          uint
+	RefID          uint `bart:"ref"`
 	SrcContainerID string
 	Port           uint16
 	Protocol       string
