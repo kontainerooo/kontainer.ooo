@@ -71,7 +71,7 @@ func (b *bus) CheckID(srv, me string, data interface{}, id uint) error {
 	typ := val.Type()
 
 	if val.Kind() != reflect.Struct {
-		return errors.New("data malformatted")
+		return errors.New("data malformed")
 	}
 
 	fieldID, ok := b.fieldID[srv+me]
@@ -112,7 +112,7 @@ func (b *bus) GetOff(srv, me ws.ProtoID, data interface{}, session interface{}) 
 
 	sessionMap, ok := session.(map[string]interface{})
 	if !ok {
-		return errors.New("session malformatted")
+		return errors.New("session malformed")
 	}
 
 	idInterface, ok := sessionMap["ID"]
@@ -122,7 +122,7 @@ func (b *bus) GetOff(srv, me ws.ProtoID, data interface{}, session interface{}) 
 
 	id64, ok := idInterface.(float64)
 	if !ok {
-		return errors.New("id malformatted")
+		return errors.New("id malformed")
 	}
 	id := uint(id64)
 
@@ -152,7 +152,7 @@ func (b *bus) GetOn(srv, me ws.ProtoID, data interface{}, session interface{}) e
 	if srv == ws.ProtoIDFromString("KTG") && me == ws.ProtoIDFromString("AUT") {
 		res, ok := data.(*pb.AuthenticationResponse)
 		if !ok {
-			return errors.New("malformatted response")
+			return errors.New("malformed response")
 		}
 
 		if res.Error != "" {
