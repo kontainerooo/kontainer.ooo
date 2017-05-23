@@ -82,6 +82,11 @@ func (s *service) EncodeFunc(_ context.Context, res interface{}) (interface{}, e
 
 func (s *service) MakeEndpoint() endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(user.CheckLoginCredentialsRequest)
+		if !ok {
+			return nil, errors.New("invalid request")
+		}
+
 		res, err := s.UserEndpoints.CheckLoginCredentialsEndpoint(ctx, request)
 		if err != nil {
 			return nil, err
@@ -92,7 +97,7 @@ func (s *service) MakeEndpoint() endpoint.Endpoint {
 		}
 
 		return bart.Claims{
-			Username: request.(user.CheckLoginCredentialsRequest).Username,
+			Username: req.Username,
 			ID:       response.ID,
 		}, nil
 	}
