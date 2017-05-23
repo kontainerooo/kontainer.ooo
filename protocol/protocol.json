@@ -19,24 +19,6 @@
       "KMI": "ALL"
     }
   },
-  "customercontainer": {
-    "id": "CCS",
-    "methods": {
-      "CreateContainer": "CRT",
-      "EditContainer": "EDT",
-      "RemoveContainer": "REM",
-      "Instances": "ALL",
-      "CreateDockerImage": "CDI"
-    }
-  },
-  "containerlifecycle": {
-    "id": "CLS",
-    "methods": {
-      "StartContainer": "SCN",
-      "StartCommand": "SCM",
-      "StopContainer": "STP"
-    }
-  },
   "routing": {
     "id": "RTG",
     "methods": {

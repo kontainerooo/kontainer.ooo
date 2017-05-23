@@ -3,23 +3,6 @@
 USERDIR=/home/vagrant
 GOPATH=/var/go/src
 
-# Move daemon config
-mkdir /etc/docker
-cp /var/go/src/github.com/kontainerooo/kontainer.ooo/scripts/daemon.json /etc/docker/daemon.json
-
-# Add docker repo
-add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-
-# Add docker gpg key
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-
-# Install go and docker dependencies
-apt-get update -y
-apt-get install linux-headers-3.13.0-116-generic apt-transport-https ca-certificates curl \
-  software-properties-common linux-image-extra-$(uname -r) \
-  linux-image-extra-virtual docker-ce zip unzip postgresql-client -y
-sudo apt-get --no-install-recommends install -y virtualbox-guest-utils
-
 # Install postgres
 add-apt-repository "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main"
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
