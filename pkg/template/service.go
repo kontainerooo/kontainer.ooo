@@ -42,11 +42,6 @@ type Service interface {
 type dbAdapter interface {
 	abstraction.DBAdapter
 	AutoMigrate(...interface{}) error
-	// Where(interface{}, ...interface{}) error
-	// First(interface{}, ...interface{}) error
-	// Find(interface{}, ...interface{}) error
-	// Create(interface{}) error
-	// Delete(interface{}, ...interface{}) error
 }
 
 type service struct {
