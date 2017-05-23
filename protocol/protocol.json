@@ -32,6 +32,18 @@
       "AddServerName": "ASN",
       "RemoveServerName": "RSN",
       "Configurations": "CON"
+    },
+    "container": {
+      "id": "CNT",
+      "methods": {
+        "CreateContainer": "CRT",
+        "RemoveContainer": "REM",
+        "Instances": "ALL",
+        "StartContainer": "STA",
+        "StopContainer": "STO",
+        "IsRunning": "ISR",
+        "Execute": "EXE"
+      }
     }
   }
 }

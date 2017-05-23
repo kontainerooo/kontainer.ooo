@@ -1,0 +1,118 @@
+syntax = "proto3";
+package container;
+option go_package = "pb";
+
+service ContainerService {
+    rpc CreateContainer (CreateContainerRequest) returns (CreateContainerResponse);
+    rpc RemoveContainer (RemoveContainerRequest) returns (RemoveContainerResponse);
+    rpc Instances (InstancesRequest) returns (InstancesResponse);
+    rpc StartContainer (StartContainerRequest) returns (StartContainerResponse);
+    rpc StopContainer (StopContainerRequest) returns (StopContainerResponse);
+    rpc IsRunning (IsRunningRequest) returns (IsRunningResponse);
+    rpc Execute (ExecuteRequest) returns (ExecuteResponse);
+}
+
+enum cType {
+  WEBSERVER = 0;
+}
+
+message cKMDI {
+  uint32 ID = 1;
+  string name = 2;
+  string version = 3;
+  string description = 4;
+  cType type = 5;
+}
+
+message cFrontendModule {
+  string template = 1;
+  map<string, string> parameters = 2;
+}
+
+message cKMI {
+  cKMDI KMDI = 1;
+  string provisionScript = 2;
+  string context = 3;
+  map<string, string> commands = 4;
+  map<string, string> environment = 5;
+  repeated cFrontendModule frontend = 6;
+  repeated string imports = 7;
+  map<string, string> interfaces = 8;
+  repeated string variables = 9;
+  map<string, string> resources = 10;
+}
+
+message CreateContainerRequest {
+    uint32 refID = 1;
+    uint32 kmiID = 2;
+    string name = 3;
+}
+
+message CreateContainerResponse {
+    string ID = 1;
+    string error = 2;
+}
+
+message RemoveContainerRequest {
+    uint32 refID = 1;
+    string ID = 2;
+}
+
+message RemoveContainerResponse {
+    string error = 1;
+}
+
+message InstancesRequest {
+    uint32 refID = 1;
+}
+
+message container {
+    uint32 refID = 1;
+	string containerID   = 2;
+	string containerName = 3;
+	cKMI kmi = 4;
+    bool running = 5;
+}
+
+message InstancesResponse {
+    repeated container instances = 1;
+}
+
+message StartContainerRequest {
+    uint32 refID = 1;
+    string ID = 2;
+}
+
+message StartContainerResponse {
+    string response = 1;
+    string error = 2;
+}
+
+message StopContainerRequest {
+    uint32 refID = 1;
+    string ID = 2;
+}
+
+message StopContainerResponse {
+    string error = 1;
+}
+
+message IsRunningRequest {
+    uint32 refID = 1;
+    string ID = 2;
+}
+
+message IsRunningResponse {
+    bool isRunning = 1;
+}
+
+message ExecuteRequest {
+    uint32 refID = 1;
+    string ID = 2;
+    string cmd = 3;
+}
+
+message ExecuteResponse {
+    string response = 1;
+    string error = 2;
+}
