@@ -19,7 +19,7 @@ type Endpoints struct {
 
 // CreateContainerRequest is the request struct for the CreateContainerEndpoint
 type CreateContainerRequest struct {
-	RefID uint
+	RefID uint `bart:"ref"`
 	KmiID uint
 	Name  string
 }
@@ -44,7 +44,7 @@ func MakeCreateContainerEndpoint(s Service) endpoint.Endpoint {
 
 // RemoveContainerRequest is the request struct for the RemoveContainerEndpoint
 type RemoveContainerRequest struct {
-	RefID uint
+	RefID uint `bart:"ref"`
 	ID    string
 }
 
@@ -66,7 +66,7 @@ func MakeRemoveContainerEndpoint(s Service) endpoint.Endpoint {
 
 // InstancesRequest is the request struct for the InstancesEndpoint
 type InstancesRequest struct {
-	RefID uint
+	RefID uint `bart:"ref"`
 }
 
 // InstancesResponse is the response struct for the InstancesEndpoint
@@ -87,7 +87,7 @@ func MakeInstancesEndpoint(s Service) endpoint.Endpoint {
 
 // StopContainerRequest is the request struct for the StopContainerEndpoint
 type StopContainerRequest struct {
-	RefID uint
+	RefID uint `bart:"ref"`
 	ID    string
 }
 
@@ -109,7 +109,7 @@ func MakeStopContainerEndpoint(s Service) endpoint.Endpoint {
 
 // IsRunningRequest is the request struct for the IsRunningEndpoint
 type IsRunningRequest struct {
-	RefID uint
+	RefID uint `bart:"ref"`
 	ID    string
 }
 
@@ -131,7 +131,7 @@ func MakeIsRunningEndpoint(s Service) endpoint.Endpoint {
 
 // ExecuteRequest is the request struct for the ExecuteEndpoint
 type ExecuteRequest struct {
-	RefID uint
+	RefID uint `bart:"ref"`
 	ID    string
 	CMD   string
 }
