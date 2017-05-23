@@ -1,3 +1,4 @@
+// Package kentheguru is the service which provides access to kontainerooo via a websocket server
 package kentheguru
 
 import (
