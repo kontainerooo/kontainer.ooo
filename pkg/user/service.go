@@ -3,8 +3,8 @@ package user
 
 import (
 	"crypto/rand"
-	"encoding/json"
 	"errors"
+	"fmt"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -84,8 +84,7 @@ func (s *service) CreateUser(username string, cfg *Config, adr *Address) (uint, 
 	if err != nil {
 		return 0, err
 	}
-	json, _ := json.Marshal(salt) // HACK sorry 🙈
-	user.Salt = string(json)
+	user.Salt = string(fmt.Sprintf("%x", salt))
 
 	password, err := bcrypt.GenerateFromPassword([]byte(user.Password+user.Salt), s.bcryptCost)
 	if err != nil {
