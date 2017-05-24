@@ -13,8 +13,8 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/go-kit/kit/log"
-	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 	"github.com/kontainerooo/kontainer.ooo/pkg/container"
+	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
 	"github.com/kontainerooo/kontainer.ooo/pkg/util"
 )
 
@@ -39,7 +39,7 @@ type Service interface {
 	UploadFile(refID uint, containerName string, filepath string, content []byte, override bool) error
 
 	// GetModuleConfig returns the configuration for the module
-	GetModuleConfig(refID uint, containerName string, moduleName string) (abstraction.JSON, error)
+	GetModuleConfig(refID uint, containerName string) (kmi.KMI, error)
 
 	// SendCommand sends a command to the customer-container, env overrides environment variables
 	// that are already globally defined in the container
@@ -227,8 +227,25 @@ func (s *service) UploadFile(refID uint, containerName string, fpath string, con
 	return nil
 }
 
-func (s *service) GetModuleConfig(refid uint, containerName string, moduleName string) (abstraction.JSON, error) {
-	return abstraction.JSON{}, nil
+func (s *service) GetModuleConfig(refID uint, containerName string) (kmi.KMI, error) {
+	id, err := s.getContainerIDForName(refID, containerName)
+	if err != nil {
+		return kmi.KMI{}, err
+	}
+
+	res, err := s.container.GetContainerKMIEndpoint(context.Background(), &container.GetContainerKMIRequest{
+		ContainerID: id,
+	})
+	if err != nil {
+		return kmi.KMI{}, err
+	}
+
+	containerKMI, ok := res.(container.GetContainerKMIResponse)
+	if !ok {
+		return kmi.KMI{}, errors.New("service returned unexpected response")
+	}
+
+	return containerKMI.ContainerKMI, nil
 }
 
 func (s *service) SendCommand(refID uint, containerName string, command string, env map[string]string) (string, error) {
