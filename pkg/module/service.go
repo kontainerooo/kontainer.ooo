@@ -194,23 +194,15 @@ func (s *service) GetModuleConfig(refid uint, containerName string, moduleName s
 	return abstraction.JSON{}, nil
 }
 
-func (s *service) SendCommand(RefID uint, containerName string, command string, env []string) (string, error) {
-	res, err := s.container.IDForNameEndpoint(context.Background(), &container.IDForNameRequest{
-		RefID: RefID,
-		Name:  containerName,
-	})
+func (s *service) SendCommand(refID uint, containerName string, command string, env []string) (string, error) {
+	id, err := s.getContainerIDForName(refID, containerName)
 	if err != nil {
 		return "", err
 	}
 
-	cnt, ok := res.(container.IDForNameResponse)
-	if !ok {
-		return "", errors.New("service returned unexpected response")
-	}
-
-	res, err = s.container.ExecuteEndpoint(context.Background(), &container.ExecuteRequest{
-		RefID: RefID,
-		ID:    cnt.ID,
+	res, err := s.container.ExecuteEndpoint(context.Background(), &container.ExecuteRequest{
+		RefID: refID,
+		ID:    id,
 		CMD:   command,
 	})
 	if err != nil {
@@ -226,11 +218,41 @@ func (s *service) SendCommand(RefID uint, containerName string, command string, 
 }
 
 func (s *service) SetEnv(refID uint, containerName string, key string, value string) error {
+	id, err := s.getContainerIDForName(refID, containerName)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.container.SetEnvEndpoint(context.Background(), &container.SetEnvRequest{
+		RefID: refID,
+		ID:    id,
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (s *service) GetEnv(refID uint, containerName string, key string) (string, error) {
 	return "", nil
+}
+
+func (s *service) getContainerIDForName(refID uint, containerName string) (string, error) {
+	res, err := s.container.IDForNameEndpoint(context.Background(), &container.IDForNameRequest{
+		RefID: refID,
+		Name:  containerName,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	cnt, ok := res.(container.IDForNameResponse)
+	if !ok {
+		return "", errors.New("service returned unexpected response")
+	}
+
+	return cnt.ID, nil
 }
 
 // NewService creates a new module service
