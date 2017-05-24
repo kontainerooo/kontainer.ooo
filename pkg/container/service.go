@@ -36,9 +36,6 @@ type Service interface {
 	// StopContainer stops a container
 	StopContainer(refID uint, id string) error
 
-	// IsRunning checks if a container is running
-	IsRunning(refID uint, id string) bool
-
 	// Execute executes a command in a given container
 	Execute(refID uint, id string, cmd string, env map[string]string) (string, error)
 
@@ -227,7 +224,6 @@ func (s *service) CreateContainer(refID uint, kmiID uint, name string) (id strin
 		RefID:       refID,
 		ContainerID: containerID,
 		KMI:         kmi,
-		Running:     false,
 	}
 	err = s.db.Create(&c)
 	if err != nil {
@@ -280,7 +276,6 @@ func (s *service) StopContainer(refID uint, id string) error {
 
 	c := Container{
 		ContainerID: id,
-		Running:     false,
 	}
 
 	err = s.db.Update(&Container{}, &c)
@@ -294,18 +289,6 @@ func (s *service) StopContainer(refID uint, id string) error {
 	}
 
 	return nil
-}
-
-func (s *service) IsRunning(refID uint, id string) bool {
-	s.db.Where("refid = ? AND id = ?", refID, id)
-
-	c := Container{}
-	err := s.db.Find(&c)
-	if err != nil {
-		return false
-	}
-
-	return c.Running
 }
 
 func (s *service) Execute(refID uint, id string, cmd string, env map[string]string) (string, error) {
