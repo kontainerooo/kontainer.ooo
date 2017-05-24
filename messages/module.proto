@@ -72,8 +72,9 @@ message GetFileResponse {
 message UploadFileRequest {
     uint32 refID = 1;
     string containerName = 2;
-    bytes content = 3;
-    bool override = 4;
+    string path = 3;
+    bytes content = 4;
+    bool override = 5;
 }
 
 message UploadFileResponse {
