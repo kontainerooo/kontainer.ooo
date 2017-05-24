@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
 )
 
 // Endpoints is a struct which collects all endpoints for the container service

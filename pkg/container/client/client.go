@@ -13,7 +13,9 @@ import (
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 	"github.com/kontainerooo/kontainer.ooo/pkg/container"
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
-	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
+
+	containerPB "github.com/kontainerooo/kontainer.ooo/pkg/container/pb"
+	kmiPB "github.com/kontainerooo/kontainer.ooo/pkg/kmi/pb"
 )
 
 // New creates a set of endpoints based on a gRPC connection
@@ -27,7 +29,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 			"CreateContainer",
 			EncodeGRPCCreateContainerRequest,
 			DecodeGRPCCreateContainerResponse,
-			pb.CreateContainerResponse{},
+			containerPB.CreateContainerResponse{},
 		).Endpoint()
 	}
 
@@ -39,7 +41,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 			"RemoveContainer",
 			EncodeGRPCRemoveContainerRequest,
 			DecodeGRPCRemoveContainerResponse,
-			pb.RemoveContainerResponse{},
+			containerPB.RemoveContainerResponse{},
 		).Endpoint()
 	}
 
@@ -51,7 +53,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 			"Instances",
 			EncodeGRPCInstancesRequest,
 			DecodeGRPCInstancesResponse,
-			pb.InstancesResponse{},
+			containerPB.InstancesResponse{},
 		).Endpoint()
 	}
 
@@ -63,7 +65,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 			"StopContainer",
 			EncodeGRPCStopContainerRequest,
 			DecodeGRPCStopContainerResponse,
-			pb.StopContainerResponse{},
+			containerPB.StopContainerResponse{},
 		).Endpoint()
 	}
 
@@ -75,7 +77,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 			"Execute",
 			EncodeGRPCExecuteRequest,
 			DecodeGRPCExecuteResponse,
-			pb.ExecuteResponse{},
+			containerPB.ExecuteResponse{},
 		).Endpoint()
 	}
 
@@ -87,7 +89,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 			"GetEnv",
 			EncodeGRPCGetEnvRequest,
 			DecodeGRPCGetEnvResponse,
-			pb.GetEnvResponse{},
+			containerPB.GetEnvResponse{},
 		).Endpoint()
 	}
 
@@ -99,7 +101,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 			"SetEnv",
 			EncodeGRPCSetEnvRequest,
 			DecodeGRPCSetEnvResponse,
-			pb.SetEnvResponse{},
+			containerPB.SetEnvResponse{},
 		).Endpoint()
 	}
 
@@ -111,7 +113,19 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 			"IDForName",
 			EncodeGRPCIDForNameRequest,
 			DecodeGRPCIDForNameResponse,
-			pb.IDForNameResponse{},
+			containerPB.IDForNameResponse{},
+		).Endpoint()
+	}
+
+	var GetContainerKMIEndpoint endpoint.Endpoint
+	{
+		GetContainerKMIEndpoint = grpctransport.NewClient(
+			conn,
+			"containerService",
+			"GetContainerKMI",
+			EncodeGRPCGetContainerKMIRequest,
+			DecodeGRPCGetContainerKMIResponse,
+			containerPB.GetContainerKMIResponse{},
 		).Endpoint()
 	}
 
@@ -124,6 +138,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 		GetEnvEndpoint:          GetEnvEndpoint,
 		SetEnvEndpoint:          SetEnvEndpoint,
 		IDForNameEndpoint:       IDForNameEndpoint,
+		GetContainerKMIEndpoint: GetContainerKMIEndpoint,
 	}
 }
 
@@ -134,37 +149,37 @@ func getError(e string) error {
 	return nil
 }
 
-func pbContainersToContainers(pbc []*pb.Container) []container.Container {
+func pbContainersToContainers(pbc []*containerPB.Container) []container.Container {
 	cts := []container.Container{}
 	for _, c := range pbc {
 		cts = append(cts, container.Container{
 			RefID:         uint(c.RefID),
 			ContainerID:   c.ContainerID,
 			ContainerName: c.ContainerName,
-			KMI:           *convertCKMI(c.Kmi),
+			KMI:           *convertKMI(c.Kmi),
 		})
 	}
 
 	return cts
 }
 
-func convertPBFrontendModule(f *kmi.FrontendModule) *pb.FrontendModule {
-	return &pb.FrontendModule{
+func convertPBFrontendModule(f *kmi.FrontendModule) *kmiPB.FrontendModule {
+	return &kmiPB.FrontendModule{
 		Template:   f.Template,
 		Parameters: f.Parameters.ToStringMap(),
 	}
 }
 
-func convertPBFrontendModuleArray(f kmi.FrontendArray) []*pb.FrontendModule {
-	a := make([]*pb.FrontendModule, len(f))
+func convertPBFrontendModuleArray(f kmi.FrontendArray) []*kmiPB.FrontendModule {
+	a := make([]*kmiPB.FrontendModule, len(f))
 	for i, m := range f {
 		a[i] = convertPBFrontendModule(m)
 	}
 	return a
 }
 
-func convertPBKMDI(k kmi.KMDI) *pb.KMDI {
-	return &pb.KMDI{
+func convertPBKMDI(k kmi.KMDI) *kmiPB.KMDI {
+	return &kmiPB.KMDI{
 		ID:          uint32(k.ID),
 		Name:        k.Name,
 		Version:     k.Version,
@@ -172,8 +187,8 @@ func convertPBKMDI(k kmi.KMDI) *pb.KMDI {
 	}
 }
 
-func convertPBKMI(k *kmi.KMI) *pb.KMI {
-	return &pb.KMI{
+func convertPBKMI(k *kmi.KMI) *kmiPB.KMI {
+	return &kmiPB.KMI{
 		KMDI:            convertPBKMDI(k.KMDI),
 		ProvisionScript: k.ProvisionScript,
 		Commands:        k.Commands.ToStringMap(),
@@ -181,35 +196,34 @@ func convertPBKMI(k *kmi.KMI) *pb.KMI {
 		Frontend:        convertPBFrontendModuleArray(k.Frontend),
 		Imports:         k.Imports,
 		Interfaces:      k.Interfaces.ToStringMap(),
-		Variables:       k.Variables,
 		Resources:       k.Resources.ToStringMap(),
 	}
 }
 
-func convertPBKMDIArray(k *[]kmi.KMDI) []*pb.KMDI {
-	a := make([]*pb.KMDI, len(*k))
+func convertPBKMDIArray(k *[]kmi.KMDI) []*kmiPB.KMDI {
+	a := make([]*kmiPB.KMDI, len(*k))
 	for i, d := range *k {
 		a[i] = convertPBKMDI(d)
 	}
 	return a
 }
 
-func convertCFrontendModule(f *pb.CFrontendModule) *kmi.FrontendModule {
+func convertFrontendModule(f *kmiPB.FrontendModule) *kmi.FrontendModule {
 	return &kmi.FrontendModule{
 		Template:   f.Template,
 		Parameters: abstraction.NewJSONFromMap(f.Parameters),
 	}
 }
 
-func convertCFrontendModuleArray(f []*pb.CFrontendModule) kmi.FrontendArray {
+func convertFrontendModuleArray(f []*kmiPB.FrontendModule) kmi.FrontendArray {
 	a := make(kmi.FrontendArray, len(f))
 	for i, m := range f {
-		a[i] = convertCFrontendModule(m)
+		a[i] = convertFrontendModule(m)
 	}
 	return a
 }
 
-func convertCKMDI(k *pb.CKMDI) kmi.KMDI {
+func convertKMDI(k *kmiPB.KMDI) kmi.KMDI {
 	return kmi.KMDI{
 		ID:          uint(k.ID),
 		Name:        k.Name,
@@ -218,24 +232,23 @@ func convertCKMDI(k *pb.CKMDI) kmi.KMDI {
 	}
 }
 
-func convertCKMI(k *pb.CKMI) *kmi.KMI {
+func convertKMI(k *kmiPB.KMI) *kmi.KMI {
 	return &kmi.KMI{
-		KMDI:            convertCKMDI(k.KMDI),
+		KMDI:            convertKMDI(k.KMDI),
 		ProvisionScript: k.ProvisionScript,
 		Commands:        abstraction.NewJSONFromMap(k.Commands),
 		Environment:     abstraction.NewJSONFromMap(k.Environment),
-		Frontend:        convertCFrontendModuleArray(k.Frontend),
+		Frontend:        convertFrontendModuleArray(k.Frontend),
 		Imports:         pq.StringArray(k.Imports),
 		Interfaces:      abstraction.NewJSONFromMap(k.Interfaces),
-		Variables:       pq.StringArray(k.Variables),
 		Resources:       abstraction.NewJSONFromMap(k.Resources),
 	}
 }
 
-func convertKMDIArray(k []*pb.CKMDI) *[]kmi.KMDI {
+func convertKMDIArray(k []*kmiPB.KMDI) *[]kmi.KMDI {
 	a := make([]kmi.KMDI, len(k))
 	for i, d := range k {
-		a[i] = convertCKMDI(d)
+		a[i] = convertKMDI(d)
 	}
 	return &a
 }
@@ -244,7 +257,7 @@ func convertKMDIArray(k []*pb.CKMDI) *[]kmi.KMDI {
 // messages/container.proto-domain createcontainer request to a gRPC CreateContainer request.
 func EncodeGRPCCreateContainerRequest(_ context.Context, request interface{}) (interface{}, error) {
 	req := request.(*container.CreateContainerRequest)
-	return &pb.CreateContainerRequest{
+	return &containerPB.CreateContainerRequest{
 		RefID: uint32(req.RefID),
 		KmiID: uint32(req.KmiID),
 		Name:  req.Name,
@@ -254,7 +267,7 @@ func EncodeGRPCCreateContainerRequest(_ context.Context, request interface{}) (i
 // DecodeGRPCCreateContainerResponse is a transport/grpc.DecodeResponseFunc that converts a
 // gRPC CreateContainer response to a messages/container.proto-domain createcontainer response.
 func DecodeGRPCCreateContainerResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
-	response := grpcResponse.(*pb.CreateContainerResponse)
+	response := grpcResponse.(*containerPB.CreateContainerResponse)
 	return &container.CreateContainerResponse{
 		Error: getError(response.Error),
 	}, nil
@@ -264,7 +277,7 @@ func DecodeGRPCCreateContainerResponse(_ context.Context, grpcResponse interface
 // messages/container.proto-domain removecontainer request to a gRPC RemoveContainer request.
 func EncodeGRPCRemoveContainerRequest(_ context.Context, request interface{}) (interface{}, error) {
 	req := request.(*container.RemoveContainerRequest)
-	return &pb.RemoveContainerRequest{
+	return &containerPB.RemoveContainerRequest{
 		RefID: uint32(req.RefID),
 		ID:    req.ID,
 	}, nil
@@ -273,7 +286,7 @@ func EncodeGRPCRemoveContainerRequest(_ context.Context, request interface{}) (i
 // DecodeGRPCRemoveContainerResponse is a transport/grpc.DecodeResponseFunc that converts a
 // gRPC RemoveContainer response to a messages/container.proto-domain removecontainer response.
 func DecodeGRPCRemoveContainerResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
-	response := grpcResponse.(*pb.RemoveContainerResponse)
+	response := grpcResponse.(*containerPB.RemoveContainerResponse)
 	return &container.RemoveContainerResponse{
 		Error: getError(response.Error),
 	}, nil
@@ -283,7 +296,7 @@ func DecodeGRPCRemoveContainerResponse(_ context.Context, grpcResponse interface
 // messages/container.proto-domain instances request to a gRPC Instances request.
 func EncodeGRPCInstancesRequest(_ context.Context, request interface{}) (interface{}, error) {
 	req := request.(*container.InstancesRequest)
-	return &pb.InstancesRequest{
+	return &containerPB.InstancesRequest{
 		RefID: uint32(req.RefID),
 	}, nil
 }
@@ -291,7 +304,7 @@ func EncodeGRPCInstancesRequest(_ context.Context, request interface{}) (interfa
 // DecodeGRPCInstancesResponse is a transport/grpc.DecodeResponseFunc that converts a
 // gRPC Instances response to a messages/container.proto-domain instances response.
 func DecodeGRPCInstancesResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
-	response := grpcResponse.(*pb.InstancesResponse)
+	response := grpcResponse.(*containerPB.InstancesResponse)
 	return &container.InstancesResponse{
 		Containers: pbContainersToContainers(response.Instances),
 	}, nil
@@ -301,7 +314,7 @@ func DecodeGRPCInstancesResponse(_ context.Context, grpcResponse interface{}) (i
 // messages/container.proto-domain stopcontainer request to a gRPC StopContainer request.
 func EncodeGRPCStopContainerRequest(_ context.Context, request interface{}) (interface{}, error) {
 	req := request.(*container.StopContainerRequest)
-	return &pb.StopContainerRequest{
+	return &containerPB.StopContainerRequest{
 		RefID: uint32(req.RefID),
 		ID:    req.ID,
 	}, nil
@@ -310,7 +323,7 @@ func EncodeGRPCStopContainerRequest(_ context.Context, request interface{}) (int
 // DecodeGRPCStopContainerResponse is a transport/grpc.DecodeResponseFunc that converts a
 // gRPC StopContainer response to a messages/container.proto-domain stopcontainer response.
 func DecodeGRPCStopContainerResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
-	response := grpcResponse.(*pb.StopContainerResponse)
+	response := grpcResponse.(*containerPB.StopContainerResponse)
 	return &container.StopContainerResponse{
 		Error: getError(response.Error),
 	}, nil
@@ -320,7 +333,7 @@ func DecodeGRPCStopContainerResponse(_ context.Context, grpcResponse interface{}
 // messages/container.proto-domain execute request to a gRPC Execute request.
 func EncodeGRPCExecuteRequest(_ context.Context, request interface{}) (interface{}, error) {
 	req := request.(*container.ExecuteRequest)
-	return &pb.ExecuteRequest{
+	return &containerPB.ExecuteRequest{
 		RefID: uint32(req.RefID),
 		ID:    req.ID,
 		Cmd:   req.CMD,
@@ -330,7 +343,7 @@ func EncodeGRPCExecuteRequest(_ context.Context, request interface{}) (interface
 // DecodeGRPCExecuteResponse is a transport/grpc.DecodeResponseFunc that converts a
 // gRPC Execute response to a messages/container.proto-domain execute response.
 func DecodeGRPCExecuteResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
-	response := grpcResponse.(*pb.ExecuteResponse)
+	response := grpcResponse.(*containerPB.ExecuteResponse)
 	return &container.ExecuteResponse{
 		Error: getError(response.Error),
 	}, nil
@@ -340,7 +353,7 @@ func DecodeGRPCExecuteResponse(_ context.Context, grpcResponse interface{}) (int
 // messages/container.proto-domain getenv request to a gRPC GetEnv request.
 func EncodeGRPCGetEnvRequest(_ context.Context, request interface{}) (interface{}, error) {
 	req := request.(*container.GetEnvRequest)
-	return &pb.GetEnvRequest{
+	return &containerPB.GetEnvRequest{
 		RefID: uint32(req.RefID),
 		ID:    req.ID,
 		Key:   req.Key,
@@ -350,7 +363,7 @@ func EncodeGRPCGetEnvRequest(_ context.Context, request interface{}) (interface{
 // DecodeGRPCGetEnvResponse is a transport/grpc.DecodeResponseFunc that converts a
 // gRPC GetEnv response to a messages/container.proto-domain getenv response.
 func DecodeGRPCGetEnvResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
-	response := grpcResponse.(*pb.GetEnvResponse)
+	response := grpcResponse.(*containerPB.GetEnvResponse)
 	return &container.GetEnvResponse{
 		Value: response.Value,
 		Error: getError(response.Error),
@@ -361,7 +374,7 @@ func DecodeGRPCGetEnvResponse(_ context.Context, grpcResponse interface{}) (inte
 // messages/container.proto-domain setenv request to a gRPC SetEnv request.
 func EncodeGRPCSetEnvRequest(_ context.Context, request interface{}) (interface{}, error) {
 	req := request.(*container.SetEnvRequest)
-	return &pb.SetEnvRequest{
+	return &containerPB.SetEnvRequest{
 		RefID: uint32(req.RefID),
 		ID:    req.ID,
 		Key:   req.Key,
@@ -372,7 +385,7 @@ func EncodeGRPCSetEnvRequest(_ context.Context, request interface{}) (interface{
 // DecodeGRPCSetEnvResponse is a transport/grpc.DecodeResponseFunc that converts a
 // gRPC SetEnv response to a messages/container.proto-domain setenv response.
 func DecodeGRPCSetEnvResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
-	response := grpcResponse.(*pb.SetEnvResponse)
+	response := grpcResponse.(*containerPB.SetEnvResponse)
 	return &container.SetEnvResponse{
 		Error: getError(response.Error),
 	}, nil
@@ -382,7 +395,7 @@ func DecodeGRPCSetEnvResponse(_ context.Context, grpcResponse interface{}) (inte
 // messages/container.proto-domain idforname request to a gRPC IDForName request.
 func EncodeGRPCIDForNameRequest(_ context.Context, request interface{}) (interface{}, error) {
 	req := request.(*container.IDForNameRequest)
-	return &pb.IDForNameRequest{
+	return &containerPB.IDForNameRequest{
 		RefID: uint32(req.RefID),
 		Name:  req.Name,
 	}, nil
@@ -391,8 +404,28 @@ func EncodeGRPCIDForNameRequest(_ context.Context, request interface{}) (interfa
 // DecodeGRPCIDForNameResponse is a transport/grpc.DecodeResponseFunc that converts a
 // gRPC IDForName response to a messages/container.proto-domain idforname response.
 func DecodeGRPCIDForNameResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
-	response := grpcResponse.(*pb.IDForNameResponse)
+	response := grpcResponse.(*containerPB.IDForNameResponse)
 	return &container.IDForNameResponse{
 		Error: getError(response.Error),
+	}, nil
+}
+
+// EncodeGRPCGetContainerKMIRequest is a transport/grpc.EncodeRequestFunc that converts a
+// messages/container.proto-domain getcontainerkmi request to a gRPC GetContainerKMI request.
+func EncodeGRPCGetContainerKMIRequest(_ context.Context, request interface{}) (interface{}, error) {
+	req := request.(*container.GetContainerKMIRequest)
+	return &containerPB.GetContainerKMIRequest{
+		ContainerID: req.ContainerID,
+	}, nil
+}
+
+// DecodeGRPCGetContainerKMIResponse is a transport/grpc.DecodeResponseFunc that converts a
+// gRPC GetContainerKMI response to a messages/container.proto-domain getcontainerkmi response.
+func DecodeGRPCGetContainerKMIResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
+	response := grpcResponse.(*containerPB.GetContainerKMIResponse)
+	kmi := convertKMI(response.ContainerKMI)
+	return &container.GetContainerKMIResponse{
+		Error:        getError(response.Error),
+		ContainerKMI: *kmi,
 	}, nil
 }

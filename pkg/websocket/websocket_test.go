@@ -14,7 +14,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
-	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
+	"github.com/kontainerooo/kontainer.ooo/pkg/kmi/pb"
 	ws "github.com/kontainerooo/kontainer.ooo/pkg/websocket"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

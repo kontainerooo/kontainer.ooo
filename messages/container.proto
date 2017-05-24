@@ -2,6 +2,8 @@ syntax = "proto3";
 package container;
 option go_package = "pb";
 
+import "kmi.proto";
+
 service ContainerService {
     rpc CreateContainer (CreateContainerRequest) returns (CreateContainerResponse);
     rpc RemoveContainer (RemoveContainerRequest) returns (RemoveContainerResponse);
@@ -11,35 +13,7 @@ service ContainerService {
     rpc GetEnv (GetEnvRequest) returns (GetEnvResponse);
     rpc SetEnv (SetEnvRequest) returns (SetEnvResponse);
     rpc IDForName (IDForNameRequest) returns (IDForNameResponse);
-}
-
-enum cType {
-  WEBSERVER = 0;
-}
-
-message cKMDI {
-  uint32 ID = 1;
-  string name = 2;
-  string version = 3;
-  string description = 4;
-  cType type = 5;
-}
-
-message cFrontendModule {
-  string template = 1;
-  map<string, string> parameters = 2;
-}
-
-message cKMI {
-  cKMDI KMDI = 1;
-  string provisionScript = 2;
-  string context = 3;
-  map<string, string> commands = 4;
-  map<string, string> environment = 5;
-  repeated cFrontendModule frontend = 6;
-  repeated string imports = 7;
-  map<string, string> interfaces = 8;
-  map<string, string> resources = 9;
+    rpc GetContainerKMI (GetContainerKMIRequest) returns (GetContainerKMIResponse);
 }
 
 message CreateContainerRequest {
@@ -70,7 +44,7 @@ message container {
     uint32 refID = 1;
 	string containerID   = 2;
 	string containerName = 3;
-	cKMI kmi = 4;
+	kmi.KMI kmi = 4;
     bool running = 5;
 }
 
@@ -128,5 +102,14 @@ message IDForNameRequest {
 
 message IDForNameResponse {
     string ID = 1;
+    string error = 2;
+}
+
+message GetContainerKMIRequest {
+    string containerID = 1;
+}
+
+message GetContainerKMIResponse {
+    kmi.KMI containerKMI = 1;
     string error = 2;
 }
