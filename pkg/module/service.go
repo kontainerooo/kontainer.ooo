@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -33,6 +34,9 @@ type Service interface {
 
 	// GetFile gets the contents of a file from the customer-container-path
 	GetFile(refID uint, containerName string, path string) (string, error)
+
+	// UploadFile uploads a file in a given container to a given path
+	UploadFile(refID uint, containerName string, filepath string, content []byte, override bool) error
 
 	// GetModuleConfig returns the configuration for the module
 	GetModuleConfig(refID uint, containerName string, moduleName string) (abstraction.JSON, error)
@@ -188,6 +192,49 @@ func (s *service) GetFile(refID uint, containerName string, filepath string) (st
 	}
 
 	return string(content), err
+}
+
+func (s *service) UploadFile(refID uint, containerName string, fpath string, content []byte, override bool) error {
+	coPath, err := s.makePath(refID, containerName)
+	if err != nil {
+		return err
+	}
+
+	// TODO: improve path traversal mitigation (let people do a/../b)
+	// and count the amount of back traversals
+	coPath = path.Join(coPath, fpath)
+	coPath = strings.Replace(coPath, "../", "", -1)
+
+	// If the file exists only replace if flag is set
+	f, err := os.Stat(coPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// Make sure the directory exists
+			err = os.MkdirAll(filepath.Dir(coPath), os.ModeDir)
+			if err != nil {
+				return err
+			}
+			err = ioutil.WriteFile(coPath, content, 0644)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	if f.IsDir() {
+		return fmt.Errorf("%s is a directory", fpath)
+	}
+
+	if override {
+		err = ioutil.WriteFile(coPath, content, 0644)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (s *service) GetModuleConfig(refid uint, containerName string, moduleName string) (abstraction.JSON, error) {
