@@ -40,7 +40,16 @@ type Service interface {
 	IsRunning(refID uint, id string) bool
 
 	// Execute executes a command in a given container
-	Execute(refID uint, id string, cmd string) (string, error)
+	Execute(refID uint, id string, cmd string, env map[string]string) (string, error)
+
+	// GetEnv returns the value to a given environment variable setting
+	GetEnv(refID uint, id string, key string) (string, error)
+
+	// SetEnv sets an environment variable for the container
+	SetEnv(refID uint, id string, key string, value string) error
+
+	// IDForName returs the containerID for a given container name and user
+	IDForName(refID uint, name string) (string, error)
 }
 
 type dbAdapter interface {
@@ -299,7 +308,7 @@ func (s *service) IsRunning(refID uint, id string) bool {
 	return c.Running
 }
 
-func (s *service) Execute(refID uint, id string, cmd string) (string, error) {
+func (s *service) Execute(refID uint, id string, cmd string, env map[string]string) (string, error) {
 	container, err := s.libcnt.Load(id)
 	if err != nil {
 		return "", err
@@ -325,6 +334,18 @@ func (s *service) Execute(refID uint, id string, cmd string) (string, error) {
 	}
 
 	return buf.String(), nil
+}
+
+func (s *service) GetEnv(refID uint, id string, key string) (string, error) {
+	return "", nil
+}
+
+func (s *service) SetEnv(refID uint, id string, key string, value string) error {
+	return nil
+}
+
+func (s *service) IDForName(refID uint, name string) (string, error) {
+	return "", nil
 }
 
 func (s *service) getKMI(kmiID uint) (kmi.KMI, error) {
