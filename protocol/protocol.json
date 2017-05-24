@@ -39,10 +39,11 @@
         "CreateContainer": "CRT",
         "RemoveContainer": "REM",
         "Instances": "ALL",
-        "StartContainer": "STA",
         "StopContainer": "STO",
-        "IsRunning": "ISR",
-        "Execute": "EXE"
+        "Execute": "EXE",
+        "GetEnv": "GEV",
+        "SetEnv": "SEV",
+        "IDFromName": "IFN"
       }
     }
   }
