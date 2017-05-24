@@ -9,9 +9,11 @@ import (
 	"path"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"github.com/go-kit/kit/log"
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
-	"github.com/kontainerooo/kontainer.ooo/pkg/user"
+	"github.com/kontainerooo/kontainer.ooo/pkg/container"
 	"github.com/kontainerooo/kontainer.ooo/pkg/util"
 )
 
@@ -52,10 +54,10 @@ type dbAdapter interface {
 }
 
 type service struct {
-	db         dbAdapter
-	userClient *user.Endpoints
-	logger     log.Logger
-	config     util.ConfigFile
+	db        dbAdapter
+	container *container.Endpoints
+	logger    log.Logger
+	config    util.ConfigFile
 }
 
 func (s *service) InitializeDatabases() error {
@@ -192,8 +194,35 @@ func (s *service) GetModuleConfig(refid uint, containerName string, moduleName s
 	return abstraction.JSON{}, nil
 }
 
-func (s *service) SendCommand(refid uint, containerName string, command string, env []string) (string, error) {
-	return "", nil
+func (s *service) SendCommand(RefID uint, containerName string, command string, env []string) (string, error) {
+	res, err := s.container.IDForNameEndpoint(context.Background(), &container.IDForNameRequest{
+		RefID: RefID,
+		Name:  containerName,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	cnt, ok := res.(container.IDForNameResponse)
+	if !ok {
+		return "", errors.New("service returned unexpected response")
+	}
+
+	res, err = s.container.ExecuteEndpoint(context.Background(), &container.ExecuteRequest{
+		RefID: RefID,
+		ID:    cnt.ID,
+		CMD:   command,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	execRes, ok := res.(container.ExecuteResponse)
+	if !ok {
+		return "", errors.New("service returned unexpected response")
+	}
+
+	return execRes.Response, nil
 }
 
 func (s *service) SetEnv(refID uint, containerName string, key string, value string) error {
@@ -204,18 +233,18 @@ func (s *service) GetEnv(refID uint, containerName string, key string) (string, 
 	return "", nil
 }
 
-// NewService creates a new template service
-func NewService(db dbAdapter, uc *user.Endpoints, l log.Logger) (Service, error) {
+// NewService creates a new module service
+func NewService(db dbAdapter, ce *container.Endpoints, l log.Logger) (Service, error) {
 	conf, err := util.GetConfig()
 	if err != nil {
 		return &service{}, err
 	}
 
 	s := &service{
-		db:         db,
-		userClient: uc,
-		logger:     l,
-		config:     conf,
+		db:        db,
+		container: ce,
+		logger:    l,
+		config:    conf,
 	}
 
 	err = s.InitializeDatabases()
