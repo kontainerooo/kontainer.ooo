@@ -260,7 +260,7 @@ func (s *service) RemoveContainer(refID uint, id string) error {
 }
 
 func (s *service) Instances(refID uint) []Container {
-	s.db.Where("refid = ?", refID)
+	s.db.Where("RefID = ?", refID)
 
 	cs := []Container{}
 	err := s.db.Find(&cs)
@@ -400,7 +400,12 @@ func (s *service) SetEnv(refID uint, id string, key string, value string) error 
 }
 
 func (s *service) IDForName(refID uint, name string) (string, error) {
-	return "", nil
+	c := &Container{}
+	err := s.db.First(c, "RefID = ? AND ContainerName = ?", refID, name)
+	if err != nil {
+		return "", err
+	}
+	return c.ContainerID, nil
 }
 
 func (s *service) getTemplateKMI(kmiID uint) (kmi.KMI, error) {
@@ -426,7 +431,7 @@ func (s *service) getTemplateKMI(kmiID uint) (kmi.KMI, error) {
 func (s *service) getContainerKMI(containerID string) (kmi.KMI, error) {
 	// TODO: cache container KMIs
 	c := Container{}
-	err := s.db.First(&c, "containerid = ?", containerID)
+	err := s.db.First(&c, "ContainerID = ?", containerID)
 	if err != nil {
 		return kmi.KMI{}, err
 	}
