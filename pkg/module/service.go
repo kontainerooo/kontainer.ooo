@@ -43,7 +43,7 @@ type Service interface {
 
 	// SendCommand sends a command to the customer-container, env overrides environment variables
 	// that are already globally defined in the container
-	SendCommand(refID uint, containerName string, command string, env []string) (string, error)
+	SendCommand(refID uint, containerName string, command string, env map[string]string) (string, error)
 
 	// SetEnv sets a permanent environment variable in the container
 	SetEnv(refID uint, containerName string, key string, value string) error
@@ -231,7 +231,7 @@ func (s *service) GetModuleConfig(refid uint, containerName string, moduleName s
 	return abstraction.JSON{}, nil
 }
 
-func (s *service) SendCommand(refID uint, containerName string, command string, env []string) (string, error) {
+func (s *service) SendCommand(refID uint, containerName string, command string, env map[string]string) (string, error) {
 	id, err := s.getContainerIDForName(refID, containerName)
 	if err != nil {
 		return "", err
@@ -241,6 +241,7 @@ func (s *service) SendCommand(refID uint, containerName string, command string, 
 		RefID: refID,
 		ID:    id,
 		CMD:   command,
+		Env:   env,
 	})
 	if err != nil {
 		return "", err
