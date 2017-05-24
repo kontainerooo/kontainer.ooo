@@ -52,20 +52,10 @@ type Service interface {
 	GetEnv(refID uint, containerName string, key string) (string, error)
 }
 
-type dbAdapter interface {
-	abstraction.DBAdapter
-	AutoMigrate(...interface{}) error
-}
-
 type service struct {
-	db        dbAdapter
 	container *container.Endpoints
 	logger    log.Logger
 	config    util.ConfigFile
-}
-
-func (s *service) InitializeDatabases() error {
-	return s.db.AutoMigrate()
 }
 
 func (s *service) makePath(refID uint, containerName string) (string, error) {
@@ -324,22 +314,16 @@ func (s *service) getContainerIDForName(refID uint, containerName string) (strin
 }
 
 // NewService creates a new module service
-func NewService(db dbAdapter, ce *container.Endpoints, l log.Logger) (Service, error) {
+func NewService(ce *container.Endpoints, l log.Logger) (Service, error) {
 	conf, err := util.GetConfig()
 	if err != nil {
 		return &service{}, err
 	}
 
 	s := &service{
-		db:        db,
 		container: ce,
 		logger:    l,
 		config:    conf,
-	}
-
-	err = s.InitializeDatabases()
-	if err != nil {
-		return s, err
 	}
 
 	return s, nil
