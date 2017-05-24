@@ -1,6 +1,6 @@
 language: go
 dist: trusty
-# Need to be root because of docker and setuid
+
 sudo: true
 
 env:

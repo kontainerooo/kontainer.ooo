@@ -108,17 +108,15 @@ func convertPBKMDI(k KMDI) *pb.KMDI {
 
 func convertPBKMI(k *KMI) *pb.KMI {
 	return &pb.KMI{
-		KMDI:        convertPBKMDI(k.KMDI),
-		Dockerfile:  k.Dockerfile,
-		Context:     k.Context,
-		Commands:    k.Commands.ToStringMap(),
-		Environment: k.Environment.ToStringMap(),
-		Frontend:    convertPBFrontendModuleArray(k.Frontend),
-		Imports:     k.Imports,
-		Interfaces:  k.Interfaces.ToStringMap(),
-		Mounts:      k.Mounts,
-		Variables:   k.Variables,
-		Resources:   k.Resources.ToStringMap(),
+		KMDI:            convertPBKMDI(k.KMDI),
+		ProvisionScript: k.ProvisionScript,
+		Commands:        k.Commands.ToStringMap(),
+		Environment:     k.Environment.ToStringMap(),
+		Frontend:        convertPBFrontendModuleArray(k.Frontend),
+		Imports:         k.Imports,
+		Interfaces:      k.Interfaces.ToStringMap(),
+		Variables:       k.Variables,
+		Resources:       k.Resources.ToStringMap(),
 	}
 }
 

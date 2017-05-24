@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("KMI", func() {
+var _ = XDescribe("KMI", func() {
 	Describe("Create Service", func() {
 		It("Should create service", func() {
 			kmiService, err := kmi.NewService(testutils.NewMockDB())
