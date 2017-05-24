@@ -33,7 +33,7 @@ type Service interface {
 	GetFiles(refID uint, containerName string, path string) (map[string]string, error)
 
 	// GetFile gets the contents of a file from the customer-container-path
-	GetFile(refID uint, containerName string, path string) (string, error)
+	GetFile(refID uint, containerName string, path string) ([]byte, error)
 
 	// UploadFile uploads a file in a given container to a given path
 	UploadFile(refID uint, containerName string, filepath string, content []byte, override bool) error
@@ -157,10 +157,10 @@ func (s *service) GetFiles(refID uint, containerName string, dir string) (map[st
 	return flist, nil
 }
 
-func (s *service) GetFile(refID uint, containerName string, filepath string) (string, error) {
+func (s *service) GetFile(refID uint, containerName string, filepath string) ([]byte, error) {
 	coPath, err := s.makePath(refID, containerName)
 	if err != nil {
-		return "", err
+		return []byte{}, err
 	}
 
 	// TODO: improve path traversal mitigation (let people do a/../b)
@@ -169,19 +169,19 @@ func (s *service) GetFile(refID uint, containerName string, filepath string) (st
 	coPath = strings.Replace(coPath, "../", "", -1)
 	f, err := os.Stat(coPath)
 	if err != nil {
-		return "", err
+		return []byte{}, err
 	}
 
 	if f.IsDir() {
-		return "", errors.New("cannot get a directory")
+		return []byte{}, errors.New("cannot get a directory")
 	}
 
 	content, err := ioutil.ReadFile(coPath)
 	if err != nil {
-		return "", err
+		return []byte{}, err
 	}
 
-	return string(content), err
+	return content, err
 }
 
 func (s *service) UploadFile(refID uint, containerName string, fpath string, content []byte, override bool) error {
