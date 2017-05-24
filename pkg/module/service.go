@@ -226,6 +226,8 @@ func (s *service) SetEnv(refID uint, containerName string, key string, value str
 	_, err = s.container.SetEnvEndpoint(context.Background(), &container.SetEnvRequest{
 		RefID: refID,
 		ID:    id,
+		Key:   key,
+		Value: value,
 	})
 	if err != nil {
 		return err
@@ -235,7 +237,26 @@ func (s *service) SetEnv(refID uint, containerName string, key string, value str
 }
 
 func (s *service) GetEnv(refID uint, containerName string, key string) (string, error) {
-	return "", nil
+	id, err := s.getContainerIDForName(refID, containerName)
+	if err != nil {
+		return "", err
+	}
+
+	res, err := s.container.GetEnvEndpoint(context.Background(), &container.GetEnvRequest{
+		RefID: refID,
+		ID:    id,
+		Key:   key,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	val, ok := res.(container.GetEnvResponse)
+	if !ok {
+		return "", errors.New("service returned unexpected response")
+	}
+
+	return val.Value, nil
 }
 
 func (s *service) getContainerIDForName(refID uint, containerName string) (string, error) {
