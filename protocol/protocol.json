@@ -43,7 +43,8 @@
         "Execute": "EXE",
         "GetEnv": "GEV",
         "SetEnv": "SEV",
-        "IDFromName": "IFN"
+        "IDFromName": "IFN",
+        "GetContainerKMI": "GCK"
       }
     }
   }

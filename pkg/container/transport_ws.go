@@ -76,6 +76,14 @@ func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
 		EncodeGRPCIDForNameResponse,
 	))
 
+	service.AddEndpoint(ws.NewServiceEndpoint(
+		"GetContainerKMI",
+		ws.ProtoIDFromString("GCK"),
+		endpoints.GetContainerKMIEndpoint,
+		DecodeWSGetContainerKMIRequest,
+		EncodeGRPCGetContainerKMIResponse,
+	))
+
 	return service
 }
 
@@ -173,4 +181,16 @@ func DecodeWSIDForNameRequest(ctx context.Context, data interface{}) (interface{
 	}
 
 	return DecodeGRPCIDForNameRequest(ctx, req)
+}
+
+// DecodeWSGetContainerKMIRequest is a websocket.DecodeRequestFunc that converts a
+// WS GetContainerKMI request to a messages/container.proto-domain getcontainerkmi request.
+func DecodeWSGetContainerKMIRequest(ctx context.Context, data interface{}) (interface{}, error) {
+	req := &pb.GetContainerKMIRequest{}
+	err := proto.Unmarshal(data.([]byte), req)
+	if err != nil {
+		return nil, err
+	}
+
+	return DecodeGRPCGetContainerKMIRequest(ctx, req)
 }

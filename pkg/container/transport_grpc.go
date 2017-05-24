@@ -63,6 +63,12 @@ func MakeGRPCServer(ctx context.Context, endpoints Endpoints, logger log.Logger)
 			EncodeGRPCIDForNameResponse,
 			options...,
 		),
+		getcontainerkmi: grpctransport.NewServer(
+			endpoints.GetContainerKMIEndpoint,
+			DecodeGRPCGetContainerKMIRequest,
+			EncodeGRPCGetContainerKMIResponse,
+			options...,
+		),
 	}
 }
 
@@ -76,6 +82,7 @@ type grpcServer struct {
 	getenv          grpctransport.Handler
 	setenv          grpctransport.Handler
 	idforname       grpctransport.Handler
+	getcontainerkmi grpctransport.Handler
 }
 
 func (s *grpcServer) CreateContainer(ctx oldcontext.Context, req *pb.CreateContainerRequest) (*pb.CreateContainerResponse, error) {
@@ -140,6 +147,14 @@ func (s *grpcServer) IDForName(ctx oldcontext.Context, req *pb.IDForNameRequest)
 		return nil, err
 	}
 	return res.(*pb.IDForNameResponse), nil
+}
+
+func (s *grpcServer) GetContainerKMI(ctx oldcontext.Context, req *pb.GetContainerKMIRequest) (*pb.GetContainerKMIResponse, error) {
+	_, res, err := s.getcontainerkmi.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res.(*pb.GetContainerKMIResponse), nil
 }
 
 // DecodeGRPCCreateContainerRequest is a transport/grpc.DecodeRequestFunc that converts a
@@ -226,6 +241,15 @@ func DecodeGRPCIDForNameRequest(_ context.Context, grpcReq interface{}) (interfa
 	}, nil
 }
 
+// DecodeGRPCGetContainerKMIRequest is a transport/grpc.DecodeRequestFunc that converts a
+// gRPC GetContainerKMI request to a messages/container.proto-domain getcontainerkmi request.
+func DecodeGRPCGetContainerKMIRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
+	req := grpcReq.(*pb.GetContainerKMIRequest)
+	return GetContainerKMIRequest{
+		ContainerID: req.ContainerID,
+	}, nil
+}
+
 // EncodeGRPCCreateContainerResponse is a transport/grpc.EncodeRequestFunc that converts a
 // messages/container.proto-domain createcontainer response to a gRPC CreateContainer response.
 func EncodeGRPCCreateContainerResponse(_ context.Context, response interface{}) (interface{}, error) {
@@ -308,6 +332,17 @@ func EncodeGRPCIDForNameResponse(_ context.Context, response interface{}) (inter
 	gRPCRes := &pb.IDForNameResponse{
 		ID: res.ID,
 	}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
+}
+
+// EncodeGRPCGetContainerKMIResponse is a transport/grpc.EncodeRequestFunc that converts a
+// messages/container.proto-domain getcontainerkmi response to a gRPC GetContainerKMI response.
+func EncodeGRPCGetContainerKMIResponse(_ context.Context, response interface{}) (interface{}, error) {
+	res := response.(GetContainerKMIResponse)
+	gRPCRes := &pb.GetContainerKMIResponse{}
 	if res.Error != nil {
 		gRPCRes.Error = res.Error.Error()
 	}

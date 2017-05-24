@@ -49,6 +49,9 @@ type Service interface {
 
 	// IDForName returs the containerID for a given container name and user
 	IDForName(refID uint, name string) (string, error)
+
+	// GetContainerKMI returns the KMI for a given container
+	GetContainerKMI(containerID string) (kmi.KMI, error)
 }
 
 type dbAdapter interface {
@@ -294,7 +297,7 @@ func (s *service) Execute(refID uint, id string, cmd string, env map[string]stri
 	b := []byte{}
 	buf := bytes.NewBuffer(b)
 
-	cKMI, err := s.getContainerKMI(id)
+	cKMI, err := s.GetContainerKMI(id)
 	if err != nil {
 		return "", err
 	}
@@ -348,7 +351,7 @@ func (s *service) Execute(refID uint, id string, cmd string, env map[string]stri
 }
 
 func (s *service) GetEnv(refID uint, id string, key string) (string, error) {
-	cKMI, err := s.getContainerKMI(id)
+	cKMI, err := s.GetContainerKMI(id)
 	if err != nil {
 		return "", err
 	}
@@ -373,7 +376,7 @@ func (s *service) GetEnv(refID uint, id string, key string) (string, error) {
 }
 
 func (s *service) SetEnv(refID uint, id string, key string, value string) error {
-	cKMI, err := s.getContainerKMI(id)
+	cKMI, err := s.GetContainerKMI(id)
 	if err != nil {
 		return err
 	}
@@ -428,7 +431,7 @@ func (s *service) getTemplateKMI(kmiID uint) (kmi.KMI, error) {
 	return *kmi, nil
 }
 
-func (s *service) getContainerKMI(containerID string) (kmi.KMI, error) {
+func (s *service) GetContainerKMI(containerID string) (kmi.KMI, error) {
 	// TODO: cache container KMIs
 	c := Container{}
 	err := s.db.First(&c, "ContainerID = ?", containerID)

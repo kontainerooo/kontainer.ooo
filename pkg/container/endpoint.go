@@ -17,6 +17,7 @@ type Endpoints struct {
 	GetEnvEndpoint          endpoint.Endpoint
 	SetEnvEndpoint          endpoint.Endpoint
 	IDForNameEndpoint       endpoint.Endpoint
+	GetContainerKMIEndpoint endpoint.Endpoint
 }
 
 // CreateContainerRequest is the request struct for the CreateContainerEndpoint
@@ -204,6 +205,29 @@ func MakeIDForNameEndpoint(s Service) endpoint.Endpoint {
 		return IDForNameResponse{
 			ID:    id,
 			Error: err,
+		}, nil
+	}
+}
+
+// GetContainerKMIRequest is the request struct for the GetContainerKMIEndpoint
+type GetContainerKMIRequest struct {
+	ContainerID string
+}
+
+// GetContainerKMIResponse is the response struct for the GetContainerKMIEndpoint
+type GetContainerKMIResponse struct {
+	ContainerKMI kmi.KMI
+	Error        error
+}
+
+// MakeGetContainerKMIEndpoint creates a gokit endpoint which invokes GetContainerKMI
+func MakeGetContainerKMIEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GetContainerKMIRequest)
+		containerKMI, err := s.GetContainerKMI(req.ContainerID)
+		return GetContainerKMIResponse{
+			ContainerKMI: containerKMI,
+			Error:        err,
 		}, nil
 	}
 }
