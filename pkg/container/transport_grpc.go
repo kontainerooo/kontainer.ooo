@@ -39,12 +39,6 @@ func MakeGRPCServer(ctx context.Context, endpoints Endpoints, logger log.Logger)
 			EncodeGRPCStopContainerResponse,
 			options...,
 		),
-		isrunning: grpctransport.NewServer(
-			endpoints.IsRunningEndpoint,
-			DecodeGRPCIsRunningRequest,
-			EncodeGRPCIsRunningResponse,
-			options...,
-		),
 		execute: grpctransport.NewServer(
 			endpoints.ExecuteEndpoint,
 			DecodeGRPCExecuteRequest,
@@ -60,7 +54,6 @@ type grpcServer struct {
 	instances       grpctransport.Handler
 	startcontainer  grpctransport.Handler
 	stopcontainer   grpctransport.Handler
-	isrunning       grpctransport.Handler
 	execute         grpctransport.Handler
 }
 
@@ -102,14 +95,6 @@ func (s *grpcServer) StopContainer(ctx oldcontext.Context, req *pb.StopContainer
 		return nil, err
 	}
 	return res.(*pb.StopContainerResponse), nil
-}
-
-func (s *grpcServer) IsRunning(ctx oldcontext.Context, req *pb.IsRunningRequest) (*pb.IsRunningResponse, error) {
-	_, res, err := s.isrunning.ServeGRPC(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return res.(*pb.IsRunningResponse), nil
 }
 
 func (s *grpcServer) Execute(ctx oldcontext.Context, req *pb.ExecuteRequest) (*pb.ExecuteResponse, error) {
@@ -157,15 +142,6 @@ func DecodeGRPCStopContainerRequest(_ context.Context, grpcReq interface{}) (int
 	return StopContainerRequest{
 		RefID: uint(req.RefID),
 		ID:    req.ID,
-	}, nil
-}
-
-// DecodeGRPCIsRunningRequest is a transport/grpc.DecodeRequestFunc that converts a
-// gRPC IsRunning request to a messages/container.proto-domain isrunning request.
-func DecodeGRPCIsRunningRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
-	req := grpcReq.(*pb.IsRunningRequest)
-	return IsRunningRequest{
-		RefID: uint(req.RefID),
 	}, nil
 }
 
@@ -217,13 +193,6 @@ func EncodeGRPCStopContainerResponse(_ context.Context, response interface{}) (i
 	if res.Error != nil {
 		gRPCRes.Error = res.Error.Error()
 	}
-	return gRPCRes, nil
-}
-
-// EncodeGRPCIsRunningResponse is a transport/grpc.EncodeRequestFunc that converts a
-// messages/container.proto-domain isrunning response to a gRPC IsRunning response.
-func EncodeGRPCIsRunningResponse(_ context.Context, response interface{}) (interface{}, error) {
-	gRPCRes := &pb.IsRunningResponse{}
 	return gRPCRes, nil
 }
 

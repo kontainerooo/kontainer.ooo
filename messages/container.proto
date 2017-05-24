@@ -8,7 +8,6 @@ service ContainerService {
     rpc Instances (InstancesRequest) returns (InstancesResponse);
     rpc StartContainer (StartContainerRequest) returns (StartContainerResponse);
     rpc StopContainer (StopContainerRequest) returns (StopContainerResponse);
-    rpc IsRunning (IsRunningRequest) returns (IsRunningResponse);
     rpc Execute (ExecuteRequest) returns (ExecuteResponse);
 }
 
@@ -95,15 +94,6 @@ message StopContainerRequest {
 
 message StopContainerResponse {
     string error = 1;
-}
-
-message IsRunningRequest {
-    uint32 refID = 1;
-    string ID = 2;
-}
-
-message IsRunningResponse {
-    bool isRunning = 1;
 }
 
 message ExecuteRequest {

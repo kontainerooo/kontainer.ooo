@@ -45,14 +45,6 @@ func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
 	))
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
-		"IsRunning",
-		ws.ProtoIDFromString("ISR"),
-		endpoints.IsRunningEndpoint,
-		DecodeWSIsRunningRequest,
-		EncodeGRPCIsRunningResponse,
-	))
-
-	service.AddEndpoint(ws.NewServiceEndpoint(
 		"Execute",
 		ws.ProtoIDFromString("EXE"),
 		endpoints.ExecuteEndpoint,
@@ -109,18 +101,6 @@ func DecodeWSStopContainerRequest(ctx context.Context, data interface{}) (interf
 	}
 
 	return DecodeGRPCStopContainerRequest(ctx, req)
-}
-
-// DecodeWSIsRunningRequest is a websocket.DecodeRequestFunc that converts a
-// WS IsRunning request to a messages/container.proto-domain isrunning request.
-func DecodeWSIsRunningRequest(ctx context.Context, data interface{}) (interface{}, error) {
-	req := &pb.IsRunningRequest{}
-	err := proto.Unmarshal(data.([]byte), req)
-	if err != nil {
-		return nil, err
-	}
-
-	return DecodeGRPCIsRunningRequest(ctx, req)
 }
 
 // DecodeWSExecuteRequest is a websocket.DecodeRequestFunc that converts a

@@ -13,7 +13,6 @@ type Endpoints struct {
 	InstancesEndpoint       endpoint.Endpoint
 	StartContainerEndpoint  endpoint.Endpoint
 	StopContainerEndpoint   endpoint.Endpoint
-	IsRunningEndpoint       endpoint.Endpoint
 	ExecuteEndpoint         endpoint.Endpoint
 }
 
@@ -103,28 +102,6 @@ func MakeStopContainerEndpoint(s Service) endpoint.Endpoint {
 		err := s.StopContainer(req.RefID, req.ID)
 		return StopContainerResponse{
 			Error: err,
-		}, nil
-	}
-}
-
-// IsRunningRequest is the request struct for the IsRunningEndpoint
-type IsRunningRequest struct {
-	RefID uint `bart:"ref"`
-	ID    string
-}
-
-// IsRunningResponse is the response struct for the IsRunningEndpoint
-type IsRunningResponse struct {
-	IsRunning bool
-}
-
-// MakeIsRunningEndpoint creates a gokit endpoint which invokes IsRunning
-func MakeIsRunningEndpoint(s Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(IsRunningRequest)
-		isRunning := s.IsRunning(req.RefID, req.ID)
-		return IsRunningResponse{
-			IsRunning: isRunning,
 		}, nil
 	}
 }
