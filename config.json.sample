@@ -1,0 +1,6 @@
+{
+    "RootfsPath": "/var/lib/kontainerooo/images",
+    "CustomerPath": "/var/lib/kontainerooo/customers",
+    "NetNSPath": "/var/go/bin/netns",
+    "StandardPathVariable": "PATH=$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+}

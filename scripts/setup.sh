@@ -56,5 +56,9 @@ echo "127.0.0.1 postgres" >> /etc/hosts
 # Create postgres user
 sudo -u postgres bash -c "psql -c \"CREATE USER kroo WITH PASSWORD 'kroo';\""
 
+# Copy config file
+cp /var/go/src/github.com/kontainerooo/kontainer.ooo/config.json.sample /var/lib/kontainerooo/config.json
+
 chown -R vagrant /var/go
 chown -R vagrant /home/vagrant/.nvm
+chown -R vagrant /var/lib/kontainerooo
