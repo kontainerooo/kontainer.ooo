@@ -39,8 +39,7 @@ message cKMI {
   repeated cFrontendModule frontend = 6;
   repeated string imports = 7;
   map<string, string> interfaces = 8;
-  repeated string variables = 9;
-  map<string, string> resources = 10;
+  map<string, string> resources = 9;
 }
 
 message CreateContainerRequest {

@@ -65,7 +65,6 @@ type KMI struct {
 	Frontend        FrontendArray    `sql:"type:jsonb"`
 	Imports         pq.StringArray   `sql:"type:text[]"`
 	Interfaces      abstraction.JSON `sql:"type:jsonb"`
-	Variables       pq.StringArray   `sql:"type:text[]"`
 	Resources       abstraction.JSON `sql:"type:jsonb"`
 }
 
