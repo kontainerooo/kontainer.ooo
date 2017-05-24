@@ -40,7 +40,8 @@ type Service interface {
 	// Execute executes a command in a given container
 	Execute(refID uint, id string, cmd string, env map[string]string) (string, error)
 
-	// GetEnv returns the value to a given environment variable setting
+	// GetEnv returns the value to a given environment variable setting. Returns the whole
+	// environment as string if key is empty
 	GetEnv(refID uint, id string, key string) (string, error)
 
 	// SetEnv sets an environment variable for the container
@@ -347,7 +348,28 @@ func (s *service) Execute(refID uint, id string, cmd string, env map[string]stri
 }
 
 func (s *service) GetEnv(refID uint, id string, key string) (string, error) {
-	return "", nil
+	cKMI, err := s.getContainerKMI(id)
+	if err != nil {
+		return "", err
+	}
+
+	env := cKMI.Environment.ToStringMap()
+
+	// When key is empty the whole environment is returned as string
+	if key == "" {
+		envString := ""
+		for k, v := range env {
+			envString = fmt.Sprintf("%s, \"%s\"=\"%s\"", envString, k, v)
+		}
+		return envString, nil
+	}
+
+	val, ok := env[key]
+	if !ok {
+		return "", errors.New("variable does not exist")
+	}
+
+	return val, nil
 }
 
 func (s *service) SetEnv(refID uint, id string, key string, value string) error {
