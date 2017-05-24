@@ -21,11 +21,14 @@ import (
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 	"github.com/kontainerooo/kontainer.ooo/pkg/container"
+	containerPB "github.com/kontainerooo/kontainer.ooo/pkg/container/pb"
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
-	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
+	kmiPB "github.com/kontainerooo/kontainer.ooo/pkg/kmi/pb"
 	"github.com/kontainerooo/kontainer.ooo/pkg/routing"
+	routingPB "github.com/kontainerooo/kontainer.ooo/pkg/routing/pb"
 	"github.com/kontainerooo/kontainer.ooo/pkg/testutils"
 	"github.com/kontainerooo/kontainer.ooo/pkg/user"
+	userPB "github.com/kontainerooo/kontainer.ooo/pkg/user/pb"
 	ws "github.com/kontainerooo/kontainer.ooo/pkg/websocket"
 	_ "github.com/opencontainers/runc/libcontainer/nsenter"
 )
@@ -156,16 +159,16 @@ func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger,
 	s := grpc.NewServer()
 
 	userServer := user.MakeGRPCServer(ctx, ue, logger)
-	pb.RegisterUserServiceServer(s, userServer)
+	userPB.RegisterUserServiceServer(s, userServer)
 
 	kmiServer := kmi.MakeGRPCServer(ctx, ke, logger)
-	pb.RegisterKMIServiceServer(s, kmiServer)
+	kmiPB.RegisterKMIServiceServer(s, kmiServer)
 
 	routingServer := routing.MakeGRPCServer(ctx, re, logger)
-	pb.RegisterRoutingServiceServer(s, routingServer)
+	routingPB.RegisterRoutingServiceServer(s, routingServer)
 
 	containerServer := container.MakeGRPCServer(ctx, ce, logger)
-	pb.RegisterContainerServiceServer(s, containerServer)
+	containerPB.RegisterContainerServiceServer(s, containerServer)
 
 	logger.Log("addr", grpcAddr)
 	errc <- s.Serve(ln)
@@ -279,13 +282,25 @@ func makeContainerServiceEndpoints(s container.Service) container.Endpoints {
 	{
 		StopContainerEndpoint = container.MakeStopContainerEndpoint(s)
 	}
-	var IsRunningEndpoint endpoint.Endpoint
-	{
-		IsRunningEndpoint = container.MakeIsRunningEndpoint(s)
-	}
 	var ExecuteEndpoint endpoint.Endpoint
 	{
 		ExecuteEndpoint = container.MakeExecuteEndpoint(s)
+	}
+	var GetEnvEndpoint endpoint.Endpoint
+	{
+		GetEnvEndpoint = container.MakeGetContainerKMIEndpoint(s)
+	}
+	var SetEnvEndpoint endpoint.Endpoint
+	{
+		SetEnvEndpoint = container.MakeGetContainerKMIEndpoint(s)
+	}
+	var IDForNameEndpoint endpoint.Endpoint
+	{
+		IDForNameEndpoint = container.MakeGetContainerKMIEndpoint(s)
+	}
+	var GetContainerKMIEndpoint endpoint.Endpoint
+	{
+		GetContainerKMIEndpoint = container.MakeGetContainerKMIEndpoint(s)
 	}
 
 	return container.Endpoints{
@@ -293,8 +308,11 @@ func makeContainerServiceEndpoints(s container.Service) container.Endpoints {
 		RemoveContainerEndpoint: RemoveContainerEndpoint,
 		InstancesEndpoint:       InstancesEndpoint,
 		StopContainerEndpoint:   StopContainerEndpoint,
-		IsRunningEndpoint:       IsRunningEndpoint,
 		ExecuteEndpoint:         ExecuteEndpoint,
+		GetEnvEndpoint:          GetEnvEndpoint,
+		SetEnvEndpoint:          SetEnvEndpoint,
+		IDForNameEndpoint:       IDForNameEndpoint,
+		GetContainerKMIEndpoint: GetContainerKMIEndpoint,
 	}
 }
 
