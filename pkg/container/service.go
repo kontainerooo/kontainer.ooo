@@ -373,6 +373,29 @@ func (s *service) GetEnv(refID uint, id string, key string) (string, error) {
 }
 
 func (s *service) SetEnv(refID uint, id string, key string, value string) error {
+	cKMI, err := s.getContainerKMI(id)
+	if err != nil {
+		return err
+	}
+
+	env := cKMI.Environment.ToStringMap()
+
+	env[key] = value
+
+	s.db.Begin()
+	c := &Container{
+		ContainerID: id,
+		KMI: kmi.KMI{
+			Environment: abstraction.NewJSONFromMap(env),
+		},
+	}
+
+	err = s.db.Update(&Container{}, c)
+	if err != nil {
+		s.db.Rollback()
+		return err
+	}
+
 	return nil
 }
 
@@ -402,21 +425,12 @@ func (s *service) getTemplateKMI(kmiID uint) (kmi.KMI, error) {
 
 func (s *service) getContainerKMI(containerID string) (kmi.KMI, error) {
 	// TODO: cache container KMIs
-	s.db.Begin()
-	err := s.db.Where("containerid = ?", containerID)
-	if err != nil {
-		s.db.Rollback()
-		return kmi.KMI{}, err
-	}
-
 	c := Container{}
-	err = s.db.First(&c)
+	err := s.db.First(&c, "containerid = ?", containerID)
 	if err != nil {
-		s.db.Rollback()
 		return kmi.KMI{}, err
 	}
 
-	s.db.Commit()
 	return c.KMI, nil
 }
 
