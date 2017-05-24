@@ -89,9 +89,7 @@ var provisionConfig = &configs.Config{
 	Rootless: false,
 	Hostname: "provision",
 	Hooks: &configs.Hooks{
-		Prestart: []configs.Hook{
-			configs.CommandHook{Command: configs.Command{Path: ContainerNetNSPath}},
-		},
+		Prestart: []configs.Hook{},
 	},
 }
 

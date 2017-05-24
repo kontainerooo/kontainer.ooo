@@ -16,6 +16,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
+	"github.com/kontainerooo/kontainer.ooo/pkg/util"
 	"github.com/opencontainers/runc/libcontainer"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	"golang.org/x/net/context"
@@ -57,21 +58,10 @@ type service struct {
 	libcnt    libcontainer.Factory
 	kmiClient *kmi.Endpoints
 	logger    log.Logger
+	config    util.ConfigFile
 }
 
 const (
-	// ContainerRootfsPath is the path were the container base images are stored
-	ContainerRootfsPath = "/var/lib/kontainerooo/images"
-
-	// ContainerCustomerPath is the path were customer data is stored
-	ContainerCustomerPath = "/var/lib/kontainerooo/customers/"
-
-	// ContainerNetNSPath is the path where the netns binary is stored
-	ContainerNetNSPath = "/var/go/bin/netns"
-
-	// ContainerStandardPathVariable is the standard path environment variable
-	ContainerStandardPathVariable = "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
-
 	// ContainerTermVariable is the term variable
 	ContainerTermVariable = "TERM=xterm"
 )
@@ -96,7 +86,7 @@ func (s *service) checkAndCreate(path string) error {
 
 // InitPaths initializes all paths this service needs
 func (s *service) InitPaths() error {
-	err := s.checkAndCreate(ContainerRootfsPath)
+	err := s.checkAndCreate(s.config.RootfsPath)
 	if err != nil {
 		return err
 	}
@@ -104,17 +94,17 @@ func (s *service) InitPaths() error {
 	// TODO: When there is a reasonable root filesystem and a
 	// server then check for a rootfs and if not present download
 	// the image
-	_, err = os.Stat(path.Join(ContainerRootfsPath, "rootfs.tar"))
+	_, err = os.Stat(path.Join(s.config.RootfsPath, "rootfs.tar"))
 	if err != nil {
 		return errors.New("no rootfs present")
 	}
 
-	err = s.checkAndCreate(ContainerCustomerPath)
+	err = s.checkAndCreate(s.config.CustomerPath)
 	if err != nil {
 		return err
 	}
 
-	_, err = os.Stat(ContainerNetNSPath)
+	_, err = os.Stat(s.config.NetNSPath)
 	if err != nil {
 		return errors.New("netns binary not present, please go get github.com/jessfraz/netns")
 	}
@@ -168,7 +158,7 @@ func (s *service) CreateContainer(refid uint, kmiID uint, name string) (id strin
 	cu, err := s.libcnt.Create(containerID, &configs.Config{
 		NoPivotRoot:       false,
 		ParentDeathSignal: 9,
-		Rootfs:            path.Join(ContainerCustomerPath, fmt.Sprintf("%d", refid), containerID, "rootfs"),
+		Rootfs:            path.Join(s.config.CustomerPath, fmt.Sprintf("%d", refid), containerID, "rootfs"),
 		Readonlyfs:        false,
 		RootPropagation:   0,
 		// TODO: Don't give the container all Capabilities (obviously...)
@@ -203,7 +193,7 @@ func (s *service) CreateContainer(refid uint, kmiID uint, name string) (id strin
 		Hostname: name,
 		Hooks: &configs.Hooks{
 			Prestart: []configs.Hook{
-				configs.CommandHook{Command: configs.Command{Path: ContainerNetNSPath}},
+				configs.CommandHook{Command: configs.Command{Path: s.config.NetNSPath}},
 			},
 		},
 	})
@@ -244,7 +234,7 @@ func (s *service) RemoveContainer(refid uint, id string) error {
 		return err
 	}
 
-	err = os.RemoveAll(path.Join(ContainerCustomerPath, string(refid), id))
+	err = os.RemoveAll(path.Join(s.config.CustomerPath, string(refid), id))
 	if err != nil {
 		return err
 	}
@@ -320,7 +310,7 @@ func (s *service) Execute(refid uint, id string, cmd string) (string, error) {
 
 	p := &libcontainer.Process{
 		Args:   []string{"/bin/sh", "-c", cmd},
-		Env:    []string{ContainerStandardPathVariable, ContainerTermVariable},
+		Env:    []string{s.config.StandardPathVariable, ContainerTermVariable},
 		Stdout: buf,
 	}
 
@@ -358,13 +348,13 @@ func (s *service) getKMI(kmiID uint) (kmi.KMI, error) {
 }
 
 func (s *service) initRootfs(refid uint, provisionScript string, id string) error {
-	imagePath := path.Join(ContainerRootfsPath, "rootfs.tar")
+	imagePath := path.Join(s.config.RootfsPath, "rootfs.tar")
 	_, err := os.Stat(imagePath)
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 
-	cPath := path.Join(ContainerCustomerPath, fmt.Sprintf("%d", refid))
+	cPath := path.Join(s.config.CustomerPath, fmt.Sprintf("%d", refid))
 	_, err = os.Stat(cPath)
 	if err != nil && !os.IsNotExist(err) {
 		return err
@@ -392,6 +382,7 @@ func (s *service) initRootfs(refid uint, provisionScript string, id string) erro
 func (s *service) provisionRootfs(rfsPath string, provisionScript string) error {
 	conf := provisionConfig
 	conf.Rootfs = rfsPath
+	conf.Hooks.Prestart[0] = configs.CommandHook{Command: configs.Command{Path: s.config.NetNSPath}}
 
 	name := fmt.Sprintf("provision-%s", time.Now().Format("20060102150405"))
 
@@ -416,7 +407,7 @@ func (s *service) provisionRootfs(rfsPath string, provisionScript string) error 
 
 	p := &libcontainer.Process{
 		Args:   []string{"/bin/sh", "/provision.sh"},
-		Env:    []string{ContainerStandardPathVariable, ContainerTermVariable},
+		Env:    []string{s.config.StandardPathVariable, ContainerTermVariable},
 		Stdout: buf,
 		Stderr: errBuf,
 	}
@@ -482,14 +473,20 @@ func (s *service) untar(dst string, src string) error {
 
 // NewService creates a new container service with necessary dependencies
 func NewService(lc libcontainer.Factory, db dbAdapter, ke *kmi.Endpoints, l log.Logger) (Service, error) {
+	conf, err := util.GetConfig()
+	if err != nil {
+		return &service{}, err
+	}
+
 	s := &service{
 		libcnt:    lc,
 		db:        db,
 		kmiClient: ke,
 		logger:    l,
+		config:    conf,
 	}
 
-	err := s.InitializeDatabases()
+	err = s.InitializeDatabases()
 	if err != nil {
 		return s, err
 	}
