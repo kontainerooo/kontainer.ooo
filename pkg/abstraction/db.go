@@ -23,6 +23,7 @@ type DBAdapter interface {
 	Commit()
 	GetValue() interface{}
 	GetAffectedRows() int64
+	IsNotFound(error) bool
 }
 
 // DB is an Interface to abstract gorm Database Functions
@@ -32,6 +33,8 @@ type DB interface {
 
 	// GetValue returns gorm.DB's Value property
 	GetValue() interface{}
+
+	IsNotFound(error) bool
 
 	AppendToArray(query interface{}, target string, values interface{}) error
 	RemoveFromArray(query interface{}, target string, index int) error
@@ -60,6 +63,10 @@ func (w *dbWrapper) GetAffectedRows() int64 {
 
 func (w *dbWrapper) GetValue() interface{} {
 	return w.db.Value
+}
+
+func (w *dbWrapper) IsNotFound(err error) bool {
+	return err == gorm.ErrRecordNotFound
 }
 
 func (w *dbWrapper) getTableName(v reflect.Value) string {

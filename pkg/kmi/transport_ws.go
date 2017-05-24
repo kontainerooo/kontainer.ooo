@@ -10,7 +10,7 @@ import (
 
 // MakeWebsocketService makes a set of kmi Endpoints available as a websocket Service
 func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
-	service := ws.NewServiceDescription("kmiService", ws.ProtoIDFromString("KMI"))
+	service, _ := ws.NewServiceDescription("kmiService", ws.ProtoIDFromString("KMI"))
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
 		"AddKMI",

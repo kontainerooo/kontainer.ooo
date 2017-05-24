@@ -10,7 +10,7 @@ import (
 
 // MakeWebsocketService makes a set of container Endpoints available as a websocket Service
 func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
-	service := ws.NewServiceDescription("containerService", ws.ProtoIDFromString("CNT"))
+	service, _ := ws.NewServiceDescription("containerService", ws.ProtoIDFromString("CNT"))
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
 		"CreateContainer",

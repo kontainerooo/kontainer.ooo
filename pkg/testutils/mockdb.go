@@ -81,6 +81,11 @@ func (m *MockDB) PrintTables() {
 	}
 }
 
+// IsNotFound returns whether the error is of type ErrNotFound
+func (m *MockDB) IsNotFound(err error) bool {
+	return err == ErrNotFound
+}
+
 // AppendToArray append to array
 func (m *MockDB) AppendToArray(query interface{}, target string, values interface{}) error {
 	if m.produceError() {

@@ -10,7 +10,7 @@ import (
 
 // MakeWebsocketService makes a set of routing Endpoints available as a websocket Service
 func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
-	service := ws.NewServiceDescription("routingService", ws.ProtoIDFromString("RTG"))
+	service, _ := ws.NewServiceDescription("routingService", ws.ProtoIDFromString("RTG"))
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
 		"CreateConfig",
