@@ -1,10 +1,8 @@
 # Container Module Specification
 
 ## KMI File
-The `.kmi` file is a tar-archived folder of the following structure of at least the following files:
-- A `Dockerfile`
+The `.kmi` file is a tar-archived folder of the following structure of at least the following file:
 - A `module.json` that contains the module's description
-- A folder that contains mount directories, scripts and other container related data that is specified in the `module.json`
 
 ### `module.json`
 
@@ -14,8 +12,7 @@ The `.kmi` file is a tar-archived folder of the following structure of at least 
     "version":      string,     // The module's version
     "description":  string,     // The module's description
     "type":         int,        // See messages/kmi.proto -> enum TYPE
-    "dockerfile":   string,     // The path to the Dockerfile (usually ./Dockerfile)
-    "container":    string,     // The path to the module's folder (usually ./container)
+    "provisionScript":   string,     // The path to the script that provisions the container module
 
     /* The following options can either be specified inline as object/array
      * or extracted into a separate file by providing the filename.
@@ -24,7 +21,6 @@ The `.kmi` file is a tar-archived folder of the following structure of at least 
     "env":          string || object,
     "interfaces":   string || object,
     "cmd":          string || object,
-    "mounts":       string || array,
     "variables":    string || array,
     "resources":    string || object
 }
@@ -55,20 +51,11 @@ The `cmd` key configures commands that can be used from frontend modules.
 }
 ```
 
-### `mounts.json`
-The `mounts` key specifies directories relative to the `container` directory that are mounted inside the docker container.,
-```javascript
-[
-    // Example: /mount ~> everything from container/mount is mounted to / inside the container
-    "path/to/dir"
-]
-```
-
 ### `variables.json`
 The `variables` key defines "variables" that can be used inside and outside the container. Basically they are files that are mounted in `/var/kro/variables` inside the container. The array contains paths that contain these "variable files".
 ```javascript
 [
-    // Example: /variables ~> everything from container/variables is mounted to /var/kro/variables inside the container
+    // Example: /variables ~> everything from container/variables is mounted to /var/lib/kontainerooo/customer/container/variables inside the container
     "path/to/vars"
 ]
 ```

@@ -9,9 +9,9 @@ PROTOC_OPTS="-Imessages/"
 
 .PHONY: force
 
-all: fe proto be all-scripts
+all: fe-test fe proto be all-scripts
 
-fe: fe-test
+fe:
 	cd ./frontend && npm install && $(ANGULAR_CLI) build
 
 fe-watch:
@@ -29,7 +29,7 @@ $(CMD_DIRS): force
 	cd $@ && export GOOS="linux" && go get && go build -o $(mkfile_path)/build/$(notdir $@)
 
 $(PKG_DIRS): force
-	cd $@ && go get -t && go test -short && export GOOS="linux" && go build
+	cd $@ && export GOOS="linux" && go get -t && go test -short && go build
 
 proto: force
 	$(PROTOC) $(PROTOC_OPTS) --go_out=plugins=grpc:pkg/pb ./messages/*

@@ -143,19 +143,17 @@ func Extract(src string, k *Content) error {
 }
 
 type moduleJSON struct {
-	Name        string
-	Version     string
-	Description string
-	Type        float64
-	Dockerfile  string
-	Context     string
-	Frontend    interface{}
-	Env         interface{}
-	Interfaces  interface{}
-	Cmd         interface{}
-	Mounts      interface{}
-	Variables   interface{}
-	Resources   interface{}
+	Name            string
+	Version         string
+	Description     string
+	Type            float64
+	ProvisionScript string
+	Frontend        interface{}
+	Env             interface{}
+	Interfaces      interface{}
+	Cmd             interface{}
+	Variables       interface{}
+	Resources       interface{}
 }
 
 // ChooseSource fills src with outsrc if src is not the expected data kind
@@ -341,7 +339,7 @@ func GetFrontend(src interface{}, dst *FrontendArray) error {
 	return nil
 }
 
-func GetDockerfile(p string, kc *Content) (string, error) {
+func GetProvisionScript(p string, kc *Content) (string, error) {
 	b, err := kc.GetFile(p)
 	if err != nil {
 		return "", err
@@ -361,9 +359,8 @@ func GetData(kC *Content, k *KMI) error {
 	k.Version = m.Version
 	k.Description = m.Description
 	k.Type = int(m.Type)
-	k.Context = m.Context
 
-	k.Dockerfile, err = GetDockerfile(m.Dockerfile, kC)
+	k.ProvisionScript, err = GetProvisionScript(m.ProvisionScript, kC)
 	if err != nil {
 		return err
 	}
@@ -391,11 +388,6 @@ func GetData(kC *Content, k *KMI) error {
 
 	k.Resources = make(map[string]interface{})
 	err = GetStringMap(m.Resources, kC, k.Resources, "resources", nil)
-	if err != nil {
-		return err
-	}
-
-	err = GetStringSlice(m.Mounts, kC, &k.Mounts, "mounts")
 	if err != nil {
 		return err
 	}

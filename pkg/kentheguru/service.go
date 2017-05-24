@@ -10,8 +10,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
 	"github.com/kontainerooo/kontainer.ooo/pkg/bart"
-	"github.com/kontainerooo/kontainer.ooo/pkg/containerlifecycle"
-	"github.com/kontainerooo/kontainer.ooo/pkg/customercontainer"
+	"github.com/kontainerooo/kontainer.ooo/pkg/container"
+
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
 	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
 	"github.com/kontainerooo/kontainer.ooo/pkg/routing"
@@ -25,16 +25,15 @@ type Service interface {
 }
 
 type service struct {
-	ProtocolMap                 ws.ProtocolMap
-	WebsocketUpgrader           websocket.Upgrader
-	TokenAuth                   ws.Authenticator
-	BartBus                     bart.Bus
-	SSLConfig                   ws.SSLConfig
-	UserEndpoints               user.Endpoints
-	KMIEndpoints                kmi.Endpoints
-	ContainerLifecycleEndpoints containerlifecycle.Endpoints
-	CustomerContainerEndpoints  customercontainer.Endpoints
-	RoutingEndpoints            routing.Endpoints
+	ProtocolMap        ws.ProtocolMap
+	WebsocketUpgrader  websocket.Upgrader
+	TokenAuth          ws.Authenticator
+	BartBus            bart.Bus
+	SSLConfig          ws.SSLConfig
+	UserEndpoints      user.Endpoints
+	KMIEndpoints       kmi.Endpoints
+	ContainerEndpoints container.Endpoints
+	RoutingEndpoints   routing.Endpoints
 }
 
 func (s *service) StartWebsocketTransport(errc chan error, logger log.Logger, wsAddr string) {
@@ -47,11 +46,8 @@ func (s *service) StartWebsocketTransport(errc chan error, logger log.Logger, ws
 	kmiService := kmi.MakeWebsocketService(s.KMIEndpoints)
 	wss.RegisterService(kmiService)
 
-	clsServer := containerlifecycle.MakeWebsocketService(s.ContainerLifecycleEndpoints)
-	wss.RegisterService(clsServer)
-
-	ccsServer := customercontainer.MakeWebsocketService(s.CustomerContainerEndpoints)
-	wss.RegisterService(ccsServer)
+	csServer := container.MakeWebsocketService(s.ContainerEndpoints)
+	wss.RegisterService(csServer)
 
 	routingServer := routing.MakeWebsocketService(s.RoutingEndpoints)
 	wss.RegisterService(routingServer)
@@ -110,22 +106,20 @@ func NewService(
 	sslConfig ws.SSLConfig,
 	ue user.Endpoints,
 	ke kmi.Endpoints,
-	cle containerlifecycle.Endpoints,
-	cce customercontainer.Endpoints,
+	ce container.Endpoints,
 	re routing.Endpoints,
 ) Service {
 	s := &service{
 		ProtocolMap: ws.ProtocolMap{
 			"v1": ws.BasicHandler{},
 		},
-		WebsocketUpgrader:           upgrader,
-		BartBus:                     bart.NewBus(signingKey, ue),
-		SSLConfig:                   sslConfig,
-		UserEndpoints:               ue,
-		KMIEndpoints:                ke,
-		ContainerLifecycleEndpoints: cle,
-		CustomerContainerEndpoints:  cce,
-		RoutingEndpoints:            re,
+		WebsocketUpgrader:  upgrader,
+		BartBus:            bart.NewBus(signingKey, ue),
+		SSLConfig:          sslConfig,
+		UserEndpoints:      ue,
+		KMIEndpoints:       ke,
+		ContainerEndpoints: ce,
+		RoutingEndpoints:   re,
 	}
 
 	s.TokenAuth = ws.NewTokenAuth(
