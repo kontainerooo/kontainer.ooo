@@ -46,6 +46,21 @@
         "IDFromName": "IFN",
         "GetContainerKMI": "GCK"
       }
+    },
+    "module": {
+      "id": "MDL",
+      "methods": {
+        "SetPublicKey": "SPK",
+        "RemoveFile": "RMF",
+        "RemoveDirectory": "RMD",
+        "GetFiles": "GFS",
+        "GetFile": "GTF",
+        "UploadFile": "ULF",
+        "GetModuleConfig": "GMC",
+        "SendCommand": "ISCMFN",
+        "SetEnv": "SEV",
+        "GetEnv": "GEV"
+      }
     }
   }
 }

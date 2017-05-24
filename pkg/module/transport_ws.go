@@ -10,11 +10,11 @@ import (
 
 // MakeWebsocketService makes a set of module Endpoints available as a websocket Service
 func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
-	service := ws.NewServiceDescription("moduleService", ws.ProtoIDFromString("module"))
+	service := ws.NewServiceDescription("moduleService", ws.ProtoIDFromString("MDL"))
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
 		"SetPublicKey",
-		ws.ProtoIDFromString(""),
+		ws.ProtoIDFromString("SPK"),
 		endpoints.SetPublicKeyEndpoint,
 		DecodeWSSetPublicKeyRequest,
 		EncodeGRPCSetPublicKeyResponse,
@@ -22,7 +22,7 @@ func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
 		"RemoveFile",
-		ws.ProtoIDFromString(""),
+		ws.ProtoIDFromString("RMF"),
 		endpoints.RemoveFileEndpoint,
 		DecodeWSRemoveFileRequest,
 		EncodeGRPCRemoveFileResponse,
@@ -30,7 +30,7 @@ func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
 		"RemoveDirectory",
-		ws.ProtoIDFromString(""),
+		ws.ProtoIDFromString("RMD"),
 		endpoints.RemoveDirectoryEndpoint,
 		DecodeWSRemoveDirectoryRequest,
 		EncodeGRPCRemoveDirectoryResponse,
@@ -38,7 +38,7 @@ func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
 		"GetFiles",
-		ws.ProtoIDFromString(""),
+		ws.ProtoIDFromString("GFS"),
 		endpoints.GetFilesEndpoint,
 		DecodeWSGetFilesRequest,
 		EncodeGRPCGetFilesResponse,
@@ -46,7 +46,7 @@ func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
 		"GetFile",
-		ws.ProtoIDFromString(""),
+		ws.ProtoIDFromString("GTF"),
 		endpoints.GetFileEndpoint,
 		DecodeWSGetFileRequest,
 		EncodeGRPCGetFileResponse,
@@ -54,7 +54,7 @@ func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
 		"UploadFile",
-		ws.ProtoIDFromString(""),
+		ws.ProtoIDFromString("ULF"),
 		endpoints.UploadFileEndpoint,
 		DecodeWSUploadFileRequest,
 		EncodeGRPCUploadFileResponse,
@@ -62,7 +62,7 @@ func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
 		"GetModuleConfig",
-		ws.ProtoIDFromString(""),
+		ws.ProtoIDFromString("GMC"),
 		endpoints.GetModuleConfigEndpoint,
 		DecodeWSGetModuleConfigRequest,
 		EncodeGRPCGetModuleConfigResponse,
@@ -70,7 +70,7 @@ func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
 		"SendCommand",
-		ws.ProtoIDFromString(""),
+		ws.ProtoIDFromString("SCM"),
 		endpoints.SendCommandEndpoint,
 		DecodeWSSendCommandRequest,
 		EncodeGRPCSendCommandResponse,
@@ -78,7 +78,7 @@ func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
 		"SetEnv",
-		ws.ProtoIDFromString(""),
+		ws.ProtoIDFromString("SEV"),
 		endpoints.SetEnvEndpoint,
 		DecodeWSSetEnvRequest,
 		EncodeGRPCSetEnvResponse,
@@ -86,7 +86,7 @@ func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
 		"GetEnv",
-		ws.ProtoIDFromString(""),
+		ws.ProtoIDFromString("GEV"),
 		endpoints.GetEnvEndpoint,
 		DecodeWSGetEnvRequest,
 		EncodeGRPCGetEnvResponse,
