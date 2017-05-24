@@ -24,23 +24,23 @@ import (
 
 // Service Container Service
 type Service interface {
-	// CreateContainer instanciates a container for a User with the id refid and returns its id
-	CreateContainer(refid uint, kmiID uint, name string) (id string, err error)
+	// CreateContainer instanciates a container for a User with the id refID and returns its id
+	CreateContainer(refID uint, kmiID uint, name string) (id string, err error)
 
 	// RemoveContainer is used to remove a container instance by id
-	RemoveContainer(refid uint, id string) error
+	RemoveContainer(refID uint, id string) error
 
 	// Instances returns a list of container instances of a user by id
-	Instances(refid uint) []Container
+	Instances(refID uint) []Container
 
 	// StopContainer stops a container
-	StopContainer(refid uint, id string) error
+	StopContainer(refID uint, id string) error
 
 	// IsRunning checks if a container is running
-	IsRunning(refid uint, id string) bool
+	IsRunning(refID uint, id string) bool
 
 	// Execute executes a command in a given container
-	Execute(refid uint, id string, cmd string) (string, error)
+	Execute(refID uint, id string, cmd string) (string, error)
 }
 
 type dbAdapter interface {
@@ -112,7 +112,7 @@ func (s *service) InitPaths() error {
 	return nil
 }
 
-func (s *service) CreateContainer(refid uint, kmiID uint, name string) (id string, err error) {
+func (s *service) CreateContainer(refID uint, kmiID uint, name string) (id string, err error) {
 	kmi, err := s.getKMI(kmiID)
 	if err != nil {
 		return "", err
@@ -120,10 +120,10 @@ func (s *service) CreateContainer(refid uint, kmiID uint, name string) (id strin
 
 	// Compute the container id - consisting of userID + imagename + timestamp
 	h := md5.New()
-	io.WriteString(h, fmt.Sprintf("%d%d%s", refid, kmi.ID, time.Now().Format("20060102150405")))
+	io.WriteString(h, fmt.Sprintf("%d%d%s", refID, kmi.ID, time.Now().Format("20060102150405")))
 	containerID := fmt.Sprintf("%x", h.Sum(nil))
 
-	s.initRootfs(refid, kmi.ProvisionScript, containerID)
+	s.initRootfs(refID, kmi.ProvisionScript, containerID)
 
 	mountCfg := []*configs.Mount{&configs.Mount{
 		Source:      "proc",
@@ -158,7 +158,7 @@ func (s *service) CreateContainer(refid uint, kmiID uint, name string) (id strin
 	cu, err := s.libcnt.Create(containerID, &configs.Config{
 		NoPivotRoot:       false,
 		ParentDeathSignal: 9,
-		Rootfs:            path.Join(s.config.CustomerPath, fmt.Sprintf("%d", refid), containerID, "rootfs"),
+		Rootfs:            path.Join(s.config.CustomerPath, fmt.Sprintf("%d", refID), containerID, "rootfs"),
 		Readonlyfs:        false,
 		RootPropagation:   0,
 		// TODO: Don't give the container all Capabilities (obviously...)
@@ -215,7 +215,7 @@ func (s *service) CreateContainer(refid uint, kmiID uint, name string) (id strin
 	}
 
 	c := Container{
-		RefID:       refid,
+		RefID:       refID,
 		ContainerID: containerID,
 		KMI:         kmi,
 		Running:     false,
@@ -228,13 +228,13 @@ func (s *service) CreateContainer(refid uint, kmiID uint, name string) (id strin
 	return containerID, nil
 }
 
-func (s *service) RemoveContainer(refid uint, id string) error {
-	err := s.StopContainer(refid, id)
+func (s *service) RemoveContainer(refID uint, id string) error {
+	err := s.StopContainer(refID, id)
 	if err != nil {
 		return err
 	}
 
-	err = os.RemoveAll(path.Join(s.config.CustomerPath, string(refid), id))
+	err = os.RemoveAll(path.Join(s.config.CustomerPath, string(refID), id))
 	if err != nil {
 		return err
 	}
@@ -251,8 +251,8 @@ func (s *service) RemoveContainer(refid uint, id string) error {
 	return nil
 }
 
-func (s *service) Instances(refid uint) []Container {
-	s.db.Where("refid = ?", refid)
+func (s *service) Instances(refID uint) []Container {
+	s.db.Where("refid = ?", refID)
 
 	cs := []Container{}
 	err := s.db.Find(&cs)
@@ -263,7 +263,7 @@ func (s *service) Instances(refid uint) []Container {
 	return cs
 }
 
-func (s *service) StopContainer(refid uint, id string) error {
+func (s *service) StopContainer(refID uint, id string) error {
 	container, err := s.libcnt.Load(id)
 	if err != nil {
 		return err
@@ -287,8 +287,8 @@ func (s *service) StopContainer(refid uint, id string) error {
 	return nil
 }
 
-func (s *service) IsRunning(refid uint, id string) bool {
-	s.db.Where("refid = ? AND id = ?", refid, id)
+func (s *service) IsRunning(refID uint, id string) bool {
+	s.db.Where("refid = ? AND id = ?", refID, id)
 
 	c := Container{}
 	err := s.db.Find(&c)
@@ -299,7 +299,7 @@ func (s *service) IsRunning(refid uint, id string) bool {
 	return c.Running
 }
 
-func (s *service) Execute(refid uint, id string, cmd string) (string, error) {
+func (s *service) Execute(refID uint, id string, cmd string) (string, error) {
 	container, err := s.libcnt.Load(id)
 	if err != nil {
 		return "", err
@@ -347,14 +347,14 @@ func (s *service) getKMI(kmiID uint) (kmi.KMI, error) {
 	return *kmi, nil
 }
 
-func (s *service) initRootfs(refid uint, provisionScript string, id string) error {
+func (s *service) initRootfs(refID uint, provisionScript string, id string) error {
 	imagePath := path.Join(s.config.RootfsPath, "rootfs.tar")
 	_, err := os.Stat(imagePath)
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 
-	cPath := path.Join(s.config.CustomerPath, fmt.Sprintf("%d", refid))
+	cPath := path.Join(s.config.CustomerPath, fmt.Sprintf("%d", refID))
 	_, err = os.Stat(cPath)
 	if err != nil && !os.IsNotExist(err) {
 		return err
