@@ -52,6 +52,30 @@ func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
 		EncodeGRPCExecuteResponse,
 	))
 
+	service.AddEndpoint(ws.NewServiceEndpoint(
+		"GetEnv",
+		ws.ProtoIDFromString("GEV"),
+		endpoints.GetEnvEndpoint,
+		DecodeWSGetEnvRequest,
+		EncodeGRPCGetEnvResponse,
+	))
+
+	service.AddEndpoint(ws.NewServiceEndpoint(
+		"SetEnv",
+		ws.ProtoIDFromString("SEV"),
+		endpoints.SetEnvEndpoint,
+		DecodeWSSetEnvRequest,
+		EncodeGRPCSetEnvResponse,
+	))
+
+	service.AddEndpoint(ws.NewServiceEndpoint(
+		"IDForName",
+		ws.ProtoIDFromString("IFN"),
+		endpoints.IDForNameEndpoint,
+		DecodeWSIDForNameRequest,
+		EncodeGRPCIDForNameResponse,
+	))
+
 	return service
 }
 
@@ -113,4 +137,40 @@ func DecodeWSExecuteRequest(ctx context.Context, data interface{}) (interface{},
 	}
 
 	return DecodeGRPCExecuteRequest(ctx, req)
+}
+
+// DecodeWSGetEnvRequest is a websocket.DecodeRequestFunc that converts a
+// WS GetEnv request to a messages/container.proto-domain getenv request.
+func DecodeWSGetEnvRequest(ctx context.Context, data interface{}) (interface{}, error) {
+	req := &pb.GetEnvRequest{}
+	err := proto.Unmarshal(data.([]byte), req)
+	if err != nil {
+		return nil, err
+	}
+
+	return DecodeGRPCGetEnvRequest(ctx, req)
+}
+
+// DecodeWSSetEnvRequest is a websocket.DecodeRequestFunc that converts a
+// WS SetEnv request to a messages/container.proto-domain setenv request.
+func DecodeWSSetEnvRequest(ctx context.Context, data interface{}) (interface{}, error) {
+	req := &pb.SetEnvRequest{}
+	err := proto.Unmarshal(data.([]byte), req)
+	if err != nil {
+		return nil, err
+	}
+
+	return DecodeGRPCSetEnvRequest(ctx, req)
+}
+
+// DecodeWSIDForNameRequest is a websocket.DecodeRequestFunc that converts a
+// WS IDForName request to a messages/container.proto-domain idforname request.
+func DecodeWSIDForNameRequest(ctx context.Context, data interface{}) (interface{}, error) {
+	req := &pb.IDForNameRequest{}
+	err := proto.Unmarshal(data.([]byte), req)
+	if err != nil {
+		return nil, err
+	}
+
+	return DecodeGRPCIDForNameRequest(ctx, req)
 }

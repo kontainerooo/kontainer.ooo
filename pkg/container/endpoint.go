@@ -14,6 +14,9 @@ type Endpoints struct {
 	StartContainerEndpoint  endpoint.Endpoint
 	StopContainerEndpoint   endpoint.Endpoint
 	ExecuteEndpoint         endpoint.Endpoint
+	GetEnvEndpoint          endpoint.Endpoint
+	SetEnvEndpoint          endpoint.Endpoint
+	IDForNameEndpoint       endpoint.Endpoint
 }
 
 // CreateContainerRequest is the request struct for the CreateContainerEndpoint
@@ -111,6 +114,7 @@ type ExecuteRequest struct {
 	RefID uint `bart:"ref"`
 	ID    string
 	CMD   string
+	Env   map[string]string
 }
 
 // ExecuteResponse is the response struct for the ExecuteEndpoint
@@ -123,10 +127,83 @@ type ExecuteResponse struct {
 func MakeExecuteEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(ExecuteRequest)
-		res, err := s.Execute(req.RefID, req.ID, req.CMD)
+		res, err := s.Execute(req.RefID, req.ID, req.CMD, req.Env)
 		return ExecuteResponse{
 			Response: res,
 			Error:    err,
+		}, nil
+	}
+}
+
+// GetEnvRequest is the request struct for the GetEnvEndpoint
+type GetEnvRequest struct {
+	RefID uint `bart:"ref"`
+	ID    string
+	Key   string
+}
+
+// GetEnvResponse is the response struct for the GetEnvEndpoint
+type GetEnvResponse struct {
+	Value string
+	Error error
+}
+
+// MakeGetEnvEndpoint creates a gokit endpoint which invokes GetEnv
+func MakeGetEnvEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GetEnvRequest)
+		res, err := s.GetEnv(req.RefID, req.ID, req.Key)
+		return GetEnvResponse{
+			Value: res,
+			Error: err,
+		}, nil
+	}
+}
+
+// SetEnvRequest is the request struct for the SetEnvEndpoint
+type SetEnvRequest struct {
+	RefID uint `bart:"ref"`
+	ID    string
+	Key   string
+	Value string
+}
+
+// SetEnvResponse is the response struct for the SetEnvEndpoint
+type SetEnvResponse struct {
+	Error error
+}
+
+// MakeSetEnvEndpoint creates a gokit endpoint which invokes SetEnv
+func MakeSetEnvEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(SetEnvRequest)
+		err := s.SetEnv(req.RefID, req.ID, req.Key, req.Value)
+		return SetEnvResponse{
+			Error: err,
+		}, nil
+	}
+}
+
+// IDForNameRequest is the request struct for the IDForNameEndpoint
+type IDForNameRequest struct {
+	RefID uint `bart:"ref"`
+	Name  string
+}
+
+// IDForNameResponse is the response struct for the IDForNameEndpoint
+type IDForNameResponse struct {
+	ID    string
+	Error error
+}
+
+// MakeIDForNameEndpoint creates a gokit endpoint which invokes IDForName
+func MakeIDForNameEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(IDForNameRequest)
+		id, err := s.IDForName(req.RefID, req.Name)
+		return IDForNameResponse{
+			ID:    id,
+			Error: err,
 		}, nil
 	}
 }

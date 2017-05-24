@@ -301,7 +301,7 @@ func (s *service) Execute(refID uint, id string, cmd string, env map[string]stri
 
 	execEnv := cKMI.Environment.ToStringMap()
 	// Construct environment and replace global with exec specific env
-	for gK, gV := range execEnv {
+	for gK := range execEnv {
 		for xK, xV := range env {
 			if strings.ToLower(gK) == strings.ToLower(xK) {
 				execEnv[gK] = xV
@@ -325,7 +325,7 @@ func (s *service) Execute(refID uint, id string, cmd string, env map[string]stri
 	// Make env string array
 	envString := []string{}
 	for k, v := range execEnv {
-		envString = append(envString, fmt.Sprintf("\"%s\"=\"%s\""), k, v)
+		envString = append(envString, fmt.Sprintf("\"%s\"=\"%s\"", k, v))
 	}
 
 	p := &libcontainer.Process{
@@ -513,7 +513,7 @@ func (s *service) provisionRootfs(cKMI kmi.KMI, rfsPath string, provisionScript 
 	// Make env string array
 	envString := []string{}
 	for k, v := range execEnv {
-		envString = append(envString, fmt.Sprintf("\"%s\"=\"%s\""), k, v)
+		envString = append(envString, fmt.Sprintf("\"%s\"=\"%s\"", k, v))
 	}
 
 	p := &libcontainer.Process{

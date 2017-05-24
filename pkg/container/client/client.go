@@ -67,18 +67,6 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 		).Endpoint()
 	}
 
-	var IsRunningEndpoint endpoint.Endpoint
-	{
-		IsRunningEndpoint = grpctransport.NewClient(
-			conn,
-			"containerService",
-			"IsRunning",
-			EncodeGRPCIsRunningRequest,
-			DecodeGRPCIsRunningResponse,
-			pb.IsRunningResponse{},
-		).Endpoint()
-	}
-
 	var ExecuteEndpoint endpoint.Endpoint
 	{
 		ExecuteEndpoint = grpctransport.NewClient(
@@ -91,13 +79,51 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 		).Endpoint()
 	}
 
+	var GetEnvEndpoint endpoint.Endpoint
+	{
+		GetEnvEndpoint = grpctransport.NewClient(
+			conn,
+			"containerService",
+			"GetEnv",
+			EncodeGRPCGetEnvRequest,
+			DecodeGRPCGetEnvResponse,
+			pb.GetEnvResponse{},
+		).Endpoint()
+	}
+
+	var SetEnvEndpoint endpoint.Endpoint
+	{
+		SetEnvEndpoint = grpctransport.NewClient(
+			conn,
+			"containerService",
+			"SetEnv",
+			EncodeGRPCSetEnvRequest,
+			DecodeGRPCSetEnvResponse,
+			pb.SetEnvResponse{},
+		).Endpoint()
+	}
+
+	var IDForNameEndpoint endpoint.Endpoint
+	{
+		IDForNameEndpoint = grpctransport.NewClient(
+			conn,
+			"containerService",
+			"IDForName",
+			EncodeGRPCIDForNameRequest,
+			DecodeGRPCIDForNameResponse,
+			pb.IDForNameResponse{},
+		).Endpoint()
+	}
+
 	return &container.Endpoints{
 		CreateContainerEndpoint: CreateContainerEndpoint,
 		RemoveContainerEndpoint: RemoveContainerEndpoint,
 		InstancesEndpoint:       InstancesEndpoint,
 		StopContainerEndpoint:   StopContainerEndpoint,
-		IsRunningEndpoint:       IsRunningEndpoint,
 		ExecuteEndpoint:         ExecuteEndpoint,
+		GetEnvEndpoint:          GetEnvEndpoint,
+		SetEnvEndpoint:          SetEnvEndpoint,
+		IDForNameEndpoint:       IDForNameEndpoint,
 	}
 }
 
@@ -115,7 +141,6 @@ func pbContainersToContainers(pbc []*pb.Container) []container.Container {
 			RefID:         uint(c.RefID),
 			ContainerID:   c.ContainerID,
 			ContainerName: c.ContainerName,
-			Running:       c.Running,
 			KMI:           *convertCKMI(c.Kmi),
 		})
 	}
@@ -291,25 +316,6 @@ func DecodeGRPCStopContainerResponse(_ context.Context, grpcResponse interface{}
 	}, nil
 }
 
-// EncodeGRPCIsRunningRequest is a transport/grpc.EncodeRequestFunc that converts a
-// messages/container.proto-domain isrunning request to a gRPC IsRunning request.
-func EncodeGRPCIsRunningRequest(_ context.Context, request interface{}) (interface{}, error) {
-	req := request.(*container.IsRunningRequest)
-	return &pb.IsRunningRequest{
-		RefID: uint32(req.RefID),
-		ID:    req.ID,
-	}, nil
-}
-
-// DecodeGRPCIsRunningResponse is a transport/grpc.DecodeResponseFunc that converts a
-// gRPC IsRunning response to a messages/container.proto-domain isrunning response.
-func DecodeGRPCIsRunningResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
-	response := grpcResponse.(*pb.IsRunningResponse)
-	return &container.IsRunningResponse{
-		IsRunning: response.IsRunning,
-	}, nil
-}
-
 // EncodeGRPCExecuteRequest is a transport/grpc.EncodeRequestFunc that converts a
 // messages/container.proto-domain execute request to a gRPC Execute request.
 func EncodeGRPCExecuteRequest(_ context.Context, request interface{}) (interface{}, error) {
@@ -326,6 +332,67 @@ func EncodeGRPCExecuteRequest(_ context.Context, request interface{}) (interface
 func DecodeGRPCExecuteResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
 	response := grpcResponse.(*pb.ExecuteResponse)
 	return &container.ExecuteResponse{
+		Error: getError(response.Error),
+	}, nil
+}
+
+// EncodeGRPCGetEnvRequest is a transport/grpc.EncodeRequestFunc that converts a
+// messages/container.proto-domain getenv request to a gRPC GetEnv request.
+func EncodeGRPCGetEnvRequest(_ context.Context, request interface{}) (interface{}, error) {
+	req := request.(*container.GetEnvRequest)
+	return &pb.GetEnvRequest{
+		RefID: uint32(req.RefID),
+		ID:    req.ID,
+		Key:   req.Key,
+	}, nil
+}
+
+// DecodeGRPCGetEnvResponse is a transport/grpc.DecodeResponseFunc that converts a
+// gRPC GetEnv response to a messages/container.proto-domain getenv response.
+func DecodeGRPCGetEnvResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
+	response := grpcResponse.(*pb.GetEnvResponse)
+	return &container.GetEnvResponse{
+		Value: response.Value,
+		Error: getError(response.Error),
+	}, nil
+}
+
+// EncodeGRPCSetEnvRequest is a transport/grpc.EncodeRequestFunc that converts a
+// messages/container.proto-domain setenv request to a gRPC SetEnv request.
+func EncodeGRPCSetEnvRequest(_ context.Context, request interface{}) (interface{}, error) {
+	req := request.(*container.SetEnvRequest)
+	return &pb.SetEnvRequest{
+		RefID: uint32(req.RefID),
+		ID:    req.ID,
+		Key:   req.Key,
+		Value: req.Value,
+	}, nil
+}
+
+// DecodeGRPCSetEnvResponse is a transport/grpc.DecodeResponseFunc that converts a
+// gRPC SetEnv response to a messages/container.proto-domain setenv response.
+func DecodeGRPCSetEnvResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
+	response := grpcResponse.(*pb.SetEnvResponse)
+	return &container.SetEnvResponse{
+		Error: getError(response.Error),
+	}, nil
+}
+
+// EncodeGRPCIDForNameRequest is a transport/grpc.EncodeRequestFunc that converts a
+// messages/container.proto-domain idforname request to a gRPC IDForName request.
+func EncodeGRPCIDForNameRequest(_ context.Context, request interface{}) (interface{}, error) {
+	req := request.(*container.IDForNameRequest)
+	return &pb.IDForNameRequest{
+		RefID: uint32(req.RefID),
+		Name:  req.Name,
+	}, nil
+}
+
+// DecodeGRPCIDForNameResponse is a transport/grpc.DecodeResponseFunc that converts a
+// gRPC IDForName response to a messages/container.proto-domain idforname response.
+func DecodeGRPCIDForNameResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
+	response := grpcResponse.(*pb.IDForNameResponse)
+	return &container.IDForNameResponse{
 		Error: getError(response.Error),
 	}, nil
 }
