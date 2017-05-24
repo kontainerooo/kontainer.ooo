@@ -24,6 +24,8 @@ import (
 	containerPB "github.com/kontainerooo/kontainer.ooo/pkg/container/pb"
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
 	kmiPB "github.com/kontainerooo/kontainer.ooo/pkg/kmi/pb"
+	"github.com/kontainerooo/kontainer.ooo/pkg/module"
+	modulePB "github.com/kontainerooo/kontainer.ooo/pkg/module/pb"
 	"github.com/kontainerooo/kontainer.ooo/pkg/routing"
 	routingPB "github.com/kontainerooo/kontainer.ooo/pkg/routing/pb"
 	"github.com/kontainerooo/kontainer.ooo/pkg/testutils"
@@ -124,12 +126,20 @@ func main() {
 
 	containerServiceEndpoints := makeContainerServiceEndpoints(containerService)
 
+	var moduleService module.Service
+	moduleService, err = module.NewService(&containerServiceEndpoints, logger)
+	if err != nil {
+		panic(err)
+	}
+
+	moduleServeEndpoints := makeModuleServiceEndpoints(moduleService)
+
 	errc := make(chan error)
 	ctx := context.Background()
 
-	go startGRPCTransport(ctx, errc, logger, grpcAddr, userEndpoints, kmiEndpoints, routingEndpoints, containerServiceEndpoints)
+	go startGRPCTransport(ctx, errc, logger, grpcAddr, userEndpoints, kmiEndpoints, routingEndpoints, containerServiceEndpoints, moduleServeEndpoints)
 
-	go startWebsocketTransport(errc, logger, wsAddr, userEndpoints, kmiEndpoints, routingEndpoints, containerServiceEndpoints)
+	go startWebsocketTransport(errc, logger, wsAddr, userEndpoints, kmiEndpoints, routingEndpoints, containerServiceEndpoints, moduleServeEndpoints)
 
 	conn, err := grpc.Dial(grpcAddr, grpc.WithInsecure(), grpc.WithTimeout(time.Second))
 	if err != nil {
@@ -148,7 +158,7 @@ func main() {
 	logger.Log("exit", <-errc)
 }
 
-func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger, grpcAddr string, ue user.Endpoints, ke kmi.Endpoints, re routing.Endpoints, ce container.Endpoints) {
+func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger, grpcAddr string, ue user.Endpoints, ke kmi.Endpoints, re routing.Endpoints, ce container.Endpoints, me module.Endpoints) {
 	logger = log.With(logger, "transport", "gRPC")
 
 	ln, err := net.Listen("tcp", grpcAddr)
@@ -170,11 +180,14 @@ func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger,
 	containerServer := container.MakeGRPCServer(ctx, ce, logger)
 	containerPB.RegisterContainerServiceServer(s, containerServer)
 
+	moduleServer := module.MakeGRPCServer(ctx, me, logger)
+	modulePB.RegisterModuleServiceServer(s, moduleServer)
+
 	logger.Log("addr", grpcAddr)
 	errc <- s.Serve(ln)
 }
 
-func startWebsocketTransport(errc chan error, logger log.Logger, wsAddr string, ue user.Endpoints, ke kmi.Endpoints, re routing.Endpoints, ce container.Endpoints) {
+func startWebsocketTransport(errc chan error, logger log.Logger, wsAddr string, ue user.Endpoints, ke kmi.Endpoints, re routing.Endpoints, ce container.Endpoints, me module.Endpoints) {
 	logger = log.With(logger, "transport", "ws")
 	s := ws.NewServer(ws.BasicHandler{}, logger)
 
@@ -189,6 +202,9 @@ func startWebsocketTransport(errc chan error, logger log.Logger, wsAddr string, 
 
 	containerServer := container.MakeWebsocketService(ce)
 	s.RegisterService(containerServer)
+
+	moduleServer := module.MakeWebsocketService(me)
+	s.RegisterService(moduleServer)
 
 	logger.Log("addr", wsAddr)
 	errc <- s.Serve(wsAddr)
@@ -378,5 +394,62 @@ func makeRoutingServiceEndpoints(s routing.Service) routing.Endpoints {
 		AddServerNameEndpoint:         AddServerNameEndpoint,
 		RemoveServerNameEndpoint:      RemoveServerNameEndpoint,
 		ConfigurationsEndpoint:        ConfigurationsEndpoint,
+	}
+}
+
+func makeModuleServiceEndpoints(s module.Service) module.Endpoints {
+
+	var SetPublicKeyEndpoint endpoint.Endpoint
+	{
+		SetPublicKeyEndpoint = module.MakeSetPublicKeyEndpoint(s)
+	}
+	var RemoveFileEndpoint endpoint.Endpoint
+	{
+		RemoveFileEndpoint = module.MakeRemoveFileEndpoint(s)
+	}
+	var RemoveDirectoryEndpoint endpoint.Endpoint
+	{
+		RemoveDirectoryEndpoint = module.MakeRemoveDirectoryEndpoint(s)
+	}
+	var GetFilesEndpoint endpoint.Endpoint
+	{
+		GetFilesEndpoint = module.MakeGetFilesEndpoint(s)
+	}
+	var GetFileEndpoint endpoint.Endpoint
+	{
+		GetFileEndpoint = module.MakeGetFileEndpoint(s)
+	}
+	var UploadFileEndpoint endpoint.Endpoint
+	{
+		UploadFileEndpoint = module.MakeUploadFileEndpoint(s)
+	}
+	var GetModuleConfigEndpoint endpoint.Endpoint
+	{
+		GetModuleConfigEndpoint = module.MakeGetModuleConfigEndpoint(s)
+	}
+	var SendCommandEndpoint endpoint.Endpoint
+	{
+		SendCommandEndpoint = module.MakeSendCommandEndpoint(s)
+	}
+	var SetEnvEndpoint endpoint.Endpoint
+	{
+		SetEnvEndpoint = module.MakeSetEnvEndpoint(s)
+	}
+	var GetEnvEndpoint endpoint.Endpoint
+	{
+		GetEnvEndpoint = module.MakeGetEnvEndpoint(s)
+	}
+
+	return module.Endpoints{
+		SetPublicKeyEndpoint:    SetPublicKeyEndpoint,
+		RemoveFileEndpoint:      RemoveFileEndpoint,
+		RemoveDirectoryEndpoint: RemoveDirectoryEndpoint,
+		GetFilesEndpoint:        GetFilesEndpoint,
+		GetFileEndpoint:         GetFileEndpoint,
+		UploadFileEndpoint:      UploadFileEndpoint,
+		GetModuleConfigEndpoint: GetModuleConfigEndpoint,
+		SendCommandEndpoint:     SendCommandEndpoint,
+		SetEnvEndpoint:          SetEnvEndpoint,
+		GetEnvEndpoint:          GetEnvEndpoint,
 	}
 }
