@@ -10,7 +10,7 @@ import (
 
 // MakeWebsocketService makes a set of user Endpoints available as a websocket Service
 func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
-	service := ws.NewServiceDescription("userService", ws.ProtoIDFromString("USR"))
+	service, _ := ws.NewServiceDescription("userService", ws.ProtoIDFromString("USR"))
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
 		"CreateUser",
@@ -133,4 +133,16 @@ func DecodeWSGetUserRequest(ctx context.Context, data interface{}) (interface{},
 	}
 
 	return DecodeGRPCGetUserRequest(ctx, req)
+}
+
+// DecodeWSCheckLoginCredentialsRequest is a websocket.DecodeRequestFunc that converts a
+// WS CheckLoginCredentials request to a messages/user.proto-domain CheckLoginCredentials request.
+func DecodeWSCheckLoginCredentialsRequest(ctx context.Context, data interface{}) (interface{}, error) {
+	req := &pb.CheckLoginCredentialsRequest{}
+	err := proto.Unmarshal(data.([]byte), req)
+	if err != nil {
+		return nil, err
+	}
+
+	return DecodeGRPCCheckLoginCredentialsRequest(ctx, req)
 }

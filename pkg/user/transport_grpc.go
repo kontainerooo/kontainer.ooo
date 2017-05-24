@@ -52,16 +52,23 @@ func MakeGRPCServer(ctx context.Context, endpoints Endpoints, logger log.Logger)
 			EncodeGRPCGetUserResponse,
 			options...,
 		),
+		checkLoginCredentials: grpctransport.NewServer(
+			endpoints.CheckLoginCredentialsEndpoint,
+			DecodeGRPCCheckLoginCredentialsRequest,
+			EncodeGRPCCheckLoginCredentialsResponse,
+			options...,
+		),
 	}
 }
 
 type grpcServer struct {
-	createUser     grpctransport.Handler
-	editUser       grpctransport.Handler
-	changeUsername grpctransport.Handler
-	deleteUser     grpctransport.Handler
-	resetPassword  grpctransport.Handler
-	getUser        grpctransport.Handler
+	createUser            grpctransport.Handler
+	editUser              grpctransport.Handler
+	changeUsername        grpctransport.Handler
+	deleteUser            grpctransport.Handler
+	resetPassword         grpctransport.Handler
+	getUser               grpctransport.Handler
+	checkLoginCredentials grpctransport.Handler
 }
 
 func (s *grpcServer) CreateUser(ctx oldcontext.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
@@ -224,6 +231,16 @@ func DecodeGRPCGetUserRequest(_ context.Context, grpcReq interface{}) (interface
 	}, nil
 }
 
+// DecodeGRPCCheckLoginCredentialsRequest is a transport/grpc.DecodeRequestFunc that converts a
+// gRPC CheckLoginCredentialsRequest request to a user-domain CheckLoginCredentials request.
+func DecodeGRPCCheckLoginCredentialsRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
+	req := grpcReq.(*pb.CheckLoginCredentialsRequest)
+	return CheckLoginCredentialsRequest{
+		Username: req.Username,
+		Password: req.Password,
+	}, nil
+}
+
 // EncodeGRPCCreateUserResponse is a transport/grpc.EncodeRequestFunc that converts a
 // user-domain createUser response to a gRPC CreateUser response.
 func EncodeGRPCCreateUserResponse(_ context.Context, response interface{}) (interface{}, error) {
@@ -291,6 +308,16 @@ func EncodeGRPCGetUserResponse(_ context.Context, response interface{}) (interfa
 	}
 	if res.Error != nil {
 		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
+}
+
+// EncodeGRPCCheckLoginCredentialsResponse is a transport/grpc.EncodeRequestFunc that converts a
+// user-domain CheckLoginCredentials response to a gRPC CheckLoginCredentials response.
+func EncodeGRPCCheckLoginCredentialsResponse(_ context.Context, response interface{}) (interface{}, error) {
+	res := response.(CheckLoginCredentialsResponse)
+	gRPCRes := &pb.CheckLoginCredentialsResponse{
+		ID: uint32(res.ID),
 	}
 	return gRPCRes, nil
 }

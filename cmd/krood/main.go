@@ -15,12 +15,14 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
+	"github.com/gorilla/websocket"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/opencontainers/runc/libcontainer"
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 	"github.com/kontainerooo/kontainer.ooo/pkg/container"
+	"github.com/kontainerooo/kontainer.ooo/pkg/kentheguru"
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
 	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
 	"github.com/kontainerooo/kontainer.ooo/pkg/routing"
@@ -49,10 +51,12 @@ func init() {
 func main() {
 
 	var (
-		grpcAddr  = ":8082"
-		wsAddr    = ":8081"
-		isMock    bool
-		dbWrapper abstraction.DB
+		grpcAddr     = ":8082"
+		wsAddr       = ":8083"
+		wsAddrSecure = ":8084"
+		bcryptCost   = 15
+		isMock       bool
+		dbWrapper    abstraction.DB
 	)
 
 	/* The krood binary can now be given a flag called `--mock`. With this
@@ -83,7 +87,7 @@ func main() {
 	}
 
 	var userService user.Service
-	userService, err := user.NewService(dbWrapper)
+	userService, err := user.NewService(dbWrapper, bcryptCost)
 	if err != nil {
 		panic(err)
 	}
@@ -126,14 +130,26 @@ func main() {
 
 	go startGRPCTransport(ctx, errc, logger, grpcAddr, userEndpoints, kmiEndpoints, routingEndpoints, containerServiceEndpoints)
 
-	go startWebsocketTransport(errc, logger, wsAddr, userEndpoints, kmiEndpoints, routingEndpoints, containerServiceEndpoints)
-
 	conn, err := grpc.Dial(grpcAddr, grpc.WithInsecure(), grpc.WithTimeout(time.Second))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v", err)
 		os.Exit(1)
 	}
 	defer conn.Close()
+
+	kenTheGuruService := kentheguru.NewService(
+		"bu", "bu", "bu", // TODO: generate keys
+		websocket.Upgrader{
+			EnableCompression: true,
+		},
+		ws.SSLConfig{
+			Addr: wsAddrSecure,
+			// TODO: generate certificate and key
+		},
+		userEndpoints, kmiEndpoints, containerServiceEndpoints, routingEndpoints,
+	)
+
+	go kenTheGuruService.StartWebsocketTransport(errc, logger, wsAddr)
 
 	// Interrupt handler.
 	go func() {
@@ -171,26 +187,6 @@ func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger,
 	errc <- s.Serve(ln)
 }
 
-func startWebsocketTransport(errc chan error, logger log.Logger, wsAddr string, ue user.Endpoints, ke kmi.Endpoints, re routing.Endpoints, ce container.Endpoints) {
-	logger = log.With(logger, "transport", "ws")
-	s := ws.NewServer(ws.BasicHandler{}, logger)
-
-	userService := user.MakeWebsocketService(ue)
-	s.RegisterService(userService)
-
-	kmiService := kmi.MakeWebsocketService(ke)
-	s.RegisterService(kmiService)
-
-	routingServer := routing.MakeWebsocketService(re)
-	s.RegisterService(routingServer)
-
-	containerServer := container.MakeWebsocketService(ce)
-	s.RegisterService(containerServer)
-
-	logger.Log("addr", wsAddr)
-	errc <- s.Serve(wsAddr)
-}
-
 func makeUserServiceEndpoints(s user.Service) user.Endpoints {
 	var createUserEndpoint endpoint.Endpoint
 	{
@@ -222,13 +218,19 @@ func makeUserServiceEndpoints(s user.Service) user.Endpoints {
 		getUserEndpoint = user.MakeGetUserEndpoint(s)
 	}
 
+	var checkLoginCredentialsEndpoint endpoint.Endpoint
+	{
+		checkLoginCredentialsEndpoint = user.MakeCheckLoginCredentialsEndpoint(s)
+	}
+
 	return user.Endpoints{
-		CreateUserEndpoint:     createUserEndpoint,
-		EditUserEndpoint:       editUserEndpoint,
-		ChangeUsernameEndpoint: changeUsernaemEndpoint,
-		DeleteUserEndpoint:     deleteUserEndpoint,
-		ResetPasswordEndpoint:  resetPasswordEndpoint,
-		GetUserEndpoint:        getUserEndpoint,
+		CreateUserEndpoint:            createUserEndpoint,
+		EditUserEndpoint:              editUserEndpoint,
+		ChangeUsernameEndpoint:        changeUsernaemEndpoint,
+		DeleteUserEndpoint:            deleteUserEndpoint,
+		ResetPasswordEndpoint:         resetPasswordEndpoint,
+		GetUserEndpoint:               getUserEndpoint,
+		CheckLoginCredentialsEndpoint: checkLoginCredentialsEndpoint,
 	}
 }
 

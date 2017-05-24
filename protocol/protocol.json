@@ -45,5 +45,11 @@
         "Execute": "EXE"
       }
     }
+  },
+  "kentheguru": {
+    "id": "KTG",
+    "methods": {
+      "Authentication": "AUT"
+    }
   }
 }
