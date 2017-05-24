@@ -1,0 +1,125 @@
+syntax = "proto3";
+package module;
+option go_package = "pb";
+
+import "kmi.proto";
+
+service ModuleService {
+    rpc SetPublicKey (SetPublicKeyRequest) returns (SetPublicKeyResponse);
+    rpc RemoveFile (RemoveFileRequest) returns (RemoveFileResponse);
+	rpc RemoveDirectory (RemoveDirectoryRequest) returns (RemoveDirectoryResponse);
+	rpc GetFiles (GetFilesRequest) returns (GetFilesResponse);
+	rpc GetFile (GetFileRequest) returns (GetFileResponse);
+	rpc UploadFile (UploadFileRequest) returns (UploadFileResponse);
+	rpc GetModuleConfig (GetModuleConfigRequest) returns (GetModuleConfigResponse);
+	rpc SendCommand (SendCommandRequest) returns (SendCommandResponse);
+	rpc SetEnv (SetEnvRequest) returns (SetEnvResponse);
+	rpc GetEnv (GetEnvRequest) returns (GetEnvResponse);
+}
+
+message SetPublicKeyRequest {
+    uint32 refID = 1;
+    string containerName = 2;
+    string key = 3;
+}
+
+message SetPublicKeyResponse {
+    string error = 1;
+}
+
+message RemoveFileRequest {
+    uint32 refID = 1;
+    string containerName = 2;
+    string filename = 3;
+}
+
+message RemoveFileResponse {
+    string error = 1;
+}
+
+message RemoveDirectoryRequest {
+    uint32 refID = 1;
+    string containerName = 2;
+    string path = 3;
+}
+
+message RemoveDirectoryResponse {
+    string error = 1;
+}
+
+message GetFilesRequest {
+    uint32 refID = 1;
+    string containerName = 2;
+    string path = 3;
+}
+
+message GetFilesResponse {
+    map<string, string> files = 1;
+    string error = 2;
+}
+
+message GetFileRequest {
+    uint32 refID = 1;
+    string containerName = 2;
+    string path = 3;
+}
+
+message GetFileResponse {
+    bytes content = 1;
+    string error = 2;
+}
+
+message UploadFileRequest {
+    uint32 refID = 1;
+    string containerName = 2;
+    bytes content = 3;
+    bool override = 4;
+}
+
+message UploadFileResponse {
+    string error = 1;
+}
+
+message GetModuleConfigRequest {
+    uint32 refID = 1;
+    string containerName = 2;
+}
+
+message GetModuleConfigResponse {
+    kmi.KMI kmi = 1;
+    string error = 2;
+}
+
+message SendCommandRequest {
+    uint32 refID = 1;
+    string containerName = 2;
+    string command = 3;
+    map<string, string> env = 4;
+}
+
+message SendCommandResponse {
+    string response = 1;
+    string error = 2;
+}
+
+message SetEnvRequest {
+    uint32 refID = 1;
+    string containerName = 2;
+    string key = 3;
+    string value = 4;
+}
+
+message SetEnvResponse {
+    string error = 1;
+}
+
+message GetEnvRequest {
+    uint32 refID = 1;
+    string containerName = 2;
+    string key = 3;
+}
+
+message GetEnvResponse {
+    string value = 1;
+    string error = 2;
+}
