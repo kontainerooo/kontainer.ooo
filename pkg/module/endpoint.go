@@ -23,7 +23,7 @@ type Endpoints struct {
 
 // SetPublicKeyRequest is the request struct for the SetPublicKeyEndpoint
 type SetPublicKeyRequest struct {
-	RefID         uint
+	RefID         uint `bart:"ref"`
 	ContainerName string
 	Key           string
 }
@@ -46,7 +46,7 @@ func MakeSetPublicKeyEndpoint(s Service) endpoint.Endpoint {
 
 // RemoveFileRequest is the request struct for the RemoveFileEndpoint
 type RemoveFileRequest struct {
-	RefID         uint
+	RefID         uint `bart:"ref"`
 	ContainerName string
 	Filename      string
 }
@@ -69,7 +69,7 @@ func MakeRemoveFileEndpoint(s Service) endpoint.Endpoint {
 
 // RemoveDirectoryRequest is the request struct for the RemoveDirectoryEndpoint
 type RemoveDirectoryRequest struct {
-	RefID         uint
+	RefID         uint `bart:"ref"`
 	ContainerName string
 	Path          string
 }
@@ -92,7 +92,7 @@ func MakeRemoveDirectoryEndpoint(s Service) endpoint.Endpoint {
 
 // GetFilesRequest is the request struct for the GetFilesEndpoint
 type GetFilesRequest struct {
-	RefID         uint
+	RefID         uint `bart:"ref"`
 	ContainerName string
 	Path          string
 }
@@ -117,7 +117,7 @@ func MakeGetFilesEndpoint(s Service) endpoint.Endpoint {
 
 // GetFileRequest is the request struct for the GetFileEndpoint
 type GetFileRequest struct {
-	RefID         uint
+	RefID         uint `bart:"ref"`
 	ContainerName string
 	Path          string
 }
@@ -142,7 +142,7 @@ func MakeGetFileEndpoint(s Service) endpoint.Endpoint {
 
 // UploadFileRequest is the request struct for the UploadFileEndpoint
 type UploadFileRequest struct {
-	RefID         uint
+	RefID         uint `bart:"ref"`
 	ContainerName string
 	Path          string
 	Content       []byte
@@ -167,7 +167,7 @@ func MakeUploadFileEndpoint(s Service) endpoint.Endpoint {
 
 // GetModuleConfigRequest is the request struct for the GetModuleConfigEndpoint
 type GetModuleConfigRequest struct {
-	RefID         uint
+	RefID         uint `bart:"ref"`
 	ContainerName string
 }
 
@@ -191,7 +191,7 @@ func MakeGetModuleConfigEndpoint(s Service) endpoint.Endpoint {
 
 // SendCommandRequest is the request struct for the SendCommandEndpoint
 type SendCommandRequest struct {
-	RefID         uint
+	RefID         uint `bart:"ref"`
 	ContainerName string
 	Command       string
 	Env           map[string]string
@@ -217,7 +217,7 @@ func MakeSendCommandEndpoint(s Service) endpoint.Endpoint {
 
 // SetEnvRequest is the request struct for the SetEnvEndpoint
 type SetEnvRequest struct {
-	RefID         uint
+	RefID         uint `bart:"ref"`
 	ContainerName string
 	Key           string
 	Value         string
@@ -241,7 +241,7 @@ func MakeSetEnvEndpoint(s Service) endpoint.Endpoint {
 
 // GetEnvRequest is the request struct for the GetEnvEndpoint
 type GetEnvRequest struct {
-	RefID         uint
+	RefID         uint `bart:"ref"`
 	ContainerName string
 	Key           string
 }

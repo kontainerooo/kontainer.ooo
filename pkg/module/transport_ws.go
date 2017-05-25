@@ -10,7 +10,7 @@ import (
 
 // MakeWebsocketService makes a set of module Endpoints available as a websocket Service
 func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
-	service := ws.NewServiceDescription("moduleService", ws.ProtoIDFromString("MDL"))
+	service, _ := ws.NewServiceDescription("moduleService", ws.ProtoIDFromString("MDL"))
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
 		"SetPublicKey",
