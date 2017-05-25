@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	grpctransport "github.com/go-kit/kit/transport/grpc"
-	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
+	"github.com/kontainerooo/kontainer.ooo/pkg/kmi/pb"
 	oldcontext "golang.org/x/net/context"
 )
 
@@ -115,7 +115,6 @@ func convertPBKMI(k *KMI) *pb.KMI {
 		Frontend:        convertPBFrontendModuleArray(k.Frontend),
 		Imports:         k.Imports,
 		Interfaces:      k.Interfaces.ToStringMap(),
-		Variables:       k.Variables,
 		Resources:       k.Resources.ToStringMap(),
 	}
 }

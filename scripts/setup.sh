@@ -48,6 +48,9 @@ cp /var/go/src/github.com/kontainerooo/kontainer.ooo/pkg/kmi/test.kmi /var/lib/k
 
 go get github.com/jessfraz/netns
 
+# Copy config file
+cp /var/go/src/github.com/kontainerooo/kontainer.ooo/config.json.sample /var/lib/kontainerooo/config.json
+
 chown -R vagrant /var/go
 chown -R vagrant /home/vagrant/.nvm
 chown -R vagrant /var/lib/kontainerooo

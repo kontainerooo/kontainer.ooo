@@ -22,12 +22,17 @@ import (
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 	"github.com/kontainerooo/kontainer.ooo/pkg/container"
+	containerPB "github.com/kontainerooo/kontainer.ooo/pkg/container/pb"
 	"github.com/kontainerooo/kontainer.ooo/pkg/kentheguru"
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
-	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
+	kmiPB "github.com/kontainerooo/kontainer.ooo/pkg/kmi/pb"
+	"github.com/kontainerooo/kontainer.ooo/pkg/module"
+	modulePB "github.com/kontainerooo/kontainer.ooo/pkg/module/pb"
 	"github.com/kontainerooo/kontainer.ooo/pkg/routing"
+	routingPB "github.com/kontainerooo/kontainer.ooo/pkg/routing/pb"
 	"github.com/kontainerooo/kontainer.ooo/pkg/testutils"
 	"github.com/kontainerooo/kontainer.ooo/pkg/user"
+	userPB "github.com/kontainerooo/kontainer.ooo/pkg/user/pb"
 	ws "github.com/kontainerooo/kontainer.ooo/pkg/websocket"
 	_ "github.com/opencontainers/runc/libcontainer/nsenter"
 )
@@ -114,7 +119,6 @@ func main() {
 	factory, err := libcontainer.New("/var/lib/kontainerooo/container", libcontainer.Cgroupfs, libcontainer.InitArgs(os.Args[0], "init"))
 	if err != nil {
 		panic(err)
-		return
 	}
 
 	var containerService container.Service
@@ -125,10 +129,18 @@ func main() {
 
 	containerServiceEndpoints := makeContainerServiceEndpoints(containerService)
 
+	var moduleService module.Service
+	moduleService, err = module.NewService(&containerServiceEndpoints, logger)
+	if err != nil {
+		panic(err)
+	}
+
+	moduleServeEndpoints := makeModuleServiceEndpoints(moduleService)
+
 	errc := make(chan error)
 	ctx := context.Background()
 
-	go startGRPCTransport(ctx, errc, logger, grpcAddr, userEndpoints, kmiEndpoints, routingEndpoints, containerServiceEndpoints)
+	go startGRPCTransport(ctx, errc, logger, grpcAddr, userEndpoints, kmiEndpoints, routingEndpoints, containerServiceEndpoints, moduleServeEndpoints)
 
 	conn, err := grpc.Dial(grpcAddr, grpc.WithInsecure(), grpc.WithTimeout(time.Second))
 	if err != nil {
@@ -146,7 +158,7 @@ func main() {
 			Addr: wsAddrSecure,
 			// TODO: generate certificate and key
 		},
-		userEndpoints, kmiEndpoints, containerServiceEndpoints, routingEndpoints,
+		userEndpoints, kmiEndpoints, containerServiceEndpoints, routingEndpoints, moduleServeEndpoints,
 	)
 
 	go kenTheGuruService.StartWebsocketTransport(errc, logger, wsAddr)
@@ -161,7 +173,7 @@ func main() {
 	logger.Log("exit", <-errc)
 }
 
-func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger, grpcAddr string, ue user.Endpoints, ke kmi.Endpoints, re routing.Endpoints, ce container.Endpoints) {
+func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger, grpcAddr string, ue user.Endpoints, ke kmi.Endpoints, re routing.Endpoints, ce container.Endpoints, me module.Endpoints) {
 	logger = log.With(logger, "transport", "gRPC")
 
 	ln, err := net.Listen("tcp", grpcAddr)
@@ -172,16 +184,19 @@ func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger,
 	s := grpc.NewServer()
 
 	userServer := user.MakeGRPCServer(ctx, ue, logger)
-	pb.RegisterUserServiceServer(s, userServer)
+	userPB.RegisterUserServiceServer(s, userServer)
 
 	kmiServer := kmi.MakeGRPCServer(ctx, ke, logger)
-	pb.RegisterKMIServiceServer(s, kmiServer)
+	kmiPB.RegisterKMIServiceServer(s, kmiServer)
 
 	routingServer := routing.MakeGRPCServer(ctx, re, logger)
-	pb.RegisterRoutingServiceServer(s, routingServer)
+	routingPB.RegisterRoutingServiceServer(s, routingServer)
 
 	containerServer := container.MakeGRPCServer(ctx, ce, logger)
-	pb.RegisterContainerServiceServer(s, containerServer)
+	containerPB.RegisterContainerServiceServer(s, containerServer)
+
+	moduleServer := module.MakeGRPCServer(ctx, me, logger)
+	modulePB.RegisterModuleServiceServer(s, moduleServer)
 
 	logger.Log("addr", grpcAddr)
 	errc <- s.Serve(ln)
@@ -281,13 +296,25 @@ func makeContainerServiceEndpoints(s container.Service) container.Endpoints {
 	{
 		StopContainerEndpoint = container.MakeStopContainerEndpoint(s)
 	}
-	var IsRunningEndpoint endpoint.Endpoint
-	{
-		IsRunningEndpoint = container.MakeIsRunningEndpoint(s)
-	}
 	var ExecuteEndpoint endpoint.Endpoint
 	{
 		ExecuteEndpoint = container.MakeExecuteEndpoint(s)
+	}
+	var GetEnvEndpoint endpoint.Endpoint
+	{
+		GetEnvEndpoint = container.MakeGetContainerKMIEndpoint(s)
+	}
+	var SetEnvEndpoint endpoint.Endpoint
+	{
+		SetEnvEndpoint = container.MakeGetContainerKMIEndpoint(s)
+	}
+	var IDForNameEndpoint endpoint.Endpoint
+	{
+		IDForNameEndpoint = container.MakeGetContainerKMIEndpoint(s)
+	}
+	var GetContainerKMIEndpoint endpoint.Endpoint
+	{
+		GetContainerKMIEndpoint = container.MakeGetContainerKMIEndpoint(s)
 	}
 
 	return container.Endpoints{
@@ -295,8 +322,11 @@ func makeContainerServiceEndpoints(s container.Service) container.Endpoints {
 		RemoveContainerEndpoint: RemoveContainerEndpoint,
 		InstancesEndpoint:       InstancesEndpoint,
 		StopContainerEndpoint:   StopContainerEndpoint,
-		IsRunningEndpoint:       IsRunningEndpoint,
 		ExecuteEndpoint:         ExecuteEndpoint,
+		GetEnvEndpoint:          GetEnvEndpoint,
+		SetEnvEndpoint:          SetEnvEndpoint,
+		IDForNameEndpoint:       IDForNameEndpoint,
+		GetContainerKMIEndpoint: GetContainerKMIEndpoint,
 	}
 }
 
@@ -362,5 +392,62 @@ func makeRoutingServiceEndpoints(s routing.Service) routing.Endpoints {
 		AddServerNameEndpoint:         AddServerNameEndpoint,
 		RemoveServerNameEndpoint:      RemoveServerNameEndpoint,
 		ConfigurationsEndpoint:        ConfigurationsEndpoint,
+	}
+}
+
+func makeModuleServiceEndpoints(s module.Service) module.Endpoints {
+
+	var SetPublicKeyEndpoint endpoint.Endpoint
+	{
+		SetPublicKeyEndpoint = module.MakeSetPublicKeyEndpoint(s)
+	}
+	var RemoveFileEndpoint endpoint.Endpoint
+	{
+		RemoveFileEndpoint = module.MakeRemoveFileEndpoint(s)
+	}
+	var RemoveDirectoryEndpoint endpoint.Endpoint
+	{
+		RemoveDirectoryEndpoint = module.MakeRemoveDirectoryEndpoint(s)
+	}
+	var GetFilesEndpoint endpoint.Endpoint
+	{
+		GetFilesEndpoint = module.MakeGetFilesEndpoint(s)
+	}
+	var GetFileEndpoint endpoint.Endpoint
+	{
+		GetFileEndpoint = module.MakeGetFileEndpoint(s)
+	}
+	var UploadFileEndpoint endpoint.Endpoint
+	{
+		UploadFileEndpoint = module.MakeUploadFileEndpoint(s)
+	}
+	var GetModuleConfigEndpoint endpoint.Endpoint
+	{
+		GetModuleConfigEndpoint = module.MakeGetModuleConfigEndpoint(s)
+	}
+	var SendCommandEndpoint endpoint.Endpoint
+	{
+		SendCommandEndpoint = module.MakeSendCommandEndpoint(s)
+	}
+	var SetEnvEndpoint endpoint.Endpoint
+	{
+		SetEnvEndpoint = module.MakeSetEnvEndpoint(s)
+	}
+	var GetEnvEndpoint endpoint.Endpoint
+	{
+		GetEnvEndpoint = module.MakeGetEnvEndpoint(s)
+	}
+
+	return module.Endpoints{
+		SetPublicKeyEndpoint:    SetPublicKeyEndpoint,
+		RemoveFileEndpoint:      RemoveFileEndpoint,
+		RemoveDirectoryEndpoint: RemoveDirectoryEndpoint,
+		GetFilesEndpoint:        GetFilesEndpoint,
+		GetFileEndpoint:         GetFileEndpoint,
+		UploadFileEndpoint:      UploadFileEndpoint,
+		GetModuleConfigEndpoint: GetModuleConfigEndpoint,
+		SendCommandEndpoint:     SendCommandEndpoint,
+		SetEnvEndpoint:          SetEnvEndpoint,
+		GetEnvEndpoint:          GetEnvEndpoint,
 	}
 }

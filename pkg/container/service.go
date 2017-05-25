@@ -10,12 +10,14 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
+	"github.com/kontainerooo/kontainer.ooo/pkg/util"
 	"github.com/opencontainers/runc/libcontainer"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	"golang.org/x/net/context"
@@ -23,23 +25,33 @@ import (
 
 // Service Container Service
 type Service interface {
-	// CreateContainer instanciates a container for a User with the id refid and returns its id
-	CreateContainer(refid uint, kmiID uint, name string) (id string, err error)
+	// CreateContainer instanciates a container for a User with the id refID and returns its id
+	CreateContainer(refID uint, kmiID uint, name string) (id string, err error)
 
 	// RemoveContainer is used to remove a container instance by id
-	RemoveContainer(refid uint, id string) error
+	RemoveContainer(refID uint, id string) error
 
 	// Instances returns a list of container instances of a user by id
-	Instances(refid uint) []Container
+	Instances(refID uint) []Container
 
 	// StopContainer stops a container
-	StopContainer(refid uint, id string) error
-
-	// IsRunning checks if a container is running
-	IsRunning(refid uint, id string) bool
+	StopContainer(refID uint, id string) error
 
 	// Execute executes a command in a given container
-	Execute(refid uint, id string, cmd string) (string, error)
+	Execute(refID uint, id string, cmd string, env map[string]string) (string, error)
+
+	// GetEnv returns the value to a given environment variable setting. Returns the whole
+	// environment as string if key is empty
+	GetEnv(refID uint, id string, key string) (string, error)
+
+	// SetEnv sets an environment variable for the container
+	SetEnv(refID uint, id string, key string, value string) error
+
+	// IDForName returs the containerID for a given container name and user
+	IDForName(refID uint, name string) (string, error)
+
+	// GetContainerKMI returns the KMI for a given container
+	GetContainerKMI(containerID string) (kmi.KMI, error)
 }
 
 type dbAdapter interface {
@@ -47,6 +59,7 @@ type dbAdapter interface {
 	AutoMigrate(...interface{}) error
 	Where(interface{}, ...interface{}) error
 	Find(interface{}, ...interface{}) error
+	First(interface{}, ...interface{}) error
 	Create(interface{}) error
 	Delete(interface{}, ...interface{}) error
 	Update(interface{}, ...interface{}) error
@@ -57,23 +70,12 @@ type service struct {
 	libcnt    libcontainer.Factory
 	kmiClient *kmi.Endpoints
 	logger    log.Logger
+	config    util.ConfigFile
 }
 
 const (
-	// ContainerRootfsPath is the path were the container base images are stored
-	ContainerRootfsPath = "/var/lib/kontainerooo/images"
-
-	// ContainerCustomerPath is the path were customer data is stored
-	ContainerCustomerPath = "/var/lib/kontainerooo/customers/"
-
-	// ContainerNetNSPath is the path where the netns binary is stored
-	ContainerNetNSPath = "/var/go/bin/netns"
-
-	// ContainerStandardPathVariable is the standard path environment variable
-	ContainerStandardPathVariable = "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
-
 	// ContainerTermVariable is the term variable
-	ContainerTermVariable = "TERM=xterm"
+	ContainerTermVariable = "xterm"
 )
 
 // InitializeDatabases sets up the container service's database
@@ -96,7 +98,7 @@ func (s *service) checkAndCreate(path string) error {
 
 // InitPaths initializes all paths this service needs
 func (s *service) InitPaths() error {
-	err := s.checkAndCreate(ContainerRootfsPath)
+	err := s.checkAndCreate(s.config.RootfsPath)
 	if err != nil {
 		return err
 	}
@@ -104,17 +106,17 @@ func (s *service) InitPaths() error {
 	// TODO: When there is a reasonable root filesystem and a
 	// server then check for a rootfs and if not present download
 	// the image
-	_, err = os.Stat(path.Join(ContainerRootfsPath, "rootfs.tar"))
+	_, err = os.Stat(path.Join(s.config.RootfsPath, "rootfs.tar"))
 	if err != nil {
 		return errors.New("no rootfs present")
 	}
 
-	err = s.checkAndCreate(ContainerCustomerPath)
+	err = s.checkAndCreate(s.config.CustomerPath)
 	if err != nil {
 		return err
 	}
 
-	_, err = os.Stat(ContainerNetNSPath)
+	_, err = os.Stat(s.config.NetNSPath)
 	if err != nil {
 		return errors.New("netns binary not present, please go get github.com/jessfraz/netns")
 	}
@@ -122,18 +124,18 @@ func (s *service) InitPaths() error {
 	return nil
 }
 
-func (s *service) CreateContainer(refid uint, kmiID uint, name string) (id string, err error) {
-	kmi, err := s.getKMI(kmiID)
+func (s *service) CreateContainer(refID uint, kmiID uint, name string) (id string, err error) {
+	kmi, err := s.getTemplateKMI(kmiID)
 	if err != nil {
 		return "", err
 	}
 
 	// Compute the container id - consisting of userID + imagename + timestamp
 	h := md5.New()
-	io.WriteString(h, fmt.Sprintf("%d%d%s", refid, kmi.ID, time.Now().Format("20060102150405")))
+	io.WriteString(h, fmt.Sprintf("%d%d%s", refID, kmi.ID, time.Now().Format("20060102150405")))
 	containerID := fmt.Sprintf("%x", h.Sum(nil))
 
-	s.initRootfs(refid, kmi.ProvisionScript, containerID)
+	s.initRootfs(refID, kmi.ProvisionScript, containerID, kmi)
 
 	mountCfg := []*configs.Mount{&configs.Mount{
 		Source:      "proc",
@@ -168,7 +170,7 @@ func (s *service) CreateContainer(refid uint, kmiID uint, name string) (id strin
 	cu, err := s.libcnt.Create(containerID, &configs.Config{
 		NoPivotRoot:       false,
 		ParentDeathSignal: 9,
-		Rootfs:            path.Join(ContainerCustomerPath, fmt.Sprintf("%d", refid), containerID, "rootfs"),
+		Rootfs:            path.Join(s.config.CustomerPath, fmt.Sprintf("%d", refID), containerID, "rootfs"),
 		Readonlyfs:        false,
 		RootPropagation:   0,
 		// TODO: Don't give the container all Capabilities (obviously...)
@@ -203,7 +205,7 @@ func (s *service) CreateContainer(refid uint, kmiID uint, name string) (id strin
 		Hostname: name,
 		Hooks: &configs.Hooks{
 			Prestart: []configs.Hook{
-				configs.CommandHook{Command: configs.Command{Path: ContainerNetNSPath}},
+				configs.CommandHook{Command: configs.Command{Path: s.config.NetNSPath}},
 			},
 		},
 	})
@@ -225,10 +227,9 @@ func (s *service) CreateContainer(refid uint, kmiID uint, name string) (id strin
 	}
 
 	c := Container{
-		RefID:       refid,
+		RefID:       refID,
 		ContainerID: containerID,
 		KMI:         kmi,
-		Running:     false,
 	}
 	err = s.db.Create(&c)
 	if err != nil {
@@ -238,13 +239,13 @@ func (s *service) CreateContainer(refid uint, kmiID uint, name string) (id strin
 	return containerID, nil
 }
 
-func (s *service) RemoveContainer(refid uint, id string) error {
-	err := s.StopContainer(refid, id)
+func (s *service) RemoveContainer(refID uint, id string) error {
+	err := s.StopContainer(refID, id)
 	if err != nil {
 		return err
 	}
 
-	err = os.RemoveAll(path.Join(ContainerCustomerPath, string(refid), id))
+	err = os.RemoveAll(path.Join(s.config.CustomerPath, string(refID), id))
 	if err != nil {
 		return err
 	}
@@ -261,8 +262,8 @@ func (s *service) RemoveContainer(refid uint, id string) error {
 	return nil
 }
 
-func (s *service) Instances(refid uint) []Container {
-	s.db.Where("refid = ?", refid)
+func (s *service) Instances(refID uint) []Container {
+	s.db.Where("RefID = ?", refID)
 
 	cs := []Container{}
 	err := s.db.Find(&cs)
@@ -273,18 +274,8 @@ func (s *service) Instances(refid uint) []Container {
 	return cs
 }
 
-func (s *service) StopContainer(refid uint, id string) error {
+func (s *service) StopContainer(refID uint, id string) error {
 	container, err := s.libcnt.Load(id)
-	if err != nil {
-		return err
-	}
-
-	c := Container{
-		ContainerID: id,
-		Running:     false,
-	}
-
-	err = s.db.Update(&Container{}, &c)
 	if err != nil {
 		return err
 	}
@@ -297,19 +288,7 @@ func (s *service) StopContainer(refid uint, id string) error {
 	return nil
 }
 
-func (s *service) IsRunning(refid uint, id string) bool {
-	s.db.Where("refid = ? AND id = ?", refid, id)
-
-	c := Container{}
-	err := s.db.Find(&c)
-	if err != nil {
-		return false
-	}
-
-	return c.Running
-}
-
-func (s *service) Execute(refid uint, id string, cmd string) (string, error) {
+func (s *service) Execute(refID uint, id string, cmd string, env map[string]string) (string, error) {
 	container, err := s.libcnt.Load(id)
 	if err != nil {
 		return "", err
@@ -318,9 +297,43 @@ func (s *service) Execute(refid uint, id string, cmd string) (string, error) {
 	b := []byte{}
 	buf := bytes.NewBuffer(b)
 
+	cKMI, err := s.GetContainerKMI(id)
+	if err != nil {
+		return "", err
+	}
+
+	execEnv := cKMI.Environment.ToStringMap()
+	// Construct environment and replace global with exec specific env
+	for gK := range execEnv {
+		for xK, xV := range env {
+			if strings.ToLower(gK) == strings.ToLower(xK) {
+				execEnv[gK] = xV
+				// Delete previously found key to reduce loop time
+				delete(env, xK)
+			}
+		}
+	}
+
+	// Append to path variable if there is one given
+	_, ok := execEnv["PATH"]
+	if !ok {
+		execEnv["PATH"] = s.config.StandardPathVariable
+	} else {
+		execEnv["PATH"] = fmt.Sprintf("%s:%s", execEnv["PATH"], s.config.StandardPathVariable)
+	}
+
+	// Set or override TERM variable if there is one
+	execEnv["TERM"] = ContainerTermVariable
+
+	// Make env string array
+	envString := []string{}
+	for k, v := range execEnv {
+		envString = append(envString, fmt.Sprintf("\"%s\"=\"%s\"", k, v))
+	}
+
 	p := &libcontainer.Process{
 		Args:   []string{"/bin/sh", "-c", cmd},
-		Env:    []string{ContainerStandardPathVariable, ContainerTermVariable},
+		Env:    envString,
 		Stdout: buf,
 	}
 
@@ -337,7 +350,68 @@ func (s *service) Execute(refid uint, id string, cmd string) (string, error) {
 	return buf.String(), nil
 }
 
-func (s *service) getKMI(kmiID uint) (kmi.KMI, error) {
+func (s *service) GetEnv(refID uint, id string, key string) (string, error) {
+	cKMI, err := s.GetContainerKMI(id)
+	if err != nil {
+		return "", err
+	}
+
+	env := cKMI.Environment.ToStringMap()
+
+	// When key is empty the whole environment is returned as string
+	if key == "" {
+		envString := ""
+		for k, v := range env {
+			envString = fmt.Sprintf("%s, \"%s\"=\"%s\"", envString, k, v)
+		}
+		return envString, nil
+	}
+
+	val, ok := env[key]
+	if !ok {
+		return "", errors.New("variable does not exist")
+	}
+
+	return val, nil
+}
+
+func (s *service) SetEnv(refID uint, id string, key string, value string) error {
+	cKMI, err := s.GetContainerKMI(id)
+	if err != nil {
+		return err
+	}
+
+	env := cKMI.Environment.ToStringMap()
+
+	env[key] = value
+
+	s.db.Begin()
+	c := &Container{
+		ContainerID: id,
+		KMI: kmi.KMI{
+			Environment: abstraction.NewJSONFromMap(env),
+		},
+	}
+
+	err = s.db.Update(&Container{}, c)
+	if err != nil {
+		s.db.Rollback()
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) IDForName(refID uint, name string) (string, error) {
+	c := &Container{}
+	err := s.db.First(c, "RefID = ? AND ContainerName = ?", refID, name)
+	if err != nil {
+		return "", err
+	}
+	return c.ContainerID, nil
+}
+
+func (s *service) getTemplateKMI(kmiID uint) (kmi.KMI, error) {
 	if s.kmiClient == nil {
 		return kmi.KMI{}, errors.New("No KMI client")
 	}
@@ -357,14 +431,25 @@ func (s *service) getKMI(kmiID uint) (kmi.KMI, error) {
 	return *kmi, nil
 }
 
-func (s *service) initRootfs(refid uint, provisionScript string, id string) error {
-	imagePath := path.Join(ContainerRootfsPath, "rootfs.tar")
+func (s *service) GetContainerKMI(containerID string) (kmi.KMI, error) {
+	// TODO: cache container KMIs
+	c := Container{}
+	err := s.db.First(&c, "ContainerID = ?", containerID)
+	if err != nil {
+		return kmi.KMI{}, err
+	}
+
+	return c.KMI, nil
+}
+
+func (s *service) initRootfs(refID uint, provisionScript string, id string, cKMI kmi.KMI) error {
+	imagePath := path.Join(s.config.RootfsPath, "rootfs.tar")
 	_, err := os.Stat(imagePath)
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 
-	cPath := path.Join(ContainerCustomerPath, fmt.Sprintf("%d", refid))
+	cPath := path.Join(s.config.CustomerPath, fmt.Sprintf("%d", refID))
 	_, err = os.Stat(cPath)
 	if err != nil && !os.IsNotExist(err) {
 		return err
@@ -381,7 +466,7 @@ func (s *service) initRootfs(refid uint, provisionScript string, id string) erro
 		return err
 	}
 
-	err = s.provisionRootfs(mPath, provisionScript)
+	err = s.provisionRootfs(cKMI, mPath, provisionScript)
 	if err != nil {
 		return err
 	}
@@ -389,9 +474,10 @@ func (s *service) initRootfs(refid uint, provisionScript string, id string) erro
 	return nil
 }
 
-func (s *service) provisionRootfs(rfsPath string, provisionScript string) error {
+func (s *service) provisionRootfs(cKMI kmi.KMI, rfsPath string, provisionScript string) error {
 	conf := provisionConfig
 	conf.Rootfs = rfsPath
+	conf.Hooks.Prestart[0] = configs.CommandHook{Command: configs.Command{Path: s.config.NetNSPath}}
 
 	name := fmt.Sprintf("provision-%s", time.Now().Format("20060102150405"))
 
@@ -414,9 +500,28 @@ func (s *service) provisionRootfs(rfsPath string, provisionScript string) error 
 	e := []byte{}
 	errBuf := bytes.NewBuffer(e)
 
+	execEnv := cKMI.Environment.ToStringMap()
+
+	// Append to path variable if there is one given
+	_, ok := execEnv["PATH"]
+	if !ok {
+		execEnv["PATH"] = s.config.StandardPathVariable
+	} else {
+		execEnv["PATH"] = fmt.Sprintf("%s:%s", execEnv["PATH"], s.config.StandardPathVariable)
+	}
+
+	// Set or override TERM variable if there is one
+	execEnv["TERM"] = ContainerTermVariable
+
+	// Make env string array
+	envString := []string{}
+	for k, v := range execEnv {
+		envString = append(envString, fmt.Sprintf("\"%s\"=\"%s\"", k, v))
+	}
+
 	p := &libcontainer.Process{
 		Args:   []string{"/bin/sh", "/provision.sh"},
-		Env:    []string{ContainerStandardPathVariable, ContainerTermVariable},
+		Env:    envString,
 		Stdout: buf,
 		Stderr: errBuf,
 	}
@@ -482,14 +587,20 @@ func (s *service) untar(dst string, src string) error {
 
 // NewService creates a new container service with necessary dependencies
 func NewService(lc libcontainer.Factory, db dbAdapter, ke *kmi.Endpoints, l log.Logger) (Service, error) {
+	conf, err := util.GetConfig()
+	if err != nil {
+		return &service{}, err
+	}
+
 	s := &service{
 		libcnt:    lc,
 		db:        db,
 		kmiClient: ke,
 		logger:    l,
+		config:    conf,
 	}
 
-	err := s.InitializeDatabases()
+	err = s.InitializeDatabases()
 	if err != nil {
 		return s, err
 	}

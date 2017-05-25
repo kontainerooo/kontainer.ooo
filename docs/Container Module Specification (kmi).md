@@ -8,11 +8,11 @@ The `.kmi` file is a tar-archived folder of the following structure of at least 
 
 ```javascript
 {
-    "name":         string,     // The module's name
-    "version":      string,     // The module's version
-    "description":  string,     // The module's description
-    "type":         int,        // See messages/kmi.proto -> enum TYPE
-    "provisionScript":   string,     // The path to the script that provisions the container module
+    "name":             string,     // The module's name
+    "version":          string,     // The module's version
+    "description":      string,     // The module's description
+    "type":             int,        // See messages/kmi.proto -> enum TYPE
+    "provisionScript":  string,     // The path to the script that provisions the container module
 
     /* The following options can either be specified inline as object/array
      * or extracted into a separate file by providing the filename.
@@ -21,7 +21,6 @@ The `.kmi` file is a tar-archived folder of the following structure of at least 
     "env":          string || object,
     "interfaces":   string || object,
     "cmd":          string || object,
-    "variables":    string || array,
     "resources":    string || object
 }
 ```
@@ -49,15 +48,6 @@ The `cmd` key configures commands that can be used from frontend modules.
     // Example: "start": "npm start"
     "command-name": string(command)
 }
-```
-
-### `variables.json`
-The `variables` key defines "variables" that can be used inside and outside the container. Basically they are files that are mounted in `/var/kro/variables` inside the container. The array contains paths that contain these "variable files".
-```javascript
-[
-    // Example: /variables ~> everything from container/variables is mounted to /var/lib/kontainerooo/customer/container/variables inside the container
-    "path/to/vars"
-]
 ```
 
 ### `resources.json`

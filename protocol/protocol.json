@@ -39,10 +39,27 @@
         "CreateContainer": "CRT",
         "RemoveContainer": "REM",
         "Instances": "ALL",
-        "StartContainer": "STA",
         "StopContainer": "STO",
-        "IsRunning": "ISR",
-        "Execute": "EXE"
+        "Execute": "EXE",
+        "GetEnv": "GEV",
+        "SetEnv": "SEV",
+        "IDFromName": "IFN",
+        "GetContainerKMI": "GCK"
+      }
+    },
+    "module": {
+      "id": "MDL",
+      "methods": {
+        "SetPublicKey": "SPK",
+        "RemoveFile": "RMF",
+        "RemoveDirectory": "RMD",
+        "GetFiles": "GFS",
+        "GetFile": "GTF",
+        "UploadFile": "ULF",
+        "GetModuleConfig": "GMC",
+        "SendCommand": "ISCMFN",
+        "SetEnv": "SEV",
+        "GetEnv": "GEV"
       }
     }
   },

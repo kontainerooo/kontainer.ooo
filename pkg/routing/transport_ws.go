@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
+	"github.com/kontainerooo/kontainer.ooo/pkg/routing/pb"
 	ws "github.com/kontainerooo/kontainer.ooo/pkg/websocket"
 )
 

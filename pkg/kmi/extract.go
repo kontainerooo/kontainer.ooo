@@ -152,7 +152,6 @@ type moduleJSON struct {
 	Env             interface{}
 	Interfaces      interface{}
 	Cmd             interface{}
-	Variables       interface{}
 	Resources       interface{}
 }
 
@@ -388,11 +387,6 @@ func GetData(kC *Content, k *KMI) error {
 
 	k.Resources = make(map[string]interface{})
 	err = GetStringMap(m.Resources, kC, k.Resources, "resources", nil)
-	if err != nil {
-		return err
-	}
-
-	err = GetStringSlice(m.Variables, kC, &k.Variables, "variabls")
 	if err != nil {
 		return err
 	}

@@ -14,7 +14,6 @@ type Container struct {
 	ContainerID   string `gorm:"primary_key"`
 	ContainerName string
 	KMI           kmi.KMI
-	Running       bool
 }
 
 const defaultMountFlags = syscall.MS_NOEXEC | syscall.MS_NOSUID | syscall.MS_NODEV
@@ -89,9 +88,7 @@ var provisionConfig = &configs.Config{
 	Rootless: false,
 	Hostname: "provision",
 	Hooks: &configs.Hooks{
-		Prestart: []configs.Hook{
-			configs.CommandHook{Command: configs.Command{Path: ContainerNetNSPath}},
-		},
+		Prestart: []configs.Hook{},
 	},
 }
 

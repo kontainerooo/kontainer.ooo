@@ -114,7 +114,6 @@ func convertKMI(k *pb.KMI) *kmi.KMI {
 		Frontend:        convertFrontendModuleArray(k.Frontend),
 		Imports:         pq.StringArray(k.Imports),
 		Interfaces:      abstraction.NewJSONFromMap(k.Interfaces),
-		Variables:       pq.StringArray(k.Variables),
 		Resources:       abstraction.NewJSONFromMap(k.Resources),
 	}
 }
