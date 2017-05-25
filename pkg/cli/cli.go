@@ -52,14 +52,14 @@ func fillRequestStruct(c *ishell.Context, value *reflect.Value, typ reflect.Type
 			switch valField.Kind() {
 			case reflect.String:
 				valField.Set(reflect.ValueOf(value))
-			case reflect.Uint32:
+			case reflect.Uint:
 				num, err := strconv.ParseUint(value, 10, 32)
 				if err != nil {
 					c.Println(err.Error())
 					continue
 				}
 				valField.SetUint(num)
-			case reflect.Int32:
+			case reflect.Int:
 				num, err := strconv.ParseInt(value, 10, 32)
 				if err != nil {
 					c.Println(err.Error())
