@@ -134,7 +134,7 @@ func createCommand(name, help string, endpoint endpoint.Endpoint, req, resType i
 func kmiCommands(sh *ishell.Shell, kmiClient *kmi.Endpoints) *ishell.Cmd {
 	kmiCmd := &ishell.Cmd{
 		Name: "kmi",
-		Help: "all KMI Service commnds",
+		Help: "all KMI Service commands",
 	}
 
 	kmiCmd.AddCmd(createCommand(
