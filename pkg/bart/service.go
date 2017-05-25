@@ -8,7 +8,7 @@ import (
 	"regexp"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
+	pb "github.com/kontainerooo/kontainer.ooo/pkg/kentheguru/pb"
 	"github.com/kontainerooo/kontainer.ooo/pkg/user"
 	ws "github.com/kontainerooo/kontainer.ooo/pkg/websocket"
 )
