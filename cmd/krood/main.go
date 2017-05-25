@@ -119,7 +119,6 @@ func main() {
 	factory, err := libcontainer.New("/var/lib/kontainerooo/container", libcontainer.Cgroupfs, libcontainer.InitArgs(os.Args[0], "init"))
 	if err != nil {
 		panic(err)
-		return
 	}
 
 	var containerService container.Service
@@ -159,7 +158,8 @@ func main() {
 			Addr: wsAddrSecure,
 			// TODO: generate certificate and key
 		},
-		userEndpoints, kmiEndpoints, containerServiceEndpoints, routingEndpoints, moduleServeEndpoints)
+		userEndpoints, kmiEndpoints, containerServiceEndpoints, routingEndpoints, moduleServeEndpoints,
+	)
 
 	go kenTheGuruService.StartWebsocketTransport(errc, logger, wsAddr)
 
