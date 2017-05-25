@@ -12,7 +12,7 @@ import (
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
-	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
+	"github.com/kontainerooo/kontainer.ooo/pkg/kmi/pb"
 )
 
 // New creates a set of endpoints based on a gRPC connection

@@ -9,6 +9,8 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
+	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
+	kmiClient "github.com/kontainerooo/kontainer.ooo/pkg/kmi/client"
 
 	"github.com/abiosoft/ishell"
 	"google.golang.org/grpc"
@@ -23,6 +25,9 @@ func InitShell(sh *ishell.Shell, conn *grpc.ClientConn, logger log.Logger) {
 			c.Println("not yet implemented")
 		},
 	})
+
+	kmiClient := kmiClient.New(conn, logger)
+	sh.AddCmd(kmiCommands(sh, kmiClient))
 }
 
 func fillRequestStruct(c *ishell.Context, value *reflect.Value, typ reflect.Type) {
@@ -124,4 +129,45 @@ func createCommand(name, help string, endpoint endpoint.Endpoint, req, resType i
 			printResult(c, resVal, resValType)
 		},
 	}
+}
+
+func kmiCommands(sh *ishell.Shell, kmiClient *kmi.Endpoints) *ishell.Cmd {
+	kmiCmd := &ishell.Cmd{
+		Name: "kmi",
+		Help: "all KMI Service commnds",
+	}
+
+	kmiCmd.AddCmd(createCommand(
+		"add",
+		"adds a kmi",
+		kmiClient.AddKMIEndpoint,
+		&kmi.AddKMIRequest{},
+		&kmi.AddKMIResponse{}),
+	)
+
+	kmiCmd.AddCmd(createCommand(
+		"remove",
+		"removes a kmi by id",
+		kmiClient.RemoveKMIEndpoint,
+		&kmi.RemoveKMIRequest{},
+		&kmi.RemoveKMIResponse{}),
+	)
+
+	kmiCmd.AddCmd(createCommand(
+		"get",
+		"requests information for a specific kmi",
+		kmiClient.GetKMIEndpoint,
+		&kmi.GetKMIRequest{},
+		&kmi.GetKMIResponse{}),
+	)
+
+	kmiCmd.AddCmd(createCommand(
+		"all",
+		"requests information for all kmis",
+		kmiClient.KMIEndpoint,
+		&kmi.KMIRequest{},
+		&kmi.KMIResponse{}),
+	)
+
+	return kmiCmd
 }
