@@ -143,11 +143,6 @@ func main() {
 
 	go startGRPCTransport(ctx, errc, logger, grpcAddr, userEndpoints, kmiEndpoints, routingEndpoints, containerServiceEndpoints, moduleServeEndpoints)
 
-<<<<<<< HEAD
-	go startWebsocketTransport(errc, logger, wsAddr, userEndpoints, kmiEndpoints, routingEndpoints, containerServiceEndpoints, moduleServeEndpoints)
-
-=======
->>>>>>> develop
 	conn, err := grpc.Dial(grpcAddr, grpc.WithInsecure(), grpc.WithTimeout(time.Second))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v", err)
@@ -164,8 +159,7 @@ func main() {
 			Addr: wsAddrSecure,
 			// TODO: generate certificate and key
 		},
-		userEndpoints, kmiEndpoints, containerServiceEndpoints, routingEndpoints,
-	)
+		userEndpoints, kmiEndpoints, containerServiceEndpoints, routingEndpoints, moduleServeEndpoints)
 
 	go kenTheGuruService.StartWebsocketTransport(errc, logger, wsAddr)
 
@@ -208,32 +202,6 @@ func startGRPCTransport(ctx context.Context, errc chan error, logger log.Logger,
 	errc <- s.Serve(ln)
 }
 
-<<<<<<< HEAD
-func startWebsocketTransport(errc chan error, logger log.Logger, wsAddr string, ue user.Endpoints, ke kmi.Endpoints, re routing.Endpoints, ce container.Endpoints, me module.Endpoints) {
-	logger = log.With(logger, "transport", "ws")
-	s := ws.NewServer(ws.BasicHandler{}, logger)
-
-	userService := user.MakeWebsocketService(ue)
-	s.RegisterService(userService)
-
-	kmiService := kmi.MakeWebsocketService(ke)
-	s.RegisterService(kmiService)
-
-	routingServer := routing.MakeWebsocketService(re)
-	s.RegisterService(routingServer)
-
-	containerServer := container.MakeWebsocketService(ce)
-	s.RegisterService(containerServer)
-
-	moduleServer := module.MakeWebsocketService(me)
-	s.RegisterService(moduleServer)
-
-	logger.Log("addr", wsAddr)
-	errc <- s.Serve(wsAddr)
-}
-
-=======
->>>>>>> develop
 func makeUserServiceEndpoints(s user.Service) user.Endpoints {
 	var createUserEndpoint endpoint.Endpoint
 	{
