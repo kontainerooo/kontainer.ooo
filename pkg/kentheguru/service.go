@@ -11,9 +11,10 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/kontainerooo/kontainer.ooo/pkg/bart"
 	"github.com/kontainerooo/kontainer.ooo/pkg/container"
+	"github.com/kontainerooo/kontainer.ooo/pkg/kentheguru/pb"
+	"github.com/kontainerooo/kontainer.ooo/pkg/module"
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
-	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
 	"github.com/kontainerooo/kontainer.ooo/pkg/routing"
 	"github.com/kontainerooo/kontainer.ooo/pkg/user"
 	ws "github.com/kontainerooo/kontainer.ooo/pkg/websocket"
@@ -34,6 +35,7 @@ type service struct {
 	KMIEndpoints       kmi.Endpoints
 	ContainerEndpoints container.Endpoints
 	RoutingEndpoints   routing.Endpoints
+	ModuleEndpoints    module.Endpoints
 }
 
 func (s *service) StartWebsocketTransport(errc chan error, logger log.Logger, wsAddr string) {
@@ -51,6 +53,9 @@ func (s *service) StartWebsocketTransport(errc chan error, logger log.Logger, ws
 
 	routingServer := routing.MakeWebsocketService(s.RoutingEndpoints)
 	wss.RegisterService(routingServer)
+
+	moduleServer := module.MakeWebsocketService(s.ModuleEndpoints)
+	wss.RegisterService(moduleServer)
 
 	logger.Log("addr", wsAddr)
 	errc <- wss.Serve(wsAddr)
@@ -108,6 +113,7 @@ func NewService(
 	ke kmi.Endpoints,
 	ce container.Endpoints,
 	re routing.Endpoints,
+	me module.Endpoints,
 ) Service {
 	s := &service{
 		ProtocolMap: ws.ProtocolMap{
