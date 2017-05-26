@@ -25,7 +25,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 	{
 		CreateContainerEndpoint = grpctransport.NewClient(
 			conn,
-			"containerService",
+			"container.ContainerService",
 			"CreateContainer",
 			EncodeGRPCCreateContainerRequest,
 			DecodeGRPCCreateContainerResponse,
@@ -37,7 +37,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 	{
 		RemoveContainerEndpoint = grpctransport.NewClient(
 			conn,
-			"containerService",
+			"container.ContainerService",
 			"RemoveContainer",
 			EncodeGRPCRemoveContainerRequest,
 			DecodeGRPCRemoveContainerResponse,
@@ -49,7 +49,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 	{
 		InstancesEndpoint = grpctransport.NewClient(
 			conn,
-			"containerService",
+			"container.ContainerService",
 			"Instances",
 			EncodeGRPCInstancesRequest,
 			DecodeGRPCInstancesResponse,
@@ -61,7 +61,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 	{
 		StopContainerEndpoint = grpctransport.NewClient(
 			conn,
-			"containerService",
+			"container.ContainerService",
 			"StopContainer",
 			EncodeGRPCStopContainerRequest,
 			DecodeGRPCStopContainerResponse,
@@ -73,7 +73,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 	{
 		ExecuteEndpoint = grpctransport.NewClient(
 			conn,
-			"containerService",
+			"container.ContainerService",
 			"Execute",
 			EncodeGRPCExecuteRequest,
 			DecodeGRPCExecuteResponse,
@@ -85,7 +85,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 	{
 		GetEnvEndpoint = grpctransport.NewClient(
 			conn,
-			"containerService",
+			"container.ContainerService",
 			"GetEnv",
 			EncodeGRPCGetEnvRequest,
 			DecodeGRPCGetEnvResponse,
@@ -97,7 +97,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 	{
 		SetEnvEndpoint = grpctransport.NewClient(
 			conn,
-			"containerService",
+			"container.ContainerService",
 			"SetEnv",
 			EncodeGRPCSetEnvRequest,
 			DecodeGRPCSetEnvResponse,
@@ -109,7 +109,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 	{
 		IDForNameEndpoint = grpctransport.NewClient(
 			conn,
-			"containerService",
+			"container.ContainerService",
 			"IDForName",
 			EncodeGRPCIDForNameRequest,
 			DecodeGRPCIDForNameResponse,
@@ -121,7 +121,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *container.Endpoints {
 	{
 		GetContainerKMIEndpoint = grpctransport.NewClient(
 			conn,
-			"containerService",
+			"container.ContainerService",
 			"GetContainerKMI",
 			EncodeGRPCGetContainerKMIRequest,
 			DecodeGRPCGetContainerKMIResponse,
@@ -156,7 +156,7 @@ func pbContainersToContainers(pbc []*containerPB.Container) []container.Containe
 			RefID:         uint(c.RefID),
 			ContainerID:   c.ContainerID,
 			ContainerName: c.ContainerName,
-			KMI:           *convertKMI(c.Kmi),
+			KMI:           container.CKMI(*convertKMI(c.Kmi)),
 		})
 	}
 
