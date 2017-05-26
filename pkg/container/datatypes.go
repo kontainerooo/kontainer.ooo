@@ -8,5 +8,14 @@ type Container struct {
 	RefID         uint
 	ContainerID   string `gorm:"primary_key"`
 	ContainerName string
-	KMI           kmi.KMI
+	KMIID         uint
+	KMI           CKMI
+}
+
+// CKMI is the database representation for the kmi of a specific instance
+type CKMI kmi.KMI
+
+// TableName sets the database name for ckmi
+func (CKMI) TableName() string {
+	return "container_kmis"
 }

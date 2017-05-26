@@ -1,3 +1,5 @@
+// +build linux
+
 package container
 
 import (
@@ -78,7 +80,13 @@ var provisionConfig = &configs.Config{
 	Rootless: false,
 	Hostname: "provision",
 	Hooks: &configs.Hooks{
-		Prestart: []configs.Hook{},
+		Prestart: []configs.Hook{
+			configs.CommandHook{
+				Command: configs.Command{
+					Path: "/var/go/bin/netns",
+				},
+			},
+		},
 	},
 }
 
