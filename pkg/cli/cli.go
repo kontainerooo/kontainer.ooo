@@ -9,6 +9,8 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
+	"github.com/kontainerooo/kontainer.ooo/pkg/container"
+	containerClient "github.com/kontainerooo/kontainer.ooo/pkg/container/client"
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
 	kmiClient "github.com/kontainerooo/kontainer.ooo/pkg/kmi/client"
 	"github.com/kontainerooo/kontainer.ooo/pkg/module"
@@ -33,6 +35,9 @@ func InitShell(sh *ishell.Shell, conn *grpc.ClientConn, logger log.Logger) {
 
 	moduleClient := moduleClient.New(conn, logger)
 	sh.AddCmd(moduleCommands(sh, moduleClient))
+
+	containerClient := containerClient.New(conn, logger)
+	sh.AddCmd(containerCommands(sh, containerClient))
 }
 
 func fillRequestStruct(c *ishell.Context, value *reflect.Value, typ reflect.Type) {
@@ -276,10 +281,74 @@ func moduleCommands(sh *ishell.Shell, moduleClient *module.Endpoints) *ishell.Cm
 		"remove directory",
 		moduleClient.RemoveDirectoryEndpoint,
 		&module.RemoveDirectoryRequest{},
-		&module.RemoveDirectoryResponse{}),
-	)
+		&module.RemoveDirectoryResponse{},
+	))
 
 	moduleCmd.AddCmd(removeCmd)
 
 	return moduleCmd
+}
+
+func containerCommands(sh *ishell.Shell, containerClient *container.Endpoints) *ishell.Cmd {
+	containerCmd := &ishell.Cmd{
+		Name: "container",
+	}
+
+	containerCmd.AddCmd(createCommand(
+		"create",
+		"creates a container",
+		containerClient.CreateContainerEndpoint,
+		&container.CreateContainerRequest{},
+		&container.CreateContainerResponse{},
+	))
+
+	containerCmd.AddCmd(createCommand(
+		"remove",
+		"removes a container",
+		containerClient.RemoveContainerEndpoint,
+		&container.RemoveContainerRequest{},
+		&container.RemoveContainerResponse{},
+	))
+
+	containerCmd.AddCmd(createCommand(
+		"execute",
+		"execute a command inside a container",
+		containerClient.ExecuteEndpoint,
+		&container.ExecuteRequest{},
+		&container.ExecuteResponse{},
+	))
+
+	containerCmd.AddCmd(createCommand(
+		"stop",
+		"stop a container",
+		containerClient.StopContainerEndpoint,
+		&container.StopContainerRequest{},
+		&container.StopContainerResponse{},
+	))
+
+	containerCmd.AddCmd(createCommand(
+		"instances",
+		"all container instances",
+		containerClient.InstancesEndpoint,
+		&container.InstancesRequest{},
+		&container.InstancesResponse{},
+	))
+
+	containerCmd.AddCmd(createCommand(
+		"id",
+		"get id for container name",
+		containerClient.IDForNameEndpoint,
+		&container.IDForNameRequest{},
+		&container.IDForNameResponse{},
+	))
+
+	containerCmd.AddCmd(createCommand(
+		"kmi",
+		"get kmi of a container",
+		containerClient.GetContainerKMIEndpoint,
+		&container.GetContainerKMIRequest{},
+		&container.GetContainerKMIResponse{},
+	))
+
+	return containerCmd
 }
