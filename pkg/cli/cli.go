@@ -11,6 +11,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
 	kmiClient "github.com/kontainerooo/kontainer.ooo/pkg/kmi/client"
+	"github.com/kontainerooo/kontainer.ooo/pkg/module"
+	moduleClient "github.com/kontainerooo/kontainer.ooo/pkg/module/client"
 
 	"github.com/abiosoft/ishell"
 	"google.golang.org/grpc"
@@ -28,6 +30,9 @@ func InitShell(sh *ishell.Shell, conn *grpc.ClientConn, logger log.Logger) {
 
 	kmiClient := kmiClient.New(conn, logger)
 	sh.AddCmd(kmiCommands(sh, kmiClient))
+
+	moduleClient := moduleClient.New(conn, logger)
+	sh.AddCmd(moduleCommands(sh, moduleClient))
 }
 
 func fillRequestStruct(c *ishell.Context, value *reflect.Value, typ reflect.Type) {
@@ -170,4 +175,111 @@ func kmiCommands(sh *ishell.Shell, kmiClient *kmi.Endpoints) *ishell.Cmd {
 	)
 
 	return kmiCmd
+}
+
+func moduleCommands(sh *ishell.Shell, moduleClient *module.Endpoints) *ishell.Cmd {
+	moduleCmd := &ishell.Cmd{
+		Name: "module",
+		Help: "all Module Service commands",
+	}
+
+	setCmd := &ishell.Cmd{
+		Name: "set",
+	}
+
+	setCmd.AddCmd(createCommand(
+		"publickey",
+		"set publickey",
+		moduleClient.SetPublicKeyEndpoint,
+		&module.SetPublicKeyRequest{},
+		&module.SetPublicKeyResponse{}),
+	)
+
+	setCmd.AddCmd(createCommand(
+		"env",
+		"set environment",
+		moduleClient.SetEnvEndpoint,
+		&module.SetEnvRequest{},
+		&module.SetEnvResponse{}),
+	)
+
+	moduleCmd.AddCmd(setCmd)
+
+	getCmd := &ishell.Cmd{
+		Name: "get",
+	}
+
+	getCmd.AddCmd(createCommand(
+		"file",
+		"get file",
+		moduleClient.GetFileEndpoint,
+		&module.GetFileRequest{},
+		&module.GetFileResponse{}),
+	)
+
+	getCmd.AddCmd(createCommand(
+		"files",
+		"get files",
+		moduleClient.GetFilesEndpoint,
+		&module.GetFilesRequest{},
+		&module.GetFilesResponse{}),
+	)
+
+	getCmd.AddCmd(createCommand(
+		"env",
+		"get environment",
+		moduleClient.GetEnvEndpoint,
+		&module.GetEnvRequest{},
+		&module.GetEnvResponse{}),
+	)
+
+	getCmd.AddCmd(createCommand(
+		"moduleconf",
+		"get module config",
+		moduleClient.GetModuleConfigEndpoint,
+		&module.GetModuleConfigRequest{},
+		&module.GetModuleConfigResponse{}),
+	)
+
+	moduleCmd.AddCmd(getCmd)
+
+	moduleCmd.AddCmd(createCommand(
+		"uploadfile",
+		"upload file",
+		moduleClient.UploadFileEndpoint,
+		&module.UploadFileRequest{},
+		&module.UploadFileResponse{}),
+	)
+
+	moduleCmd.AddCmd(createCommand(
+		"sendcmd",
+		"send command",
+		moduleClient.SendCommandEndpoint,
+		&module.SendCommandRequest{},
+		&module.SendCommandResponse{}),
+	)
+
+	removeCmd := &ishell.Cmd{
+		Name: "remove",
+	}
+
+	removeCmd.AddCmd(createCommand(
+		"file",
+		"remove file",
+		moduleClient.RemoveFileEndpoint,
+		&module.RemoveFileRequest{},
+		&module.RemoveFileResponse{}),
+	)
+
+	removeCmd.AddCmd(createCommand(
+		"dir",
+		"remove directory",
+		moduleClient.RemoveDirectoryEndpoint,
+		&module.RemoveDirectoryRequest{},
+		&module.RemoveDirectoryResponse{}),
+	)
+
+	moduleCmd.AddCmd(removeCmd)
+
+	return moduleCmd
 }
