@@ -74,12 +74,7 @@ func (s *service) RemoveKMI(id uint) error {
 }
 
 func (s *service) GetKMI(id uint, k *KMI) error {
-	err := s.db.Where("ID = ?", id)
-	if err != nil {
-		return err
-	}
-
-	err = s.db.First(k)
+	err := s.db.First(k, "ID = ?", id)
 	if err != nil {
 		return err
 	}

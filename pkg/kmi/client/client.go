@@ -107,17 +107,14 @@ func convertKMDI(k *pb.KMDI) kmi.KMDI {
 
 func convertKMI(k *pb.KMI) *kmi.KMI {
 	return &kmi.KMI{
-		KMDI:        convertKMDI(k.KMDI),
-		Dockerfile:  k.Dockerfile,
-		Context:     k.Context,
-		Commands:    abstraction.NewJSONFromMap(k.Commands),
-		Environment: abstraction.NewJSONFromMap(k.Environment),
-		Frontend:    convertFrontendModuleArray(k.Frontend),
-		Imports:     pq.StringArray(k.Imports),
-		Interfaces:  abstraction.NewJSONFromMap(k.Interfaces),
-		Mounts:      pq.StringArray(k.Mounts),
-		Variables:   pq.StringArray(k.Variables),
-		Resources:   abstraction.NewJSONFromMap(k.Resources),
+		KMDI:            convertKMDI(k.KMDI),
+		ProvisionScript: k.ProvisionScript,
+		Commands:        abstraction.NewJSONFromMap(k.Commands),
+		Environment:     abstraction.NewJSONFromMap(k.Environment),
+		Frontend:        convertFrontendModuleArray(k.Frontend),
+		Imports:         pq.StringArray(k.Imports),
+		Interfaces:      abstraction.NewJSONFromMap(k.Interfaces),
+		Resources:       abstraction.NewJSONFromMap(k.Resources),
 	}
 }
 

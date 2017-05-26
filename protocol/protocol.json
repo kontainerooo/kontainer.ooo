@@ -19,24 +19,6 @@
       "KMI": "ALL"
     }
   },
-  "customercontainer": {
-    "id": "CCS",
-    "methods": {
-      "CreateContainer": "CRT",
-      "EditContainer": "EDT",
-      "RemoveContainer": "REM",
-      "Instances": "ALL",
-      "CreateDockerImage": "CDI"
-    }
-  },
-  "containerlifecycle": {
-    "id": "CLS",
-    "methods": {
-      "StartContainer": "SCN",
-      "StartCommand": "SCM",
-      "StopContainer": "STP"
-    }
-  },
   "routing": {
     "id": "RTG",
     "methods": {
@@ -50,6 +32,41 @@
       "AddServerName": "ASN",
       "RemoveServerName": "RSN",
       "Configurations": "CON"
+    },
+    "container": {
+      "id": "CNT",
+      "methods": {
+        "CreateContainer": "CRT",
+        "RemoveContainer": "REM",
+        "Instances": "ALL",
+        "StopContainer": "STO",
+        "Execute": "EXE",
+        "GetEnv": "GEV",
+        "SetEnv": "SEV",
+        "IDFromName": "IFN",
+        "GetContainerKMI": "GCK"
+      }
+    },
+    "module": {
+      "id": "MDL",
+      "methods": {
+        "SetPublicKey": "SPK",
+        "RemoveFile": "RMF",
+        "RemoveDirectory": "RMD",
+        "GetFiles": "GFS",
+        "GetFile": "GTF",
+        "UploadFile": "ULF",
+        "GetModuleConfig": "GMC",
+        "SendCommand": "ISCMFN",
+        "SetEnv": "SEV",
+        "GetEnv": "GEV"
+      }
+    }
+  },
+  "kentheguru": {
+    "id": "KTG",
+    "methods": {
+      "Authentication": "AUT"
     }
   }
 }

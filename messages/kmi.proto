@@ -28,16 +28,14 @@ message FrontendModule {
 
 message KMI {
   KMDI KMDI = 1;
-  string dockerfile = 2;
+  string provisionScript = 2;
   string context = 3;
   map<string, string> commands = 4;
   map<string, string> environment = 5;
   repeated FrontendModule frontend = 6;
   repeated string imports = 7;
   map<string, string> interfaces = 8;
-  repeated string mounts = 9;
-  repeated string variables = 10;
-  map<string, string> resources = 11;
+  map<string, string> resources = 9;
 }
 
 message AddKMIRequest {

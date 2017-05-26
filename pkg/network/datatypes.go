@@ -5,7 +5,8 @@ import "github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 
 // Networks stores the networks belonging to a user
 type Networks struct {
-	UserID      uint
+	// can stay at UserID since it will be rewritten soon ¯\_(ツ)_/¯
+	UserID      uint   `bart:"ref"`
 	NetworkID   string `gorm:"primary_key"`
 	NetworkName string
 	IsPrimary   bool

@@ -4,13 +4,13 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
+	"github.com/kontainerooo/kontainer.ooo/pkg/kmi/pb"
 	ws "github.com/kontainerooo/kontainer.ooo/pkg/websocket"
 )
 
 // MakeWebsocketService makes a set of kmi Endpoints available as a websocket Service
 func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
-	service := ws.NewServiceDescription("kmiService", ws.ProtoIDFromString("KMI"))
+	service, _ := ws.NewServiceDescription("kmiService", ws.ProtoIDFromString("KMI"))
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
 		"AddKMI",

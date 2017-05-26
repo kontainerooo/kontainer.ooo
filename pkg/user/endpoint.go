@@ -8,12 +8,13 @@ import (
 
 // Endpoints is a struct which collects all endpoints for the user service
 type Endpoints struct {
-	CreateUserEndpoint     endpoint.Endpoint
-	EditUserEndpoint       endpoint.Endpoint
-	ChangeUsernameEndpoint endpoint.Endpoint
-	DeleteUserEndpoint     endpoint.Endpoint
-	ResetPasswordEndpoint  endpoint.Endpoint
-	GetUserEndpoint        endpoint.Endpoint
+	CreateUserEndpoint            endpoint.Endpoint
+	EditUserEndpoint              endpoint.Endpoint
+	ChangeUsernameEndpoint        endpoint.Endpoint
+	DeleteUserEndpoint            endpoint.Endpoint
+	ResetPasswordEndpoint         endpoint.Endpoint
+	GetUserEndpoint               endpoint.Endpoint
+	CheckLoginCredentialsEndpoint endpoint.Endpoint
 }
 
 // CreateUserRequest is the request struct for the CreateUserEndpoint
@@ -25,7 +26,7 @@ type CreateUserRequest struct {
 
 // CreateUserResponse is the response struct for the CreateUserEndpoint
 type CreateUserResponse struct {
-	ID    uint
+	ID    uint `bart:"ref"`
 	Error error
 }
 
@@ -43,7 +44,7 @@ func MakeCreateUserEndpoint(s Service) endpoint.Endpoint {
 
 // EditUserRequest is the request struct for the EditUserEndpoint
 type EditUserRequest struct {
-	ID  uint
+	ID  uint `bart:"ref"`
 	Cfg *Config
 }
 
@@ -65,7 +66,7 @@ func MakeEditUserEndpoint(s Service) endpoint.Endpoint {
 
 // ChangeUsernameRequest is the request struct for the ChangeUsernameEndpoint
 type ChangeUsernameRequest struct {
-	ID       uint
+	ID       uint `bart:"ref"`
 	Username string
 }
 
@@ -87,7 +88,7 @@ func MakeChangeUsernameEndpoint(s Service) endpoint.Endpoint {
 
 // DeleteUserRequest is the request struct for the DeleteUserEndpoint
 type DeleteUserRequest struct {
-	ID uint
+	ID uint `bart:"ref"`
 }
 
 // DeleteUserResponse is the response struct for the DeleteUserEndpoint
@@ -129,7 +130,7 @@ func MakeResetPasswordEndpoint(s Service) endpoint.Endpoint {
 
 // GetUserRequest is the request struct for the GetUserEndpoint
 type GetUserRequest struct {
-	ID uint
+	ID uint `bart:"ref"`
 }
 
 // GetUserResponse is the response struct for the GetUserEndpoint
@@ -147,6 +148,28 @@ func MakeGetUserEndpoint(s Service) endpoint.Endpoint {
 		return GetUserResponse{
 			User:  user,
 			Error: err,
+		}, nil
+	}
+}
+
+// CheckLoginCredentialsRequest is the request struct for the CheckLoginCredentialsEndpoint
+type CheckLoginCredentialsRequest struct {
+	Username string
+	Password string
+}
+
+// CheckLoginCredentialsResponse is the response struct for the CheckLoginCredentialsEndpoint
+type CheckLoginCredentialsResponse struct {
+	ID uint
+}
+
+// MakeCheckLoginCredentialsEndpoint creates a gokit endpoiint which invokes GetUser
+func MakeCheckLoginCredentialsEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		checkRequest := request.(CheckLoginCredentialsRequest)
+		id := s.CheckLoginCredentials(checkRequest.Username, checkRequest.Password)
+		return CheckLoginCredentialsResponse{
+			ID: id,
 		}, nil
 	}
 }

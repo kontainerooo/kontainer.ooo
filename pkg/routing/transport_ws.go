@@ -4,13 +4,13 @@ import (
 	"context"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
+	"github.com/kontainerooo/kontainer.ooo/pkg/routing/pb"
 	ws "github.com/kontainerooo/kontainer.ooo/pkg/websocket"
 )
 
 // MakeWebsocketService makes a set of routing Endpoints available as a websocket Service
 func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
-	service := ws.NewServiceDescription("routingService", ws.ProtoIDFromString("RTG"))
+	service, _ := ws.NewServiceDescription("routingService", ws.ProtoIDFromString("RTG"))
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
 		"CreateConfig",

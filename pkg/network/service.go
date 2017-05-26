@@ -4,11 +4,8 @@ package network
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 
-	"github.com/docker/docker/api/types"
-	networkTypes "github.com/docker/docker/api/types/network"
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 	"github.com/kontainerooo/kontainer.ooo/pkg/firewall"
 )
@@ -56,8 +53,8 @@ type dbAdapter interface {
 }
 
 type service struct {
-	dcli     abstraction.DCli
 	db       dbAdapter
+	dcli     abstraction.DCli
 	fwClient *firewall.Endpoints
 	logger   log.Logger
 }
@@ -91,9 +88,7 @@ func (s *service) createNetwork(refid uint, cfg *Config, isPrimary bool) error {
 		return ErrNetworkAlreadyExists
 	}
 
-	res, err := s.dcli.NetworkCreate(context.Background(), fmt.Sprintf("%s-%s", string(refid), name), types.NetworkCreate{
-		Driver: cfg.Driver,
-	})
+	err = s.dcli.NetworkCreate()
 	if err != nil {
 		return err
 	}
@@ -101,14 +96,14 @@ func (s *service) createNetwork(refid uint, cfg *Config, isPrimary bool) error {
 	nw = Networks{
 		UserID:      uint(refid),
 		NetworkName: name,
-		NetworkID:   res.ID,
+		NetworkID:   "res.ID",
 		IsPrimary:   isPrimary,
 	}
 
 	err = s.db.Create(&nw)
 	if err != nil {
 		// Try to remove the actual network on db error
-		s.dcli.NetworkRemove(context.Background(), res.ID)
+		s.dcli.NetworkRemove()
 		return err
 	}
 
@@ -141,7 +136,7 @@ func (s *service) RemoveNetworkByName(refid uint, name string) error {
 
 	if nw.NetworkID != "" {
 		s.db.Begin()
-		err = s.dcli.NetworkRemove(context.Background(), nw.NetworkID)
+		err = s.dcli.NetworkRemove()
 		if err != nil {
 			return err
 		}
@@ -182,23 +177,23 @@ func (s *service) AddContainerToNetwork(refid uint, name string, containerID str
 	}
 
 	if nw.NetworkID != "" {
-		err = s.dcli.NetworkConnect(context.Background(), nw.NetworkID, containerID, &networkTypes.EndpointSettings{})
+		err = s.dcli.NetworkConnect()
 		if err != nil {
 			return err
 		}
 
 		// Check which IP address we got
-		information, err := s.dcli.NetworkInspect(context.Background(), nw.NetworkID, false)
+		err := s.dcli.NetworkInspect()
 		if err != nil {
 			return err
 		}
 
-		c, ok := information.Containers[containerID]
-		if !ok {
-			return errors.New("Container was not connected to network")
-		}
-
-		ip, err := abstraction.NewInet(c.IPv4Address)
+		// c, ok := information.Containers[containerID]
+		// if !ok {
+		// 	return errors.New("Container was not connected to network")
+		// }
+		//
+		ip, err := abstraction.NewInet("127.0.8.15")
 		if err != nil {
 			return err
 		}
@@ -230,7 +225,7 @@ func (s *service) RemoveContainerFromNetwork(refid uint, name string, containerI
 		return err
 	}
 	if nw.NetworkID != "" {
-		err = s.dcli.NetworkDisconnect(context.Background(), nw.NetworkID, containerID, true)
+		err = s.dcli.NetworkDisconnect()
 		if err != nil {
 			return err
 		}

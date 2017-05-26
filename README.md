@@ -15,7 +15,7 @@ It is recommended that you build the project using the provided vagrant machine 
 ### 1. Building the go backend
 The backend requires `golang` and the `protobuf compiler` to be installed. Additionally the go packages `github.com/golang/protobuf/protoc-gen-go` and `github.com/golang/protobuf/proto` need to be installed.
 
-To be able to run **kontainer.ooo** `docker`, a `postgresql` instance and `iptables` are required.
+To be able to run **kontainer.ooo** a `postgresql` instance and `iptables` are required.
 
 The `Vagrantfile` already has these dependencies configured.
 

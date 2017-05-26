@@ -15,10 +15,6 @@ Vagrant.configure(2) do |config|
   # Websocket Port
   config.vm.network "forwarded_port", guest: 8083, host: 8083
 
-  # Docker Port
-  # In the future docker will not listen to tcp. Sorry.
-  config.vm.network "forwarded_port", guest: 2375, host: 9075
-
   # Fronted Port
   config.vm.network "forwarded_port", guest: 4200, host: 4200
 
