@@ -6,6 +6,8 @@ import (
 	"github.com/go-kit/kit/log"
 	grpctransport "github.com/go-kit/kit/transport/grpc"
 	"github.com/kontainerooo/kontainer.ooo/pkg/container/pb"
+	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
+	kmiPB "github.com/kontainerooo/kontainer.ooo/pkg/kmi/pb"
 	oldcontext "golang.org/x/net/context"
 )
 
@@ -83,6 +85,51 @@ type grpcServer struct {
 	setenv          grpctransport.Handler
 	idforname       grpctransport.Handler
 	getcontainerkmi grpctransport.Handler
+}
+
+func convertPBFrontendModule(f *kmi.FrontendModule) *kmiPB.FrontendModule {
+	return &kmiPB.FrontendModule{
+		Template:   f.Template,
+		Parameters: f.Parameters.ToStringMap(),
+	}
+}
+
+func convertPBFrontendModuleArray(f kmi.FrontendArray) []*kmiPB.FrontendModule {
+	a := make([]*kmiPB.FrontendModule, len(f))
+	for i, m := range f {
+		a[i] = convertPBFrontendModule(m)
+	}
+	return a
+}
+
+func convertPBKMDI(k kmi.KMDI) *kmiPB.KMDI {
+	return &kmiPB.KMDI{
+		ID:          uint32(k.ID),
+		Name:        k.Name,
+		Version:     k.Version,
+		Description: k.Description,
+	}
+}
+
+func convertPBKMI(k *CKMI) *kmiPB.KMI {
+	return &kmiPB.KMI{
+		KMDI:            convertPBKMDI(k.KMDI),
+		ProvisionScript: k.ProvisionScript,
+		Commands:        k.Commands.ToStringMap(),
+		Environment:     k.Environment.ToStringMap(),
+		Frontend:        convertPBFrontendModuleArray(k.Frontend),
+		Imports:         k.Imports,
+		Interfaces:      k.Interfaces.ToStringMap(),
+		Resources:       k.Resources.ToStringMap(),
+	}
+}
+
+func convertPBKMDIArray(k *[]kmi.KMDI) []*kmiPB.KMDI {
+	a := make([]*kmiPB.KMDI, len(*k))
+	for i, d := range *k {
+		a[i] = convertPBKMDI(d)
+	}
+	return a
 }
 
 func (s *grpcServer) CreateContainer(ctx oldcontext.Context, req *pb.CreateContainerRequest) (*pb.CreateContainerResponse, error) {
@@ -254,7 +301,9 @@ func DecodeGRPCGetContainerKMIRequest(_ context.Context, grpcReq interface{}) (i
 // messages/container.proto-domain createcontainer response to a gRPC CreateContainer response.
 func EncodeGRPCCreateContainerResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(CreateContainerResponse)
-	gRPCRes := &pb.CreateContainerResponse{}
+	gRPCRes := &pb.CreateContainerResponse{
+		ID: res.ID,
+	}
 	if res.Error != nil {
 		gRPCRes.Error = res.Error.Error()
 	}
@@ -275,7 +324,20 @@ func EncodeGRPCRemoveContainerResponse(_ context.Context, response interface{}) 
 // EncodeGRPCInstancesResponse is a transport/grpc.EncodeRequestFunc that converts a
 // messages/container.proto-domain instances response to a gRPC Instances response.
 func EncodeGRPCInstancesResponse(_ context.Context, response interface{}) (interface{}, error) {
-	gRPCRes := &pb.InstancesResponse{}
+	res := response.(InstancesResponse)
+	cts := []*pb.Container{}
+	for _, v := range res.Containers {
+		c := &pb.Container{
+			ContainerID:   v.ContainerID,
+			ContainerName: v.ContainerName,
+			Kmi:           convertPBKMI(&v.KMI),
+			RefID:         uint32(v.RefID),
+		}
+		cts = append(cts, c)
+	}
+	gRPCRes := &pb.InstancesResponse{
+		Instances: cts,
+	}
 	return gRPCRes, nil
 }
 
@@ -294,7 +356,9 @@ func EncodeGRPCStopContainerResponse(_ context.Context, response interface{}) (i
 // messages/container.proto-domain execute response to a gRPC Execute response.
 func EncodeGRPCExecuteResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(ExecuteResponse)
-	gRPCRes := &pb.ExecuteResponse{}
+	gRPCRes := &pb.ExecuteResponse{
+		Response: res.Response,
+	}
 	if res.Error != nil {
 		gRPCRes.Error = res.Error.Error()
 	}
