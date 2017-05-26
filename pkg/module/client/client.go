@@ -24,7 +24,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *module.Endpoints {
 	{
 		SetPublicKeyEndpoint = grpctransport.NewClient(
 			conn,
-			"moduleService",
+			"module.ModuleService",
 			"SetPublicKey",
 			EncodeGRPCSetPublicKeyRequest,
 			DecodeGRPCSetPublicKeyResponse,
@@ -36,7 +36,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *module.Endpoints {
 	{
 		RemoveFileEndpoint = grpctransport.NewClient(
 			conn,
-			"moduleService",
+			"module.ModuleService",
 			"RemoveFile",
 			EncodeGRPCRemoveFileRequest,
 			DecodeGRPCRemoveFileResponse,
@@ -48,7 +48,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *module.Endpoints {
 	{
 		RemoveDirectoryEndpoint = grpctransport.NewClient(
 			conn,
-			"moduleService",
+			"module.ModuleService",
 			"RemoveDirectory",
 			EncodeGRPCRemoveDirectoryRequest,
 			DecodeGRPCRemoveDirectoryResponse,
@@ -60,7 +60,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *module.Endpoints {
 	{
 		GetFilesEndpoint = grpctransport.NewClient(
 			conn,
-			"moduleService",
+			"module.ModuleService",
 			"GetFiles",
 			EncodeGRPCGetFilesRequest,
 			DecodeGRPCGetFilesResponse,
@@ -72,7 +72,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *module.Endpoints {
 	{
 		GetFileEndpoint = grpctransport.NewClient(
 			conn,
-			"moduleService",
+			"module.ModuleService",
 			"GetFile",
 			EncodeGRPCGetFileRequest,
 			DecodeGRPCGetFileResponse,
@@ -84,7 +84,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *module.Endpoints {
 	{
 		UploadFileEndpoint = grpctransport.NewClient(
 			conn,
-			"moduleService",
+			"module.ModuleService",
 			"UploadFile",
 			EncodeGRPCUploadFileRequest,
 			DecodeGRPCUploadFileResponse,
@@ -96,7 +96,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *module.Endpoints {
 	{
 		GetModuleConfigEndpoint = grpctransport.NewClient(
 			conn,
-			"moduleService",
+			"module.ModuleService",
 			"GetModuleConfig",
 			EncodeGRPCGetModuleConfigRequest,
 			DecodeGRPCGetModuleConfigResponse,
@@ -108,7 +108,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *module.Endpoints {
 	{
 		SendCommandEndpoint = grpctransport.NewClient(
 			conn,
-			"moduleService",
+			"module.ModuleService",
 			"SendCommand",
 			EncodeGRPCSendCommandRequest,
 			DecodeGRPCSendCommandResponse,
@@ -120,7 +120,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *module.Endpoints {
 	{
 		SetEnvEndpoint = grpctransport.NewClient(
 			conn,
-			"moduleService",
+			"module.ModuleService",
 			"SetEnv",
 			EncodeGRPCSetEnvRequest,
 			DecodeGRPCSetEnvResponse,
@@ -132,7 +132,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *module.Endpoints {
 	{
 		GetEnvEndpoint = grpctransport.NewClient(
 			conn,
-			"moduleService",
+			"module.ModuleService",
 			"GetEnv",
 			EncodeGRPCGetEnvRequest,
 			DecodeGRPCGetEnvResponse,
