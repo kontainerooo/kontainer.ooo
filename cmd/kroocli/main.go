@@ -17,6 +17,7 @@ func main() {
 	)
 
 	shell := ishell.New()
+	shell.SetHomeHistoryPath(".kroocli_history")
 	shell.Println("Kontainer.ooo interactive shell")
 
 	logger := log.NewLogfmtLogger(os.Stdout)
