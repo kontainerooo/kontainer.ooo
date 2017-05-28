@@ -269,6 +269,7 @@ func EncodeGRPCCreateContainerRequest(_ context.Context, request interface{}) (i
 func DecodeGRPCCreateContainerResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
 	response := grpcResponse.(*containerPB.CreateContainerResponse)
 	return &container.CreateContainerResponse{
+		ID:    response.ID,
 		Error: getError(response.Error),
 	}, nil
 }
@@ -345,7 +346,8 @@ func EncodeGRPCExecuteRequest(_ context.Context, request interface{}) (interface
 func DecodeGRPCExecuteResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
 	response := grpcResponse.(*containerPB.ExecuteResponse)
 	return &container.ExecuteResponse{
-		Error: getError(response.Error),
+		Error:    getError(response.Error),
+		Response: response.Response,
 	}, nil
 }
 
@@ -406,6 +408,7 @@ func EncodeGRPCIDForNameRequest(_ context.Context, request interface{}) (interfa
 func DecodeGRPCIDForNameResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
 	response := grpcResponse.(*containerPB.IDForNameResponse)
 	return &container.IDForNameResponse{
+		ID:    response.ID,
 		Error: getError(response.Error),
 	}, nil
 }
