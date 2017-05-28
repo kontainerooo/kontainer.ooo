@@ -15,6 +15,8 @@ import (
 	kmiClient "github.com/kontainerooo/kontainer.ooo/pkg/kmi/client"
 	"github.com/kontainerooo/kontainer.ooo/pkg/module"
 	moduleClient "github.com/kontainerooo/kontainer.ooo/pkg/module/client"
+	"github.com/kontainerooo/kontainer.ooo/pkg/user"
+	userClient "github.com/kontainerooo/kontainer.ooo/pkg/user/client"
 
 	"github.com/abiosoft/ishell"
 	"google.golang.org/grpc"
@@ -38,6 +40,9 @@ func InitShell(sh *ishell.Shell, conn *grpc.ClientConn, logger log.Logger) {
 
 	containerClient := containerClient.New(conn, logger)
 	sh.AddCmd(containerCommands(sh, containerClient))
+
+	userClient := userClient.New(conn, logger)
+	sh.AddCmd(userCommands(sh, userClient))
 }
 
 func fillRequestStruct(c *ishell.Context, value *reflect.Value, typ reflect.Type) {
@@ -76,6 +81,13 @@ func fillRequestStruct(c *ishell.Context, value *reflect.Value, typ reflect.Type
 					continue
 				}
 				valField.SetInt(num)
+			case reflect.Bool:
+				bul, err := strconv.ParseBool(value)
+				if err != nil {
+					c.Println(err.Error())
+					continue
+				}
+				valField.SetBool(bul)
 			}
 			break
 		}
@@ -115,6 +127,7 @@ func createCommand(name, help string, endpoint endpoint.Endpoint, req, resType i
 			reqVal := reqValPtr.Elem()
 			reqType := reqVal.Type()
 			fillRequestStruct(c, &reqVal, reqType)
+
 			res, err := endpoint(context.Background(), reqValPtr.Interface())
 			if err != nil {
 				c.Println(err)
@@ -130,7 +143,7 @@ func createCommand(name, help string, endpoint endpoint.Endpoint, req, resType i
 			}
 
 			errVal := resVal.FieldByName("Error")
-			if errVal.Interface() != nil && errVal != reflect.ValueOf(nil) {
+			if errVal != reflect.ValueOf(nil) && errVal.Interface() != nil {
 				c.Println("Error: ", errVal)
 				return
 			}
@@ -351,4 +364,65 @@ func containerCommands(sh *ishell.Shell, containerClient *container.Endpoints) *
 	))
 
 	return containerCmd
+}
+
+func userCommands(sh *ishell.Shell, userClient *user.Endpoints) *ishell.Cmd {
+	userCmd := &ishell.Cmd{
+		Name: "user",
+		Help: "all User Service commands",
+	}
+
+	userCmd.AddCmd(createCommand(
+		"create",
+		"create user",
+		userClient.CreateUserEndpoint,
+		&user.CreateUserRequest{
+			Cfg: &user.Config{
+				Address: user.Address{},
+			},
+		},
+		&user.CreateUserResponse{},
+	))
+
+	userCmd.AddCmd(createCommand(
+		"edit",
+		"edit user",
+		userClient.EditUserEndpoint,
+		&user.EditUserRequest{},
+		&user.EditUserResponse{},
+	))
+
+	userCmd.AddCmd(createCommand(
+		"delete",
+		"delete user",
+		userClient.DeleteUserEndpoint,
+		&user.DeleteUserRequest{},
+		&user.DeleteUserResponse{},
+	))
+
+	userCmd.AddCmd(createCommand(
+		"get",
+		"get user",
+		userClient.GetUserEndpoint,
+		&user.GetUserRequest{},
+		&user.GetUserResponse{},
+	))
+
+	userCmd.AddCmd(createCommand(
+		"changeusername",
+		"change username",
+		userClient.ChangeUsernameEndpoint,
+		&user.ChangeUsernameRequest{},
+		&user.ChangeUsernameResponse{},
+	))
+
+	userCmd.AddCmd(createCommand(
+		"checkcredentials",
+		"check login credentials",
+		userClient.CheckLoginCredentialsEndpoint,
+		&user.CheckLoginCredentialsRequest{},
+		&user.CheckLoginCredentialsResponse{},
+	))
+
+	return userCmd
 }
