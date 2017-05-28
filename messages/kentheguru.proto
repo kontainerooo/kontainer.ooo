@@ -11,3 +11,9 @@ message AuthenticationResponse {
   string token = 1;
   string error = 2;
 }
+
+message ErrorResponse {
+  string error = 1;
+  string service = 2;
+  string method = 3;
+}
