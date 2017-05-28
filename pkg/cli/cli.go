@@ -15,6 +15,8 @@ import (
 	kmiClient "github.com/kontainerooo/kontainer.ooo/pkg/kmi/client"
 	"github.com/kontainerooo/kontainer.ooo/pkg/module"
 	moduleClient "github.com/kontainerooo/kontainer.ooo/pkg/module/client"
+	"github.com/kontainerooo/kontainer.ooo/pkg/routing"
+	routingClient "github.com/kontainerooo/kontainer.ooo/pkg/routing/client"
 	"github.com/kontainerooo/kontainer.ooo/pkg/user"
 	userClient "github.com/kontainerooo/kontainer.ooo/pkg/user/client"
 
@@ -43,6 +45,9 @@ func InitShell(sh *ishell.Shell, conn *grpc.ClientConn, logger log.Logger) {
 
 	userClient := userClient.New(conn, logger)
 	sh.AddCmd(userCommands(sh, userClient))
+
+	routingClient := routingClient.New(conn, logger)
+	sh.AddCmd(routingCommands(sh, routingClient))
 }
 
 func fillRequestStruct(c *ishell.Context, value *reflect.Value, typ reflect.Type) {
@@ -425,4 +430,121 @@ func userCommands(sh *ishell.Shell, userClient *user.Endpoints) *ishell.Cmd {
 	))
 
 	return userCmd
+}
+
+func routingCommands(sh *ishell.Shell, routingClient *routing.Endpoints) *ishell.Cmd {
+	routingCmd := &ishell.Cmd{
+		Name: "routing",
+		Help: "all routing service commands",
+	}
+
+	ls := &routing.ListenStatement{}
+	log := routing.Log{}
+	ssl := routing.SSLSettings{}
+	loc := &routing.LocationRule{}
+	rc := &routing.RouterConfig{
+		ListenStatement: ls,
+		AccessLog:       log,
+		ErrorLog:        log,
+		SSLSettings:     ssl,
+		LocationRules:   routing.LocationRules{loc},
+	}
+
+	routingCmd.AddCmd(createCommand(
+		"createconf",
+		"Create a router config",
+		routingClient.CreateConfigEndpoint,
+		&routing.CreateConfigRequest{
+			Config: rc,
+		},
+		&routing.CreateConfigResponse{},
+	))
+
+	routingCmd.AddCmd(createCommand(
+		"editconf",
+		"Edit a router config",
+		routingClient.EditConfigEndpoint,
+		&routing.EditConfigRequest{
+			Config: rc,
+		},
+		&routing.EditConfigResponse{},
+	))
+
+	routingCmd.AddCmd(createCommand(
+		"getconf",
+		"Get a router config",
+		routingClient.GetConfigEndpoint,
+		&routing.GetConfigRequest{},
+		&routing.GetConfigResponse{},
+	))
+
+	removeCmd := &ishell.Cmd{
+		Name: "remove",
+	}
+
+	removeCmd.AddCmd(createCommand(
+		"conf",
+		"Remove a router config",
+		routingClient.RemoveConfigEndpoint,
+		&routing.RemoveConfigRequest{},
+		&routing.RemoveConfigResponse{},
+	))
+
+	removeCmd.AddCmd(createCommand(
+		"loc",
+		"Remove a location",
+		routingClient.RemoveLocationEndpoint,
+		&routing.RemoveLocationRequest{},
+		&routing.RemoveLocationResponse{},
+	))
+
+	removeCmd.AddCmd(createCommand(
+		"sn",
+		"Remove a server name",
+		routingClient.RemoveServerNameEndpoint,
+		&routing.RemoveServerNameRequest{},
+		&routing.RemoveServerNameResponse{},
+	))
+
+	routingCmd.AddCmd(removeCmd)
+
+	addCmd := &ishell.Cmd{
+		Name: "Add",
+	}
+
+	addCmd.AddCmd(createCommand(
+		"loc",
+		"Add a location",
+		routingClient.AddLocationEndpoint,
+		&routing.AddLocationRequest{},
+		&routing.AddLocationResponse{},
+	))
+
+	addCmd.AddCmd(createCommand(
+		"sn",
+		"Add a server name",
+		routingClient.AddServerNameEndpoint,
+		&routing.AddServerNameRequest{},
+		&routing.AddServerNameResponse{},
+	))
+
+	routingCmd.AddCmd(addCmd)
+
+	routingCmd.AddCmd(createCommand(
+		"changels",
+		"Change a listen statement",
+		routingClient.ChangeListenStatementEndpoint,
+		&routing.ChangeListenStatementRequest{},
+		&routing.ChangeListenStatementResponse{},
+	))
+
+	routingCmd.AddCmd(createCommand(
+		"all",
+		"Get all configurations",
+		routingClient.ConfigurationsEndpoint,
+		&routing.ConfigurationsRequest{},
+		&routing.ConfigurationsResponse{},
+	))
+
+	return routingCmd
 }
