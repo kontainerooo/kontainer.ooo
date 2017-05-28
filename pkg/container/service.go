@@ -346,7 +346,9 @@ func (s *service) Execute(refID uint, id string, cmd string, env map[string]stri
 	// Make env string array
 	envString := []string{}
 	for k, v := range execEnv {
-		envString = append(envString, fmt.Sprintf("\"%s\"=\"%s\"", k, v))
+		// Replace spaces in ENV variable key
+		key := strings.Replace(k, " ", "_", -1)
+		envString = append(envString, fmt.Sprintf("%s=\"%s\"", key, v))
 	}
 
 	p := &libcontainer.Process{
@@ -380,7 +382,9 @@ func (s *service) GetEnv(refID uint, id string, key string) (string, error) {
 	if key == "" {
 		envString := ""
 		for k, v := range env {
-			envString = fmt.Sprintf("%s, \"%s\"=\"%s\"", envString, k, v)
+			// Replace spaces in ENV variable key
+			key := strings.Replace(k, " ", "_", -1)
+			envString = fmt.Sprintf("%s, \"%s\"=\"%s\"", envString, key, v)
 		}
 		return envString, nil
 	}
