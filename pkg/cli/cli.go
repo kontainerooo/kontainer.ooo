@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
+	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 	"github.com/kontainerooo/kontainer.ooo/pkg/container"
 	containerClient "github.com/kontainerooo/kontainer.ooo/pkg/container/client"
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
@@ -71,7 +72,10 @@ func fillRequestStruct(c *ishell.Context, value *reflect.Value, typ reflect.Type
 			value := c.ReadLine()
 			switch valField.Kind() {
 			case reflect.String:
-				valField.Set(reflect.ValueOf(value))
+				if valField.Type() == reflect.TypeOf(abstraction.Inet("")) {
+					valField.Set(reflect.ValueOf(abstraction.Inet(value)))
+				}
+				valField.SetString(value)
 			case reflect.Uint:
 				num, err := strconv.ParseUint(value, 10, 32)
 				if err != nil {

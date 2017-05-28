@@ -218,7 +218,8 @@ func EncodeGRPCGetConfigRequest(_ context.Context, request interface{}) (interfa
 func DecodeGRPCGetConfigResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
 	response := grpcResponse.(*pb.GetConfigResponse)
 	return &routing.GetConfigResponse{
-		Error: getError(response.Error),
+		Error:  getError(response.Error),
+		Config: *routing.ConvertPBConfig(response.Config),
 	}, nil
 }
 
