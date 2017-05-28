@@ -7,7 +7,6 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"runtime"
 	"syscall"
 	"time"
 
@@ -34,24 +33,7 @@ import (
 	"github.com/kontainerooo/kontainer.ooo/pkg/user"
 	userPB "github.com/kontainerooo/kontainer.ooo/pkg/user/pb"
 	ws "github.com/kontainerooo/kontainer.ooo/pkg/websocket"
-	_ "github.com/opencontainers/runc/libcontainer/nsenter"
 )
-
-func init() {
-	if len(os.Args) > 1 && os.Args[1] == "init" {
-		runtime.GOMAXPROCS(1)
-		runtime.LockOSThread()
-		factory, err := libcontainer.New("")
-		if err != nil {
-			panic(err)
-		}
-
-		if err := factory.StartInitialization(); err != nil {
-			panic(err)
-		}
-		panic("--this line should have never been executed, congratulations--")
-	}
-}
 
 func main() {
 
@@ -62,6 +44,7 @@ func main() {
 		bcryptCost   = 15
 		isMock       bool
 		dbWrapper    abstraction.DB
+		initBinary   = "kroo-init"
 	)
 
 	/* The krood binary can now be given a flag called `--mock`. With this
@@ -116,7 +99,7 @@ func main() {
 
 	routingEndpoints := makeRoutingServiceEndpoints(routingService)
 
-	factory, err := libcontainer.New("/var/lib/kontainerooo/container", libcontainer.Cgroupfs, libcontainer.InitArgs(os.Args[0], "init"))
+	factory, err := libcontainer.New("/var/lib/kontainerooo/container", libcontainer.Cgroupfs, libcontainer.InitArgs(initBinary, "init"))
 	if err != nil {
 		panic(err)
 	}
