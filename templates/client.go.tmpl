@@ -17,7 +17,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *{{.File.Name | splitArray "/
 			{
 				{{.Name}}Endpoint = grpctransport.NewClient(
 					conn,
-					"{{$file.Name | splitArray "/" | last | splitArray "." | first}}Service",
+					"{{$file.Package}}.{{$file.Name | splitArray "/" | last | splitArray "." | first | title}}Service",
 					"{{.Name}}",
 					EncodeGRPC{{.Name}}Request,
 					DecodeGRPC{{.Name}}Response,
