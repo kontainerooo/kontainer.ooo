@@ -1,3 +1,5 @@
+// +build linux
+
 package container
 
 import (
@@ -80,7 +82,7 @@ const (
 
 // InitializeDatabases sets up the container service's database
 func (s *service) InitializeDatabases() error {
-	return s.db.AutoMigrate(&Container{})
+	return s.db.AutoMigrate(&CKMI{}, &Container{})
 }
 
 func (s *service) checkAndCreate(path string) error {
@@ -227,15 +229,31 @@ func (s *service) CreateContainer(refID uint, kmiID uint, name string) (id strin
 	}
 
 	c := Container{
-		RefID:       refID,
-		ContainerID: containerID,
-		KMI:         kmi,
+		RefID:         refID,
+		ContainerName: name,
+		ContainerID:   containerID,
 	}
-	err = s.db.Create(&c)
+
+	ckmi := CKMI(kmi)
+	ckmi.ID = 0
+
+	s.db.Begin()
+
+	err = s.db.Create(&ckmi)
 	if err != nil {
+		s.db.Rollback()
 		return "", err
 	}
 
+	c.KMIID = ckmi.ID
+
+	err = s.db.Create(&c)
+	if err != nil {
+		s.db.Rollback()
+		return "", err
+	}
+
+	s.db.Commit()
 	return containerID, nil
 }
 
@@ -392,7 +410,7 @@ func (s *service) SetEnv(refID uint, id string, key string, value string) error 
 	s.db.Begin()
 	c := &Container{
 		ContainerID: id,
-		KMI: kmi.KMI{
+		KMI: CKMI{
 			Environment: abstraction.NewJSONFromMap(env),
 		},
 	}
@@ -438,12 +456,12 @@ func (s *service) getTemplateKMI(kmiID uint) (kmi.KMI, error) {
 func (s *service) GetContainerKMI(containerID string) (kmi.KMI, error) {
 	// TODO: cache container KMIs
 	c := Container{}
-	err := s.db.First(&c, "ContainerID = ?", containerID)
+	err := s.db.First(&c, "container_id = ?", containerID)
 	if err != nil {
 		return kmi.KMI{}, err
 	}
 
-	return c.KMI, nil
+	return kmi.KMI(c.KMI), nil
 }
 
 func (s *service) initRootfs(refID uint, provisionScript string, id string, cKMI kmi.KMI) error {

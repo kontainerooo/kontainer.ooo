@@ -9,6 +9,8 @@ import (
 	oldcontext "golang.org/x/net/context"
 )
 
+// TODO: fix config proto message, restrict password/salt properties
+
 // MakeGRPCServer makes a set of endpoints available as a gRPC UserServiceServer
 func MakeGRPCServer(ctx context.Context, endpoints Endpoints, logger log.Logger) pb.UserServiceServer {
 	options := []grpctransport.ServerOption{
@@ -119,6 +121,14 @@ func (s *grpcServer) GetUser(ctx oldcontext.Context, req *pb.GetUserRequest) (*p
 	return res.(*pb.GetUserResponse), nil
 }
 
+func (s *grpcServer) CheckLoginCredentials(ctx oldcontext.Context, req *pb.CheckLoginCredentialsRequest) (*pb.CheckLoginCredentialsResponse, error) {
+	_, res, err := s.checkLoginCredentials.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res.(*pb.CheckLoginCredentialsResponse), nil
+}
+
 func convertPbAddress(pb *pb.Address) *Address {
 	return &Address{
 		ID:         uint(pb.ID),
@@ -131,7 +141,8 @@ func convertPbAddress(pb *pb.Address) *Address {
 	}
 }
 
-func convertPbConfig(pb *pb.Config) (*Config, *Address) {
+// ConvertPbConfig converts a protbuf config into a user.Config
+func ConvertPbConfig(pb *pb.Config) (*Config, *Address) {
 	cfg := &Config{
 		Admin:     pb.Admin,
 		Email:     pb.Email,
@@ -148,26 +159,39 @@ func convertPbConfig(pb *pb.Config) (*Config, *Address) {
 	return cfg, adr
 }
 
+// ConvertConfig converts a user-package-domain config struct into its protobuf message equivalent
+func ConvertConfig(cfg *Config, password bool) *pb.Config {
+	var hash, salt string
+	if password {
+		hash = cfg.Password
+		salt = cfg.Salt
+	}
+
+	return &pb.Config{
+		Admin:     cfg.Admin,
+		Email:     cfg.Email,
+		Password:  hash,
+		Salt:      salt,
+		Phone:     cfg.Phone,
+		Image:     cfg.Image,
+		AddressID: uint32(cfg.AddressID),
+		Address: &pb.Address{
+			ID:         uint32(cfg.Address.ID),
+			Postcode:   cfg.Address.Postcode,
+			City:       cfg.Address.City,
+			Country:    cfg.Address.Country,
+			Street:     cfg.Address.Street,
+			Houseno:    int32(cfg.Address.Houseno),
+			Additional: cfg.Address.Additional,
+		},
+	}
+}
+
 func convertUser(usr *User) *pb.User {
 	return &pb.User{
 		ID:       uint32(usr.ID),
 		Username: usr.Username,
-		Config: &pb.Config{
-			Admin:     usr.Admin,
-			Email:     usr.Email,
-			Phone:     usr.Phone,
-			Image:     usr.Image,
-			AddressID: uint32(usr.AddressID),
-			Address: &pb.Address{
-				ID:         uint32(usr.Address.ID),
-				Postcode:   usr.Address.Postcode,
-				City:       usr.Address.City,
-				Country:    usr.Address.Country,
-				Street:     usr.Address.Street,
-				Houseno:    int32(usr.Address.Houseno),
-				Additional: usr.Address.Additional,
-			},
-		},
+		Config:   ConvertConfig(&usr.Config, true),
 	}
 }
 
@@ -175,7 +199,9 @@ func convertUser(usr *User) *pb.User {
 // gRPC CreateUser request to a user-domain createUser request.
 func DecodeGRPCCreateUserRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
 	req := grpcReq.(*pb.CreateUserRequest)
-	cfg, adr := convertPbConfig(req.Config)
+
+	cfg, adr := ConvertPbConfig(req.Config)
+
 	return CreateUserRequest{
 		Username: req.Username,
 		Cfg:      cfg,
@@ -187,7 +213,7 @@ func DecodeGRPCCreateUserRequest(_ context.Context, grpcReq interface{}) (interf
 // gRPC EditUser request to a user-domain editUser request.
 func DecodeGRPCEditUserRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
 	req := grpcReq.(*pb.EditUserRequest)
-	cfg, _ := convertPbConfig(req.Config)
+	cfg, _ := ConvertPbConfig(req.Config)
 	return EditUserRequest{
 		ID:  uint(req.ID),
 		Cfg: cfg,
