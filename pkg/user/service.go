@@ -154,11 +154,7 @@ func (s *service) GetUser(id uint, user *User) error {
 
 func (s *service) GetUserByUsername(username string) (*User, error) {
 	user := &User{}
-	err := s.db.Where("Username = ?", username)
-	if err != nil {
-		return nil, err
-	}
-	err = s.db.First(user)
+	err := s.db.First(user, "Username = ?", username)
 	if err != nil && !s.db.IsNotFound(err) {
 		return nil, err
 	}
