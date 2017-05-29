@@ -37,6 +37,8 @@ type Config struct {
 type User struct {
 	ID       uint
 	Username string
+	Name     string
+	Surname  string
 	Config
 }
 
