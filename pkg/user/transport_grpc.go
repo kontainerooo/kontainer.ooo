@@ -159,7 +159,7 @@ func ConvertPbConfig(pb *pb.Config) (*Config, *Address) {
 	return cfg, adr
 }
 
-// ConvertConfig converts
+// ConvertConfig converts a user-package-domain config struct into its protobuf message equivalent
 func ConvertConfig(cfg *Config, password bool) *pb.Config {
 	var hash, salt string
 	if password {

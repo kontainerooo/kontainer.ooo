@@ -1,4 +1,4 @@
-// Package cli is
+// Package cli provides the available commands for kroocli
 package cli
 
 import (
