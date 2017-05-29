@@ -30,12 +30,12 @@ var _ = Describe("Server", func() {
 	Context("Server", func() {
 		Describe("New Server", func() {
 			It("Should return a new server", func() {
-				server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{})
+				server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{}, errh)
 				Ω(server).ShouldNot(BeNil())
 			})
 
 			It("Should accept middleware", func() {
-				server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{},
+				server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{}, errh,
 					ws.Before(func(ws.ProtoID, ws.ProtoID, interface{}, interface{}) error { return nil }),
 					ws.After(func(ws.ProtoID, ws.ProtoID, interface{}, interface{}) error { return nil }))
 				Ω(server).ShouldNot(BeNil())
@@ -44,7 +44,7 @@ var _ = Describe("Server", func() {
 			Context("Error Handling", func() {
 				Describe("Upgrader", func() {
 					It("Should set a ReadBuffersize if none is provided", func() {
-						server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{})
+						server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{}, errh)
 						Ω(server.Upgrader.ReadBufferSize).ShouldNot(BeNil())
 					})
 
@@ -52,7 +52,7 @@ var _ = Describe("Server", func() {
 						size := 123
 						server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{
 							WriteBufferSize: size,
-						}, testAuth{}, ws.SSLConfig{})
+						}, testAuth{}, ws.SSLConfig{}, errh)
 						Ω(server.Upgrader.ReadBufferSize).Should(BeEquivalentTo(size))
 					})
 
@@ -60,12 +60,12 @@ var _ = Describe("Server", func() {
 						size := 123
 						server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{
 							ReadBufferSize: size,
-						}, testAuth{}, ws.SSLConfig{})
+						}, testAuth{}, ws.SSLConfig{}, errh)
 						Ω(server.Upgrader.WriteBufferSize).Should(BeEquivalentTo(size))
 					})
 
 					It("Should provide a default CheckOrigin function", func() {
-						server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{})
+						server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{}, errh)
 						Ω(server.Upgrader.CheckOrigin(nil)).Should(BeTrue())
 					})
 				})
@@ -74,7 +74,7 @@ var _ = Describe("Server", func() {
 
 		Describe("Register Service", func() {
 			It("Should register a new Service", func() {
-				server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{})
+				server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{}, errh)
 				sd, _ := ws.NewServiceDescription("name", ws.ProtoIDFromString("TST"))
 
 				err := server.RegisterService(sd)
@@ -83,7 +83,7 @@ var _ = Describe("Server", func() {
 
 			Context("Error Handling", func() {
 				It("Should return an error if a service id already exists", func() {
-					server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{})
+					server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{}, errh)
 					sd, _ := ws.NewServiceDescription("name", ws.ProtoIDFromString("TST"))
 
 					server.RegisterService(sd)
@@ -96,7 +96,7 @@ var _ = Describe("Server", func() {
 		Describe("Get Service", func() {
 			It("Should return a Service", func() {
 				id := ws.ProtoIDFromString("TST")
-				server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{})
+				server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{}, errh)
 				sd, _ := ws.NewServiceDescription("name", id)
 				server.RegisterService(sd)
 
@@ -108,8 +108,7 @@ var _ = Describe("Server", func() {
 			Context("Error Handling", func() {
 				It("Should return an error if a service does not exist", func() {
 					id := ws.ProtoIDFromString("TST")
-					server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{})
-
+					server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{}, errh)
 					_, err := server.GetService(id)
 					Ω(err).Should(HaveOccurred())
 				})
@@ -121,7 +120,7 @@ var _ = Describe("Server", func() {
 				It("Should return an error if no server has been started", func() {
 					server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{
 						Only: true,
-					})
+					}, errh)
 					err := server.Serve("")
 					Ω(err).Should(HaveOccurred())
 				})
@@ -131,7 +130,7 @@ var _ = Describe("Server", func() {
 		Describe("Serve HTTP", func() {
 
 			It("Should accept connections", func() {
-				wsServer := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{})
+				wsServer := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{}, errh)
 				httpServer := httptest.NewServer(wsServer)
 
 				dialer := websocket.Dialer{}
@@ -149,7 +148,7 @@ var _ = Describe("Server", func() {
 				)
 
 				BeforeEach(func() {
-					wsServer := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{})
+					wsServer := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{}, errh)
 
 					sd, _ := ws.NewServiceDescription("test", ws.ProtoIDFromString("TST"))
 					sd.AddEndpoint(ws.NewServiceEndpoint("test", ws.ProtoIDFromString("TST"), makeTestEndpoint(), decodeTest, encodeTest))
@@ -184,37 +183,38 @@ var _ = Describe("Server", func() {
 					It("Should return an error message if a Service does not exist", func() {
 						connection.WriteMessage(websocket.TextMessage, []byte("BLA BLA bla"))
 						_, msg, _ := connection.ReadMessage()
-						Ω(msg).Should(BeEquivalentTo([]byte(errService.Error())))
+
+						Ω(string(msg)).Should(ContainSubstring(errService.Error()))
 					})
 
 					It("Should return an error message if a Method does not exist", func() {
 						connection.WriteMessage(websocket.TextMessage, []byte("TST BLA bla"))
 						_, msg, _ := connection.ReadMessage()
-						Ω(msg).Should(BeEquivalentTo([]byte(errMethod.Error())))
+						Ω(string(msg)).Should(ContainSubstring(errMethod.Error()))
 					})
 
 					It("Should return an error if a Service is not registered", func() {
 						connection.WriteMessage(websocket.TextMessage, []byte("NYI NYI bla"))
 						_, msg, _ := connection.ReadMessage()
-						Ω(msg).Should(BeEquivalentTo([]byte("Service Description NYI does not exist")))
+						Ω(string(msg)).Should(ContainSubstring("Service Description NYI does not exist"))
 					})
 
 					It("Should return an error if a Method is not registered", func() {
 						connection.WriteMessage(websocket.TextMessage, []byte("TST NYI bla"))
 						_, msg, _ := connection.ReadMessage()
-						Ω(msg).Should(BeEquivalentTo([]byte("Service Endpoint NYI does not exist")))
+						Ω(string(msg)).Should(ContainSubstring("Service Endpoint NYI does not exist"))
 					})
 
 					It("Should return an error if the Endpoint handler returns one", func() {
 						connection.WriteMessage(websocket.TextMessage, []byte("TST TST 42"))
 						_, msg, _ := connection.ReadMessage()
-						Ω(msg).Should(BeEquivalentTo([]byte(errEncode.Error())))
+						Ω(string(msg)).Should(ContainSubstring(errEncode.Error()))
 					})
 
 					It("Should return an error if the Protocol Encoder returns one", func() {
 						connection.WriteMessage(websocket.TextMessage, []byte("TST TST error"))
 						_, msg, _ := connection.ReadMessage()
-						Ω(msg).Should(BeEquivalentTo([]byte(errProtocolEncode.Error())))
+						Ω(string(msg)).Should(ContainSubstring(errProtocolEncode.Error()))
 					})
 
 					XContext("Middleware", func() {})

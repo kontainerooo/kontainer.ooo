@@ -40,7 +40,7 @@ type service struct {
 
 func (s *service) StartWebsocketTransport(errc chan error, logger log.Logger, wsAddr string) {
 	logger = log.With(logger, "transport", "ws")
-	wss := ws.NewServer(s.ProtocolMap, logger, s.WebsocketUpgrader, s.TokenAuth, s.SSLConfig, ws.Before(s.BartBus.GetOff), ws.After(s.BartBus.GetOn))
+	wss := ws.NewServer(s.ProtocolMap, logger, s.WebsocketUpgrader, s.TokenAuth, s.SSLConfig, s.ErrorHandler, ws.Before(s.BartBus.GetOff), ws.After(s.BartBus.GetOn))
 
 	userService := user.MakeWebsocketService(s.UserEndpoints)
 	wss.RegisterService(userService)
@@ -102,6 +102,30 @@ func (s *service) MakeEndpoint() endpoint.Endpoint {
 			ID:       response.ID,
 		}, nil
 	}
+}
+
+func (s *service) ErrorHandler(srv, me *ws.ProtoID, err error, ph ws.ProtocolHandler) []byte {
+	var (
+		ktgID               = ws.ProtoIDFromString("KTG")
+		errID               = ws.ProtoIDFromString("ERR")
+		srvString, meString string
+	)
+
+	if srv != nil {
+		srvString = srv.String()
+	}
+	if me != nil {
+		meString = me.String()
+	}
+
+	res := &pb.ErrorResponse{
+		Error:   err.Error(),
+		Service: srvString,
+		Method:  meString,
+	}
+
+	data, _ := ph.Encode(&ktgID, &errID, res)
+	return data
 }
 
 // NewService returns a new KenTheGuru.Service instance

@@ -9,6 +9,9 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// The ErrorHandler is used to encode errors which occur during server side processing of requests
+type ErrorHandler func(*ProtoID, *ProtoID, error, ProtocolHandler) []byte
+
 // MiddlewareFunc is a function type used in the websocket package
 // Its parameters are the service and method id in a message as well as its data
 // furthermore the session information is added
@@ -71,6 +74,7 @@ type Server struct {
 	Upgrader websocket.Upgrader
 
 	auth     Authenticator
+	errh     ErrorHandler
 	ssl      SSLConfig
 	services map[ProtoID]*ServiceDescription
 	before   []*Middleware
@@ -167,7 +171,7 @@ HANDLER:
 
 		srv, me, data, err := protocolHandler.Decode(request)
 		if err != nil {
-			err = conn.WriteMessage(messageType, []byte(err.Error()))
+			err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
 			if err != nil {
 				s.Logger.Log("err", err)
 				return
@@ -177,7 +181,7 @@ HANDLER:
 
 		service, err := s.GetService(*srv)
 		if err != nil {
-			err = conn.WriteMessage(messageType, []byte(err.Error()))
+			err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
 			if err != nil {
 				s.Logger.Log("err", err)
 				return
@@ -187,7 +191,7 @@ HANDLER:
 
 		handler, err := service.GetEndpointHandler(*me, s.before, session)
 		if err != nil {
-			err = conn.WriteMessage(messageType, []byte(err.Error()))
+			err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
 			if err != nil {
 				s.Logger.Log("err", err)
 				return
@@ -197,7 +201,7 @@ HANDLER:
 
 		res, err := handler(data)
 		if err != nil {
-			err = conn.WriteMessage(messageType, []byte(err.Error()))
+			err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
 			if err != nil {
 				s.Logger.Log("err", err)
 				return
@@ -208,7 +212,7 @@ HANDLER:
 		for _, middleware := range s.after {
 			err = middleware.mid(*srv, *me, res, &session)
 			if err != nil {
-				err = conn.WriteMessage(messageType, []byte(err.Error()))
+				err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
 				if err != nil {
 					s.Logger.Log("err", err)
 					return
@@ -219,7 +223,7 @@ HANDLER:
 
 		response, err := protocolHandler.Encode(srv, me, res)
 		if err != nil {
-			err = conn.WriteMessage(messageType, []byte(err.Error()))
+			err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
 			if err != nil {
 				s.Logger.Log("err", err)
 				return
@@ -242,6 +246,7 @@ func NewServer(
 	upgrader websocket.Upgrader,
 	auth Authenticator,
 	ssl SSLConfig,
+	errh ErrorHandler,
 	m ...*Middleware,
 ) *Server {
 	var (
@@ -288,6 +293,7 @@ func NewServer(
 		Upgrader:  upgrader,
 		ssl:       ssl,
 		auth:      auth,
+		errh:      errh,
 		services:  services,
 		before:    before,
 		after:     after,
