@@ -9,6 +9,7 @@ service UserService {
   rpc DeleteUser (DeleteUserRequest) returns (DeleteUserResponse);
   rpc ResetPassword (ResetPasswordRequest) returns (ResetPasswordResponse);
   rpc GetUser (GetUserRequest) returns (GetUserResponse);
+  rpc CheckLoginCredentials (CheckLoginCredentialsRequest) returns (CheckLoginCredentialsResponse);
 }
 
 message Address {

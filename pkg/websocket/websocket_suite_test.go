@@ -134,3 +134,15 @@ func encodeTest(ctx context.Context, res interface{}) (interface{}, error) {
 		}, nil
 	}
 }
+
+func errh(srv, me *ws.ProtoID, err error, ph ws.ProtocolHandler) []byte {
+	var srvString, meString string
+	if srv != nil {
+		srvString = srv.String()
+	}
+	if me != nil {
+		meString = me.String()
+	}
+
+	return []byte(srvString + " " + meString + " " + err.Error())
+}

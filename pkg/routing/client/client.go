@@ -9,8 +9,8 @@ import (
 	grpctransport "github.com/go-kit/kit/transport/grpc"
 	"google.golang.org/grpc"
 
-	"github.com/kontainerooo/kontainer.ooo/pkg/pb"
 	"github.com/kontainerooo/kontainer.ooo/pkg/routing"
+	"github.com/kontainerooo/kontainer.ooo/pkg/routing/pb"
 )
 
 // New creates a set of endpoints based on a gRPC connection
@@ -20,7 +20,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *routing.Endpoints {
 	{
 		CreateConfigEndpoint = grpctransport.NewClient(
 			conn,
-			"routingService",
+			"routing.RoutingService",
 			"CreateConfig",
 			EncodeGRPCCreateConfigRequest,
 			DecodeGRPCCreateConfigResponse,
@@ -32,7 +32,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *routing.Endpoints {
 	{
 		EditConfigEndpoint = grpctransport.NewClient(
 			conn,
-			"routingService",
+			"routing.RoutingService",
 			"EditConfig",
 			EncodeGRPCEditConfigRequest,
 			DecodeGRPCEditConfigResponse,
@@ -44,7 +44,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *routing.Endpoints {
 	{
 		GetConfigEndpoint = grpctransport.NewClient(
 			conn,
-			"routingService",
+			"routing.RoutingService",
 			"GetConfig",
 			EncodeGRPCGetConfigRequest,
 			DecodeGRPCGetConfigResponse,
@@ -56,7 +56,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *routing.Endpoints {
 	{
 		RemoveConfigEndpoint = grpctransport.NewClient(
 			conn,
-			"routingService",
+			"routing.RoutingService",
 			"RemoveConfig",
 			EncodeGRPCRemoveConfigRequest,
 			DecodeGRPCRemoveConfigResponse,
@@ -68,7 +68,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *routing.Endpoints {
 	{
 		AddLocationEndpoint = grpctransport.NewClient(
 			conn,
-			"routingService",
+			"routing.RoutingService",
 			"AddLocation",
 			EncodeGRPCAddLocationRequest,
 			DecodeGRPCAddLocationResponse,
@@ -80,7 +80,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *routing.Endpoints {
 	{
 		RemoveLocationEndpoint = grpctransport.NewClient(
 			conn,
-			"routingService",
+			"routing.RoutingService",
 			"RemoveLocation",
 			EncodeGRPCRemoveLocationRequest,
 			DecodeGRPCRemoveLocationResponse,
@@ -92,7 +92,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *routing.Endpoints {
 	{
 		ChangeListenStatementEndpoint = grpctransport.NewClient(
 			conn,
-			"routingService",
+			"routing.RoutingService",
 			"ChangeListenStatement",
 			EncodeGRPCChangeListenStatementRequest,
 			DecodeGRPCChangeListenStatementResponse,
@@ -104,7 +104,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *routing.Endpoints {
 	{
 		AddServerNameEndpoint = grpctransport.NewClient(
 			conn,
-			"routingService",
+			"routing.RoutingService",
 			"AddServerName",
 			EncodeGRPCAddServerNameRequest,
 			DecodeGRPCAddServerNameResponse,
@@ -116,7 +116,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *routing.Endpoints {
 	{
 		RemoveServerNameEndpoint = grpctransport.NewClient(
 			conn,
-			"routingService",
+			"routing.RoutingService",
 			"RemoveServerName",
 			EncodeGRPCRemoveServerNameRequest,
 			DecodeGRPCRemoveServerNameResponse,
@@ -128,7 +128,7 @@ func New(conn *grpc.ClientConn, logger log.Logger) *routing.Endpoints {
 	{
 		ConfigurationsEndpoint = grpctransport.NewClient(
 			conn,
-			"routingService",
+			"routing.RoutingService",
 			"Configurations",
 			EncodeGRPCConfigurationsRequest,
 			DecodeGRPCConfigurationsResponse,
@@ -218,7 +218,8 @@ func EncodeGRPCGetConfigRequest(_ context.Context, request interface{}) (interfa
 func DecodeGRPCGetConfigResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
 	response := grpcResponse.(*pb.GetConfigResponse)
 	return &routing.GetConfigResponse{
-		Error: getError(response.Error),
+		Error:  getError(response.Error),
+		Config: *routing.ConvertPBConfig(response.Config),
 	}, nil
 }
 

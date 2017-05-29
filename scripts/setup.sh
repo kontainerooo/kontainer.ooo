@@ -7,7 +7,7 @@ GOPATH=/var/go/src
 add-apt-repository "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main"
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 apt-get update -y
-apt-get install postgresql-9.6 git -y
+apt-get install postgresql-9.6 git cgroup-lite -y
 
 # Install go
 curl -O https://storage.googleapis.com/golang/go1.8.linux-amd64.tar.gz
