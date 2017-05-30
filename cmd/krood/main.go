@@ -133,7 +133,10 @@ func main() {
 	defer conn.Close()
 
 	kenTheGuruService := kentheguru.NewService(
-		"bu", "bu", "bu", // TODO: generate keys
+		// TODO: generate keys and load them from configuration file
+		"bubububububububububububububububu",
+		"bubububububububububububububububu",
+		"bu",
 		websocket.Upgrader{
 			EnableCompression: true,
 		},
