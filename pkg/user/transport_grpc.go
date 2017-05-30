@@ -191,6 +191,8 @@ func convertUser(usr *User) *pb.User {
 	return &pb.User{
 		ID:       uint32(usr.ID),
 		Username: usr.Username,
+		Name:     usr.Name,
+		Surname:  usr.Surname,
 		Config:   ConvertConfig(&usr.Config, true),
 	}
 }

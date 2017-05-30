@@ -124,6 +124,8 @@ func convertPBUser(usr *pb.User) *user.User {
 	return &user.User{
 		ID:       uint(usr.ID),
 		Username: usr.Username,
+		Name:     usr.Name,
+		Surname:  usr.Surname,
 		Config:   *cfg,
 	}
 }
