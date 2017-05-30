@@ -39,6 +39,8 @@ type tokenAuth struct {
 
 func (t *tokenAuth) Mux(w http.ResponseWriter, r *http.Request) (interface{}, bool) {
 	if r.URL.Path == "/auth" {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
 		err := r.ParseForm()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -89,10 +91,15 @@ func (t *tokenAuth) Mux(w http.ResponseWriter, r *http.Request) (interface{}, bo
 		val := reflect.ValueOf(claims.Data)
 
 		for _, key := range val.MapKeys() {
-			session.Values[key.String()] = val.MapIndex(key)
+			session.Values[key.String()] = val.MapIndex(key).Interface()
 		}
 
-		session.Save(r, w)
+		err = session.Save(r, w)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return nil, true
+		}
+
 		w.Write([]byte("Authenticated!"))
 
 		return nil, true
@@ -160,6 +167,7 @@ func NewTokenAuth(
 	enc EncodeResponseFunc,
 	end endpoint.Endpoint,
 ) Authenticator {
+	// TODO: add validation of auth, encryptionKey
 	return &tokenAuth{
 		SessionStore: sessions.NewCookieStore([]byte(authenticationKey), []byte(encryptionKey)),
 		ServiceID:    serviceID,
