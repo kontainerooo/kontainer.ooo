@@ -39,6 +39,8 @@ type tokenAuth struct {
 
 func (t *tokenAuth) Mux(w http.ResponseWriter, r *http.Request) (interface{}, bool) {
 	if r.URL.Path == "/auth" {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
 		err := r.ParseForm()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
