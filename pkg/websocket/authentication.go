@@ -89,7 +89,7 @@ func (t *tokenAuth) Mux(w http.ResponseWriter, r *http.Request) (interface{}, bo
 		val := reflect.ValueOf(claims.Data)
 
 		for _, key := range val.MapKeys() {
-			session.Values[key.String()] = val.MapIndex(key)
+			session.Values[key.String()] = val.MapIndex(key).Interface()
 		}
 
 		err = session.Save(r, w)
