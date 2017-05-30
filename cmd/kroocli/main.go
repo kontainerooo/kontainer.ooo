@@ -31,5 +31,5 @@ func main() {
 
 	cli.InitShell(shell, conn, logger)
 
-	shell.Start()
+	shell.Run()
 }
