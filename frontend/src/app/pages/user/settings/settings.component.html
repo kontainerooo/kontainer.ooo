@@ -2,11 +2,12 @@
   <mdl-card mdl-shadow="2">
     <mdl-card-title>
       <img class="settings-avatar" src="http://static.giantbomb.com/uploads/scale_small/0/9517/2816097-tumblr_n45cr8dmj61ty0km0o7_1280.png">
-      <h2 mdl-card-title-text>Morty Smith</h2>
-      <h3 mdl-card-title-text>m.smith</h3>
+      <h2 mdl-card-title-text>{{form.get('firstName').value}} {{form.get('lastName').value}}</h2>
+      <h3 mdl-card-title-text>{{form.get('username').value}}</h3>
     </mdl-card-title>
     <mdl-card-supporting-text>
-      <form [formGroup]="form">
+      <mdl-spinner *ngIf="loading" single-color [active]="loading"></mdl-spinner>
+      <form *ngIf="!loading" [formGroup]="form">
         <div class="mdl-grid">
           <div class="mdl-cell mdl-cell--12-col mdl-cell--8-col-tablet mdl-cell--4-col-phone">
             <h2>General Information</h2>
@@ -18,6 +19,7 @@
               formControlName="firstName"
               floating-label
               [class.is-invalid]="isFieldValid('firstName')"
+              [class.is-disabled]="edit"
               error-msg="Please provide a first name"></mdl-textfield>
           </div>
           <div class="mdl-cell mdl-cell--6-col mdl-cell--4-col-tablet mdl-cell--4-col-phone">
@@ -27,6 +29,7 @@
               formControlName="lastName"
               floating-label
               [class.is-invalid]="isFieldValid('lastName')"
+              [class.is-disabled]="edit"
               error-msg="Please provide a last name"></mdl-textfield>
           </div>
           <div class="mdl-cell mdl-cell--6-col mdl-cell--4-col-tablet mdl-cell--4-col-phone">
@@ -46,6 +49,7 @@
               formControlName="username"
               floating-label
               [class.is-invalid]="isFieldValid('username')"
+              [class.is-disabled]="edit"
               error-msg="Please provide a username"></mdl-textfield>
           </div>
           <div class="mdl-cell mdl-cell--6-col mdl-cell--4-col-tablet mdl-cell--4-col-phone">
@@ -110,7 +114,7 @@
           <div class="mdl-cell mdl-cell--4-col mdl-cell--3-col-tablet mdl-cell--4-col-phone">
             <mdl-textfield
               label="Zip Code"
-              type="number"
+              type="text"
               formControlName="zip"
               floating-label
               [class.is-invalid]="isFieldValid('zip')"

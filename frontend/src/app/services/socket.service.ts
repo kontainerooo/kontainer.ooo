@@ -40,7 +40,7 @@ export class SocketService {
         ws.onerror = obs.error.bind(obs);
         ws.onclose = obs.complete.bind(obs);
 
-        return ws.close.bind(ws);
+        // return ws.close.bind(ws);
       }
     );
 
