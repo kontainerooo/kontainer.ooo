@@ -139,25 +139,22 @@ func (s *service) ResetPassword(email string) error {
 }
 
 func (s *service) GetUser(id uint, user *User) error {
-	err := s.db.Where("ID = ?", id)
+	err := s.db.First(user, "ID = ?", id)
 	if err != nil {
 		return err
 	}
 
-	err = s.db.First(user)
+	err = s.db.First(&user.Address, "ID = ?", user.AddressID)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func (s *service) GetUserByUsername(username string) (*User, error) {
 	user := &User{}
-	err := s.db.Where("Username = ?", username)
-	if err != nil {
-		return nil, err
-	}
-	err = s.db.First(user)
+	err := s.db.First(user, "Username = ?", username)
 	if err != nil && !s.db.IsNotFound(err) {
 		return nil, err
 	}
