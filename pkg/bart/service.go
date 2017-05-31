@@ -110,7 +110,7 @@ func (b *bus) GetOff(srv, me ws.ProtoID, data interface{}, session interface{}) 
 		return nil
 	}
 
-	sessionMap, ok := session.(map[string]interface{})
+	sessionMap, ok := session.(map[interface{}]interface{})
 	if !ok {
 		return errors.New("session malformed")
 	}
@@ -171,8 +171,19 @@ func (b *bus) GetOn(srv, me ws.ProtoID, data interface{}, session interface{}) e
 			return errors.New("token invalid")
 		}
 
+		claimsData, ok := claimsWrapper.Data.(map[string]interface{})
+		if !ok {
+			return errors.New("malformed claims")
+		}
+
 		val := reflect.ValueOf(session).Elem()
-		val.Set(reflect.ValueOf(claimsWrapper.Data))
+		valMap := make(map[interface{}]interface{})
+
+		for k, v := range claimsData {
+			valMap[k] = v
+		}
+
+		val.Set(reflect.ValueOf(valMap))
 	}
 
 	return nil
