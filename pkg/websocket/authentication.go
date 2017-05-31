@@ -115,7 +115,7 @@ func (t *tokenAuth) Mux(w http.ResponseWriter, r *http.Request) (interface{}, bo
 		return nil, false
 	}
 
-	return session, false
+	return session.Values, false
 }
 
 func (t *tokenAuth) GetID() ProtoID {
