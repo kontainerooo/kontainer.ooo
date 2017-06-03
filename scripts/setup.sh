@@ -51,6 +51,9 @@ go get github.com/jessfraz/netns
 # Copy config file
 cp /var/go/src/github.com/kontainerooo/kontainer.ooo/config.json.sample /var/lib/kontainerooo/config.json
 
+# Enable ip forwarding
+echo 1 > /proc/sys/net/ipv4/ip_forward
+
 chown -R vagrant /var/go
 chown -R vagrant /home/vagrant/.nvm
 chown -R vagrant /var/lib/kontainerooo
