@@ -24,7 +24,7 @@ fe-test:
 all-scripts:
 	$(MAKE) -C ./scripts
 
-be: $(PKG_DIRS) $(CMD_DIRS)
+be: proto $(PKG_DIRS) $(CMD_DIRS)
 
 $(CMD_DIRS): force
 	cd $@ && export GOOS="linux" && go get && go build -o $(mkfile_path)/build/$(notdir $@)
