@@ -44,7 +44,7 @@ func main() {
 		bcryptCost   = 15
 		isMock       bool
 		dbWrapper    abstraction.DB
-		initBinary   = "kroo-init"
+		initBinary   = "/var/go/bin/kroo-init"
 	)
 
 	/* The krood binary can now be given a flag called `--mock`. With this

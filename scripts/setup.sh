@@ -7,7 +7,7 @@ GOPATH=/var/go/src
 add-apt-repository "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main"
 wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 apt-get update -y
-apt-get install postgresql-9.6 git cgroup-lite -y
+apt-get install postgresql-9.6 git cgroup-lite unzip -y
 
 # Install go
 curl -O https://storage.googleapis.com/golang/go1.8.linux-amd64.tar.gz
@@ -41,7 +41,7 @@ sudo -u postgres bash -c "psql -c \"CREATE USER kroo WITH PASSWORD 'kroo';\""
 
 # Install netns
 mkdir -p /var/lib/kontainerooo/images
-curl [REDACTED] -O /var/lib/kontainerooo/images/rootfs.tar
+cd /var/lib/kontainerooo/images && { curl -O [REDACTED] ; cd -; }
 
 mkdir -p /var/lib/kontainerooo/kmi
 cp /var/go/src/github.com/kontainerooo/kontainer.ooo/pkg/kmi/test.kmi /var/lib/kontainerooo/kmi
@@ -50,6 +50,9 @@ go get github.com/jessfraz/netns
 
 # Copy config file
 cp /var/go/src/github.com/kontainerooo/kontainer.ooo/config.json.sample /var/lib/kontainerooo/config.json
+
+# Enable ip forwarding
+echo 1 > /proc/sys/net/ipv4/ip_forward
 
 chown -R vagrant /var/go
 chown -R vagrant /home/vagrant/.nvm
