@@ -71,7 +71,6 @@ func (s *service) makePath(refID uint, containerName string) (string, error) {
 	}
 
 	coPath := path.Join(s.config.CustomerPath, fmt.Sprintf("%d", refID), containerID, "rootfs")
-	fmt.Println(coPath)
 	_, err = os.Stat(coPath)
 	if err != nil {
 		return "", errors.New("container does not exist")
