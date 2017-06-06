@@ -168,11 +168,43 @@ export class GlobalDataService {
         if(!akr.error) {
           return akr.ID;
         }
-    });
+      });
 
     this.kmis.next('AddKMIRequest', {
       path: path
     });
+
+    return obs;
+  }
+
+  setAndGetAvailableKMI(): Observable<kmi.KMDI[]> {
+    let obs = this.kmis
+      .reconnect()
+      .share()
+      .first((value: ProtoResponse) => {
+        return value.message == 'KMIResponse';
+      })
+      .map((value: ProtoResponse): kmi.KMDI[] => {
+        let kr = kmi.KMIResponse.from(value.data);
+        let kmdiArray: kmi.KMDI[] = [];
+        if(!kr.error) {
+          for(let element of kr.kmdi) {
+            kmdiArray.push(kmi.KMDI.from(element));
+          }
+          return kmdiArray;
+        }
+      });
+
+    obs.subscribe(
+      value => {
+        this.gd.KMDI = value;
+      },
+      error => {
+        console.log(error);
+      }
+    )
+
+    this.kmis.next('KMIRequest', {});
 
     return obs;
   }

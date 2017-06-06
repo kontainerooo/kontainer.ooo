@@ -2,38 +2,29 @@ import { Component, OnInit } from '@angular/core';
 import { MdlDialogService } from 'angular2-mdl';
 import { kmi } from '../../../../messages/messages';
 import { AddPathComponent } from './add-path/add-path.component';
+import { GlobalDataService } from '../../../services/global-data.service';
 
 @Component({
   selector: 'kro-kmi-add',
   templateUrl: './kmi-add.component.html',
   styleUrls: ['./kmi-add.component.scss']
 })
-export class KmiAddComponent {
+export class KmiAddComponent implements OnInit {
   kmiModules: Array<kmi.KMDI>;
-  kmiInstalled: Array<boolean>;
 
-  constructor(private mdlds: MdlDialogService) {
-    this.kmiModules = [
-      new kmi.KMDI({
-        ID: 0,
-        description: 'Event-driven I/O server-side JavaScript environment based on V8. Includes API documentation, change-log, examples and announcements.',
-        name: 'Node.js',
-        type: kmi.Type.WEBSERVER,
-        version: '1.0.0+7.8.0'
-      }),
-      new kmi.KMDI({
-        ID: 1,
-        description: 'Building on the Best of Relational with the Innovations of NoSQL',
-        name: 'MongoDB',
-        type: kmi.Type.WEBSERVER,
-        version: '1.0.0+3.4.3'
-      })
-    ];
+  constructor(private mdlds: MdlDialogService, private gds: GlobalDataService) {
+    this.kmiModules = [];
+  }
 
-    this.kmiInstalled = [
-      true,
-      false
-    ];
+  ngOnInit() {
+    this.gds.setAndGetAvailableKMI().subscribe(
+      value => {
+        this.kmiModules = value;
+      },
+      error => {
+        console.log(error);
+      }
+    )
   }
 
   convertType(type: kmi.Type): string {

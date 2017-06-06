@@ -1,5 +1,6 @@
-import { user } from '../../messages/messages';
+import { user, kmi } from '../../messages/messages';
 
 export interface GlobalData {
-  user?: user.User
+  user?: user.User,
+  KMDI?: kmi.KMDI[]
 }
