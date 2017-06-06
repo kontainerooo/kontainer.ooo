@@ -19,6 +19,15 @@ export class KenTheGuruService {
       });
   }
 
+  public reconnect(): Subject<object> {
+    this.messages = <Subject<ProtoResponse>>this.wsService
+      .connect(SOCKET_URL)
+      .map((response: MessageEvent): ProtoResponse => {
+        return this.wsService.decodeMessage(new Uint8Array(response.data), KENTHEGURU_TYPE);
+      });
+    return this.messages;
+  }
+
   public next(message: string, data: object) {
     this.messages.next(this.wsService.encodeMessage(KENTHEGURU_TYPE, message, data));
   }

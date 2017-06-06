@@ -57,7 +57,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     });
 
     if(this.edit) {
-      this.gds.setAndGetUserById(3).subscribe(
+      this.gds.setAndGetUserById(1).subscribe(
         user => {
           this.gotUser(user);
         },
@@ -108,7 +108,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
         }
       );
     } else {
-      this.gds.editUser(3, testObject.config).subscribe(
+      this.gds.editUser(this.gds.getUserId(), testObject.config).subscribe(
         success => {
           if(success) {
             this.mdlss.showToast('User saved');
@@ -128,6 +128,12 @@ export class SettingsComponent implements OnInit, OnDestroy {
       }
       if(user.username) {
         this.form.get('username').setValue(user.username);
+      }
+      if(user.name) {
+        this.form.get('firstName').setValue(user.name);
+      }
+      if(user.surname) {
+        this.form.get('lastName').setValue(user.surname);
       }
       if(user.config.phone) {
         this.form.get('phone').setValue(user.config.phone);

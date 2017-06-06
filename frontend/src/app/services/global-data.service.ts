@@ -1,15 +1,18 @@
 import { Injectable } from '@angular/core';
+import { Http, Response, URLSearchParams } from '@angular/http';
 import { GlobalData } from '../interfaces/global-data';
+import { SocketService } from './socket.service';
 import { UserService } from './user.service';
-import { user } from '../../messages/messages';
+import { KenTheGuruService } from './ken-the-guru.service';
+import { user, kentheguru } from '../../messages/messages';
 import { ProtoResponse } from '../interfaces/proto-response';
-import { Observable, ReplaySubject } from 'rxjs/Rx';
+import { Observable, Subject } from 'rxjs/Rx';
 
 @Injectable()
 export class GlobalDataService {
   private gd: GlobalData;
 
-  constructor(private us: UserService) {
+  constructor(private http: Http, private us: UserService, private ktgs: KenTheGuruService) {
     this.gd = {};
   }
   
@@ -30,7 +33,8 @@ export class GlobalDataService {
   }
 
   setAndGetUserById(id: number): Observable<user.User> {
-    let obs = this.us.messages
+    let obs = this.us
+      .reconnect()
       .share()
       .first((value: ProtoResponse) => {
         return value.message == 'GetUserResponse';
@@ -56,7 +60,8 @@ export class GlobalDataService {
   }
 
   registerUser(userProperties: user.User$Properties): Observable<number> {
-    let obs = this.us.messages
+    let obs = this.us
+      .reconnect()
       .share()
       .first((value: ProtoResponse) => {
         return value.message == 'CreateUserResponse';
@@ -71,7 +76,8 @@ export class GlobalDataService {
   }
 
   editUser(id: number, configProperties: user.Config$Properties): Observable<boolean> {
-    let obs = this.us.messages
+    let obs = this.us
+      .reconnect()
       .share()
       .first((value: ProtoResponse) => {
         return value.message == 'EditUserResponse';
@@ -99,7 +105,49 @@ export class GlobalDataService {
     return obs;
   }
 
-  // logIn(username: string, password: string): Promise<user.User> {
-  //   this.us.next('CheckLoginCredentialsRequest')
-  // }
+  logIn(username: string, password: string): Subject<Response> {
+    let obs = this.ktgs
+      .reconnect()
+      .share()
+      .first((value: ProtoResponse) => {
+        return value.message == 'AuthenticationResponse' || value.message == 'ErrorResponse';
+      })
+      .map((value: ProtoResponse): string => {
+        if(value.message == 'AuthenticationResponse') {
+          return kentheguru.AuthenticationResponse.from(value.data).token;
+        } else {
+          return 'nope';
+        }
+      });
+
+    let cookieRequest = new Subject<Response>();
+
+    obs.subscribe(
+      token => {
+        let body = new URLSearchParams();
+        body.set('token', token);
+
+        this.http.post(`http://${SocketService.SOCKET_ADDRESS}/auth`, body).share().subscribe(
+          data => {
+            if(data.text() == 'Authenticated!') {
+              cookieRequest.next(data);
+            }
+          },
+          error => {
+            console.log(error);
+          }
+        );
+      },
+      error => {
+        console.log(error);
+      }
+    );
+
+    this.ktgs.next('AuthenticationRequest', {
+      username: username,
+      password: password
+    });
+
+    return cookieRequest;
+  }
 }

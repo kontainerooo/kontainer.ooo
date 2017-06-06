@@ -9,6 +9,7 @@ export class SocketService {
   private opcodeConverter: OpcodeConverter;
   private sendWhenOpen: Array<Uint8Array>;
   private readonly PROTOCOL_VERSION: string;
+  public static readonly SOCKET_ADDRESS: string = 'localhost:8083';
 
   constructor() { 
     this.opcodeConverter = new OpcodeConverter();
@@ -47,6 +48,7 @@ export class SocketService {
     let observer = {
       next: (data: Uint8Array) => {
         if (ws.readyState === WebSocket.OPEN) {
+          console.log(data);
           ws.send(data);
         } else {
           this.sendWhenOpen.push(data);

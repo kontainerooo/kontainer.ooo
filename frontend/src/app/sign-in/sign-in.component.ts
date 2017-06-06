@@ -1,5 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { KenTheGuruService } from '../services/ken-the-guru.service';
+import { Router } from '@angular/router';
+import { GlobalDataService } from '../services/global-data.service';
+import { MdlSnackbarService } from 'angular2-mdl';
 import {
   FormGroup,
   Validators,
@@ -14,7 +16,7 @@ import {
 export class SignInComponent implements OnInit, OnDestroy {
   form: FormGroup;
 
-  constructor(private fb: FormBuilder, private ktgs: KenTheGuruService) {
+  constructor(private fb: FormBuilder, private gds: GlobalDataService, private mdlss: MdlSnackbarService, private router: Router) {
     this.form = this.fb.group({
       username: [''],
       password: ['']
@@ -22,25 +24,25 @@ export class SignInComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.ktgs.messages.subscribe(
+
+  }
+
+  ngOnDestroy() {
+
+  }
+
+  onSubmit() {
+    this.mdlss.showToast('Logging in...');
+    this.gds.logIn(this.form.get('username').value, this.form.get('password').value).subscribe(
       value => {
-        console.log(value);
+        if(value) {
+          this.router.navigate(['/']);
+        }
       },
       error => {
         console.log(error);
       }
     );
-  }
-
-  ngOnDestroy() {
-    this.ktgs.messages.unsubscribe();
-  }
-
-  onSubmit() {
-    this.ktgs.next('AuthenticationRequest', {
-      username: this.form.get('username').value,
-      password: this.form.get('password').value
-    });
   }
 
 }
