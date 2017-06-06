@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { MdlDialogService } from 'angular2-mdl';
 import { kmi } from '../../../../messages/messages';
+import { AddPathComponent } from './add-path/add-path.component';
 
 @Component({
   selector: 'kro-kmi-add',
@@ -10,7 +12,7 @@ export class KmiAddComponent {
   kmiModules: Array<kmi.KMDI>;
   kmiInstalled: Array<boolean>;
 
-  constructor() {
+  constructor(private mdlds: MdlDialogService) {
     this.kmiModules = [
       new kmi.KMDI({
         ID: 0,
@@ -41,6 +43,18 @@ export class KmiAddComponent {
       default:
         return 'Default';
     }
+  }
+
+  showAddKMI() {
+    let addDialog = this.mdlds.showCustomDialog({
+      component: AddPathComponent,
+      providers: [],
+      isModal: true,
+      styles: {'width': '350px'},
+      clickOutsideToClose: true,
+      enterTransitionDuration: 400,
+      leaveTransitionDuration: 400
+    });
   }
 
 }

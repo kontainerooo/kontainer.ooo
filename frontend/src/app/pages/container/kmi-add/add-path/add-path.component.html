@@ -1,0 +1,9 @@
+<form [formGroup]="addPath">
+  <mdl-textfield
+          type="text"
+          label="Path of the KMI"
+          formControlName="path"
+          autofocus
+          floating-label></mdl-textfield>
+  <button mdl-button mdl-colored="primary" mdl-ripple mdl-button-type="raised" [disabled]="!addPath.valid" (click)="submit()">Add</button>
+</form>

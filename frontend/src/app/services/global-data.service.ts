@@ -4,7 +4,8 @@ import { GlobalData } from '../interfaces/global-data';
 import { SocketService } from './socket.service';
 import { UserService } from './user.service';
 import { KenTheGuruService } from './ken-the-guru.service';
-import { user, kentheguru } from '../../messages/messages';
+import { KmiService } from './kmi.service';
+import { user, kentheguru, kmi } from '../../messages/messages';
 import { ProtoResponse } from '../interfaces/proto-response';
 import { Observable, Subject } from 'rxjs/Rx';
 
@@ -12,10 +13,12 @@ import { Observable, Subject } from 'rxjs/Rx';
 export class GlobalDataService {
   private gd: GlobalData;
 
-  constructor(private http: Http, private us: UserService, private ktgs: KenTheGuruService) {
+  constructor(private http: Http, private us: UserService, private ktgs: KenTheGuruService, private kmis: KmiService) {
     this.gd = {};
   }
   
+  /* User methods */
+
   getUserId(): number {
     if(this.gd.user && this.gd.user.ID) {
       return this.gd.user.ID;
@@ -149,5 +152,28 @@ export class GlobalDataService {
     });
 
     return cookieRequest;
+  }
+
+  /* KMI methods */
+
+  addKMI(path: string): Observable<number> {
+    let obs = this.kmis
+      .reconnect()
+      .share()
+      .first((value: ProtoResponse) => {
+        return value.message == 'AddKMIResponse';
+      })
+      .map((value: ProtoResponse): number => {
+        let akr = kmi.AddKMIResponse.from(value.data);
+        if(!akr.error) {
+          return akr.ID;
+        }
+    });
+
+    this.kmis.next('AddKMIRequest', {
+      path: path
+    });
+
+    return obs;
   }
 }

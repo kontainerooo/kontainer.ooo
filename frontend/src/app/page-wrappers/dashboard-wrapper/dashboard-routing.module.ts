@@ -17,6 +17,7 @@ import { KmiOverviewComponent } from '../../pages/container/kmi-overview/kmi-ove
 import { KmiAddComponent } from '../../pages/container/kmi-add/kmi-add.component';
 import { KmiDetailComponent } from './../../pages/container/kmi-detail/kmi-detail.component';
 import { KmiStatusComponent } from './../../pages/container/templates/kmi-status/kmi-status.component';
+import { AddPathComponent } from './../../pages/container/kmi-add/add-path/add-path.component';
 
 const dashboardRoutes = [
   {
@@ -59,7 +60,11 @@ const dashboardRoutes = [
     KmiAddComponent,
     SearchKmiPipe,
     KmiDetailComponent,
-    KmiStatusComponent
+    KmiStatusComponent,
+    AddPathComponent
+  ],
+  entryComponents: [
+    AddPathComponent
   ],
   imports: [
     BrowserModule,

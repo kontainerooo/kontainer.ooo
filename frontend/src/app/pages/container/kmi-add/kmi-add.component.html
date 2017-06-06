@@ -1,7 +1,7 @@
 <div class="mdl-cell mdl-cell--12-col">
   <mdl-card mdl-shadow="2">
     <mdl-card-title>
-      <h2 mdl-card-title-text>All containers</h2>
+      <h2 mdl-card-title-text>Available Configurations</h2>
     </mdl-card-title>
     <mdl-card-supporting-text>
       <mdl-textfield
@@ -34,5 +34,10 @@
         </mdl-list-item>
       </mdl-list>
     </mdl-card-supporting-text>
+    <mdl-card-menu>
+      <button mdl-button mdl-button-type="icon" mdl-ripple (click)="showAddKMI()">
+        <mdl-icon>add</mdl-icon>
+      </button>
+    </mdl-card-menu>
   </mdl-card>
 </div>
