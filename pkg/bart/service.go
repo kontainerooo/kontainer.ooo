@@ -10,6 +10,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 	pb "github.com/kontainerooo/kontainer.ooo/pkg/kentheguru/pb"
 	"github.com/kontainerooo/kontainer.ooo/pkg/user"
+	userPb "github.com/kontainerooo/kontainer.ooo/pkg/user/pb"
 	ws "github.com/kontainerooo/kontainer.ooo/pkg/websocket"
 )
 
@@ -22,6 +23,9 @@ type Bus interface {
 
 	// GetOn should be used as a websocket after middleware
 	GetOn(ws.ProtoID, ws.ProtoID, interface{}, interface{}) error
+
+	// LostAndFound should be used as a websocket before middleware
+	LostAndFound(ws.ProtoID, ws.ProtoID, interface{}, interface{}) error
 }
 
 type bus struct {
@@ -185,6 +189,39 @@ func (b *bus) GetOn(srv, me ws.ProtoID, data interface{}, session interface{}) e
 
 		val.Set(reflect.ValueOf(valMap))
 	}
+
+	return nil
+}
+
+func (b *bus) LostAndFound(srv, me ws.ProtoID, data interface{}, session interface{}) error {
+	if srv != ws.ProtoIDFromString("USR") || me != ws.ProtoIDFromString("GET") {
+		return nil
+	}
+
+	req, ok := data.(*userPb.GetUserRequest)
+	if !ok {
+		return errors.New("request malformed")
+	}
+
+	if req.ID != 0 {
+		return nil
+	}
+
+	sessionMap, ok := session.(map[interface{}]interface{})
+	if !ok {
+		return errors.New("session malformed")
+	}
+
+	idInterface, ok := sessionMap["ID"]
+	if !ok {
+		return errors.New("no id present in session data")
+	}
+
+	id64, ok := idInterface.(float64)
+	if !ok {
+		return errors.New("id malformed")
+	}
+	req.ID = uint32(id64)
 
 	return nil
 }
