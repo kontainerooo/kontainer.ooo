@@ -100,6 +100,7 @@ func convertKMDI(k *pb.KMDI) kmi.KMDI {
 	return kmi.KMDI{
 		ID:          uint(k.ID),
 		Name:        k.Name,
+		Type:        int(k.Type),
 		Version:     k.Version,
 		Description: k.Description,
 	}

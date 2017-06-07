@@ -101,6 +101,7 @@ func convertPBKMDI(k KMDI) *pb.KMDI {
 	return &pb.KMDI{
 		ID:          uint32(k.ID),
 		Name:        k.Name,
+		Type:        pb.Type(k.Type),
 		Version:     k.Version,
 		Description: k.Description,
 	}
