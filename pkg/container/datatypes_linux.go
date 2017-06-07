@@ -84,6 +84,7 @@ var provisionConfig = &configs.Config{
 			configs.CommandHook{
 				Command: configs.Command{
 					Path: "/var/go/bin/netns",
+					Args: []string{"-ipfile /var/lib/kontainerooo/lol.ip"},
 				},
 			},
 		},
