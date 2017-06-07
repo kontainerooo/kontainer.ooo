@@ -65,7 +65,12 @@ func (s *service) makePath(refID uint, containerName string) (string, error) {
 		return "", errors.New("customer does not exist")
 	}
 
-	coPath := path.Join(s.config.CustomerPath, fmt.Sprintf("%d", refID), containerName)
+	containerID, err := s.getContainerIDForName(refID, containerName)
+	if err != nil {
+		return "", err
+	}
+
+	coPath := path.Join(s.config.CustomerPath, fmt.Sprintf("%d", refID), containerID, "rootfs")
 	_, err = os.Stat(coPath)
 	if err != nil {
 		return "", errors.New("container does not exist")
@@ -315,7 +320,7 @@ func (s *service) GetEnv(refID uint, containerName string, key string) (string, 
 }
 
 func (s *service) getContainerIDForName(refID uint, containerName string) (string, error) {
-	res, err := s.container.IDForNameEndpoint(context.Background(), &container.IDForNameRequest{
+	res, err := s.container.IDForNameEndpoint(context.Background(), container.IDForNameRequest{
 		RefID: refID,
 		Name:  containerName,
 	})
