@@ -13,6 +13,7 @@ import (
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
+	kmiClient "github.com/kontainerooo/kontainer.ooo/pkg/kmi/client"
 	kmiPB "github.com/kontainerooo/kontainer.ooo/pkg/kmi/pb"
 	"github.com/kontainerooo/kontainer.ooo/pkg/module"
 	"github.com/kontainerooo/kontainer.ooo/pkg/module/pb"
@@ -21,6 +22,17 @@ import (
 // New creates a set of endpoints based on a gRPC connection
 func New(conn *grpc.ClientConn, logger log.Logger) *module.Endpoints {
 
+	var CreateContainerModuleEndpoint endpoint.Endpoint
+	{
+		CreateContainerModuleEndpoint = grpctransport.NewClient(
+			conn,
+			"module.ModuleService",
+			"CreateContainerModule",
+			EncodeGRPCCreateContainerModuleRequest,
+			DecodeGRPCCreateContainerModuleResponse,
+			pb.CreateContainerModuleResponse{},
+		).Endpoint()
+	}
 	var SetPublicKeyEndpoint endpoint.Endpoint
 	{
 		SetPublicKeyEndpoint = grpctransport.NewClient(
@@ -141,17 +153,57 @@ func New(conn *grpc.ClientConn, logger log.Logger) *module.Endpoints {
 		).Endpoint()
 	}
 
+	var SetLinkEndpoint endpoint.Endpoint
+	{
+		SetLinkEndpoint = grpctransport.NewClient(
+			conn,
+			"module.ModuleService",
+			"SetLink",
+			EncodeGRPCSetLinkRequest,
+			DecodeGRPCSetLinkResponse,
+			pb.SetLinkResponse{},
+		).Endpoint()
+	}
+
+	var RemoveLinkEndpoint endpoint.Endpoint
+	{
+		RemoveLinkEndpoint = grpctransport.NewClient(
+			conn,
+			"module.ModuleService",
+			"RemoveLink",
+			EncodeGRPCRemoveLinkRequest,
+			DecodeGRPCRemoveLinkResponse,
+			pb.RemoveLinkResponse{},
+		).Endpoint()
+	}
+
+	var GetModulesEndpoint endpoint.Endpoint
+	{
+		GetModulesEndpoint = grpctransport.NewClient(
+			conn,
+			"module.ModuleService",
+			"GetModules",
+			EncodeGRPCGetModulesRequest,
+			DecodeGRPCGetModulesResponse,
+			pb.GetModulesResponse{},
+		).Endpoint()
+	}
+
 	return &module.Endpoints{
-		SetPublicKeyEndpoint:    SetPublicKeyEndpoint,
-		RemoveFileEndpoint:      RemoveFileEndpoint,
-		RemoveDirectoryEndpoint: RemoveDirectoryEndpoint,
-		GetFilesEndpoint:        GetFilesEndpoint,
-		GetFileEndpoint:         GetFileEndpoint,
-		UploadFileEndpoint:      UploadFileEndpoint,
-		GetModuleConfigEndpoint: GetModuleConfigEndpoint,
-		SendCommandEndpoint:     SendCommandEndpoint,
-		SetEnvEndpoint:          SetEnvEndpoint,
-		GetEnvEndpoint:          GetEnvEndpoint,
+		CreateContainerModuleEndpoint: CreateContainerModuleEndpoint,
+		SetPublicKeyEndpoint:          SetPublicKeyEndpoint,
+		RemoveFileEndpoint:            RemoveFileEndpoint,
+		RemoveDirectoryEndpoint:       RemoveDirectoryEndpoint,
+		GetFilesEndpoint:              GetFilesEndpoint,
+		GetFileEndpoint:               GetFileEndpoint,
+		UploadFileEndpoint:            UploadFileEndpoint,
+		GetModuleConfigEndpoint:       GetModuleConfigEndpoint,
+		SendCommandEndpoint:           SendCommandEndpoint,
+		SetEnvEndpoint:                SetEnvEndpoint,
+		GetEnvEndpoint:                GetEnvEndpoint,
+		SetLinkEndpoint:               SetLinkEndpoint,
+		RemoveLinkEndpoint:            RemoveLinkEndpoint,
+		GetModulesEndpoint:            GetModulesEndpoint,
 	}
 }
 
@@ -205,6 +257,26 @@ func convertKMDIArray(k []*kmiPB.KMDI) *[]kmi.KMDI {
 		a[i] = convertKMDI(d)
 	}
 	return &a
+}
+
+// EncodeGRPCCreateContainerModuleRequest is a transport/grpc.EncodeRequestFunc that converts a
+// module.proto-domain createcontainermodule request to a gRPC CreateContainerModule request.
+func EncodeGRPCCreateContainerModuleRequest(_ context.Context, request interface{}) (interface{}, error) {
+	req := request.(*module.CreateContainerModuleRequest)
+	return &pb.CreateContainerModuleRequest{
+		RefID: uint32(req.RefID),
+		KmiID: uint32(req.KmiID),
+		Name:  req.Name,
+	}, nil
+}
+
+// DecodeGRPCCreateContainerModuleResponse is a transport/grpc.DecodeResponseFunc that converts a
+// gRPC CreateContainerModule response to a module.proto-domain createcontainermodule response.
+func DecodeGRPCCreateContainerModuleResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
+	response := grpcResponse.(*pb.CreateContainerModuleResponse)
+	return &module.CreateContainerModuleResponse{
+		Error: getError(response.Error),
+	}, nil
 }
 
 // EncodeGRPCSetPublicKeyRequest is a transport/grpc.EncodeRequestFunc that converts a
@@ -419,5 +491,78 @@ func DecodeGRPCGetEnvResponse(_ context.Context, grpcResponse interface{}) (inte
 	return &module.GetEnvResponse{
 		Value: response.Value,
 		Error: getError(response.Error),
+	}, nil
+}
+
+// EncodeGRPCSetLinkRequest is a transport/grpc.EncodeRequestFunc that converts a
+// module.proto-domain setlink request to a gRPC SetLink request.
+func EncodeGRPCSetLinkRequest(_ context.Context, request interface{}) (interface{}, error) {
+	req := request.(*module.SetLinkRequest)
+	return &pb.SetLinkRequest{
+		RefID:         uint32(req.RefID),
+		ContainerName: req.ContainerName,
+		LinkInterface: req.LinkInterface,
+		LinkName:      req.LinkName,
+	}, nil
+}
+
+// DecodeGRPCSetLinkResponse is a transport/grpc.DecodeResponseFunc that converts a
+// gRPC SetLink response to a module.proto-domain setlink response.
+func DecodeGRPCSetLinkResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
+	response := grpcResponse.(*pb.SetLinkResponse)
+	return &module.SetLinkResponse{
+		Error: getError(response.Error),
+	}, nil
+}
+
+// EncodeGRPCRemoveLinkRequest is a transport/grpc.EncodeRequestFunc that converts a
+// module.proto-domain removelink request to a gRPC RemoveLink request.
+func EncodeGRPCRemoveLinkRequest(_ context.Context, request interface{}) (interface{}, error) {
+	req := request.(*module.RemoveLinkRequest)
+	return &pb.RemoveLinkRequest{
+		RefID:         uint32(req.RefID),
+		ContainerName: req.ContainerName,
+		LinkInterface: req.LinkInterface,
+		LinkName:      req.LinkName,
+	}, nil
+}
+
+// DecodeGRPCRemoveLinkResponse is a transport/grpc.DecodeResponseFunc that converts a
+// gRPC RemoveLink response to a module.proto-domain removelink response.
+func DecodeGRPCRemoveLinkResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
+	response := grpcResponse.(*pb.RemoveLinkResponse)
+	return &module.RemoveLinkResponse{
+		Error: getError(response.Error),
+	}, nil
+}
+
+// EncodeGRPCGetModulesRequest is a transport/grpc.EncodeRequestFunc that converts a
+// module.proto-domain getmodules request to a gRPC GetModules request.
+func EncodeGRPCGetModulesRequest(_ context.Context, request interface{}) (interface{}, error) {
+	req := request.(*module.GetModulesRequest)
+	return &pb.GetModulesRequest{
+		RefID: uint32(req.RefID),
+	}, nil
+}
+
+func pbToModules(mod []*pb.Module) []module.Module {
+	mods := []module.Module{}
+	for _, v := range mod {
+		mods = append(mods, module.Module{
+			ContainerName: v.ContainerName,
+			KMDI:          kmiClient.ConvertKMDI(v.Kmdi),
+		})
+	}
+
+	return mods
+}
+
+// DecodeGRPCGetModulesResponse is a transport/grpc.DecodeResponseFunc that converts a
+// gRPC GetModules response to a module.proto-domain getmodules response.
+func DecodeGRPCGetModulesResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
+	response := grpcResponse.(*pb.GetModulesResponse)
+	return &module.GetModulesResponse{
+		Error:   getError(response.Error),
+		Modules: pbToModules(response.Modules),
 	}, nil
 }
