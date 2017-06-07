@@ -84,6 +84,30 @@ func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
 		EncodeGRPCGetContainerKMIResponse,
 	))
 
+	service.AddEndpoint(ws.NewServiceEndpoint(
+		"SetLink",
+		ws.ProtoIDFromString("SLI"),
+		endpoints.SetLinkEndpoint,
+		DecodeWSSetLinkRequest,
+		EncodeGRPCSetLinkResponse,
+	))
+
+	service.AddEndpoint(ws.NewServiceEndpoint(
+		"RemoveLink",
+		ws.ProtoIDFromString("RLI"),
+		endpoints.RemoveLinkEndpoint,
+		DecodeWSRemoveLinkRequest,
+		EncodeGRPCRemoveLinkResponse,
+	))
+
+	service.AddEndpoint(ws.NewServiceEndpoint(
+		"GetLinks",
+		ws.ProtoIDFromString("GLI"),
+		endpoints.GetLinksEndpoint,
+		DecodeWSGetLinksRequest,
+		EncodeGRPCGetLinksResponse,
+	))
+
 	return service
 }
 
@@ -193,4 +217,40 @@ func DecodeWSGetContainerKMIRequest(ctx context.Context, data interface{}) (inte
 	}
 
 	return DecodeGRPCGetContainerKMIRequest(ctx, req)
+}
+
+// DecodeWSSetLinkRequest is a websocket.DecodeRequestFunc that converts a
+// WS SetLink request to a container.proto-domain setlink request.
+func DecodeWSSetLinkRequest(ctx context.Context, data interface{}) (interface{}, error) {
+	req := &pb.SetLinkRequest{}
+	err := proto.Unmarshal(data.([]byte), req)
+	if err != nil {
+		return nil, err
+	}
+
+	return DecodeGRPCSetLinkRequest(ctx, req)
+}
+
+// DecodeWSRemoveLinkRequest is a websocket.DecodeRequestFunc that converts a
+// WS RemoveLink request to a container.proto-domain removelink request.
+func DecodeWSRemoveLinkRequest(ctx context.Context, data interface{}) (interface{}, error) {
+	req := &pb.RemoveLinkRequest{}
+	err := proto.Unmarshal(data.([]byte), req)
+	if err != nil {
+		return nil, err
+	}
+
+	return DecodeGRPCRemoveLinkRequest(ctx, req)
+}
+
+// DecodeWSGetLinksRequest is a websocket.DecodeRequestFunc that converts a
+// WS GetLinks request to a container.proto-domain getlinks request.
+func DecodeWSGetLinksRequest(ctx context.Context, data interface{}) (interface{}, error) {
+	req := &pb.GetLinksRequest{}
+	err := proto.Unmarshal(data.([]byte), req)
+	if err != nil {
+		return nil, err
+	}
+
+	return DecodeGRPCGetLinksRequest(ctx, req)
 }
