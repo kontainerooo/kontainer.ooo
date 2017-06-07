@@ -320,28 +320,7 @@ func (s *service) Execute(refID uint, id string, cmd string, env map[string]stri
 		return "", err
 	}
 
-	execEnv := cKMI.Environment.ToStringMap()
-	// Construct environment and replace global with exec specific env
-	for gK := range execEnv {
-		for xK, xV := range env {
-			if strings.ToLower(gK) == strings.ToLower(xK) {
-				execEnv[gK] = xV
-				// Delete previously found key to reduce loop time
-				delete(env, xK)
-			}
-		}
-	}
-
-	// Append to path variable if there is one given
-	_, ok := execEnv["PATH"]
-	if !ok {
-		execEnv["PATH"] = s.config.StandardPathVariable
-	} else {
-		execEnv["PATH"] = fmt.Sprintf("%s:%s", execEnv["PATH"], s.config.StandardPathVariable)
-	}
-
-	// Set or override TERM variable if there is one
-	execEnv["TERM"] = ContainerTermVariable
+	execEnv := s.createEnvironmentMap(cKMI, env)
 
 	// Make env string array
 	envString := []string{}
@@ -426,11 +405,55 @@ func (s *service) SetEnv(refID uint, id string, key string, value string) error 
 
 func (s *service) IDForName(refID uint, name string) (string, error) {
 	c := &Container{}
-	err := s.db.First(c, "RefID = ? AND ContainerName = ?", refID, name)
+	err := s.db.First(c, "ref_id = ? AND container_name = ?", refID, name)
 	if err != nil {
 		return "", err
 	}
 	return c.ContainerID, nil
+}
+
+func (s *service) createEnvironmentMap(cKMI kmi.KMI, env map[string]string) map[string]string {
+
+	// Prefix interfaces to create the environment variables
+	execEnv := make(map[string]string)
+	for k, v := range cKMI.Interfaces.ToStringMap() {
+		execEnv[fmt.Sprintf("KROO_%s", strings.ToUpper(k))] = v
+	}
+
+	// Prefix commands to create command environment variables
+	for k, v := range cKMI.Commands.ToStringMap() {
+		execEnv[fmt.Sprintf("KROO_CMD_%s", strings.ToUpper(k))] = v
+	}
+
+	// Add the KMIs configured environment, possibly overriding
+	for k, v := range cKMI.Environment.ToStringMap() {
+		execEnv[k] = v
+	}
+
+	// Construct environment and replace global with exec specific env
+	for gK := range execEnv {
+		for xK, xV := range env {
+			if strings.ToLower(gK) == strings.ToLower(xK) {
+				execEnv[gK] = xV
+				// Delete previously found key to reduce loop time
+				// <- is that even true? Hopefully ¯\_(ツ)_/¯
+				delete(env, xK)
+			}
+		}
+	}
+
+	// Append to path variable if there is one given
+	_, ok := execEnv["PATH"]
+	if !ok {
+		execEnv["PATH"] = s.config.StandardPathVariable
+	} else {
+		execEnv["PATH"] = fmt.Sprintf("%s:%s", execEnv["PATH"], s.config.StandardPathVariable)
+	}
+
+	// Set or override TERM variable if there is one
+	execEnv["TERM"] = ContainerTermVariable
+
+	return execEnv
 }
 
 func (s *service) getTemplateKMI(kmiID uint) (kmi.KMI, error) {
@@ -461,7 +484,13 @@ func (s *service) GetContainerKMI(containerID string) (kmi.KMI, error) {
 		return kmi.KMI{}, err
 	}
 
-	return kmi.KMI(c.KMI), nil
+	cKMI := CKMI{}
+	err = s.db.First(&cKMI, "id = ?", c.KMIID)
+	if err != nil {
+		return kmi.KMI{}, err
+	}
+
+	return kmi.KMI(cKMI), nil
 }
 
 func (s *service) initRootfs(refID uint, provisionScript string, id string, cKMI kmi.KMI) error {
