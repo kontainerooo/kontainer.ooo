@@ -150,7 +150,7 @@ func (s *service) CreateContainer(refID uint, kmiID uint, name string) (id strin
 
 	netnsCmd := configs.NewCommandHook(configs.Command{
 		Path: s.config.NetNSPath,
-		Args: []string{"netns", fmt.Sprintf("-ipfile %s", path.Join(s.config.CustomerPath, fmt.Sprintf("%d", refID), containerID, ".ip"))},
+		Args: []string{"netns", "-ipfile", path.Join(s.config.CustomerPath, fmt.Sprintf("%d", refID), containerID, ".ip")},
 		Dir:  path.Join(s.config.CustomerPath, fmt.Sprintf("%d", refID), containerID),
 	})
 
