@@ -31,9 +31,13 @@ func (j JSON) ToStringMap() map[string]string {
 func (j JSON) ToStringArrayMap() map[string][]string {
 	m := make(map[string][]string)
 	for k, v := range j {
+		tmpArr := []string{}
 		switch v.(type) {
-		case []string:
-			m[k] = v.([]string)
+		case []interface{}:
+			for _, b := range v.([]interface{}) {
+				tmpArr = append(tmpArr, b.(string))
+			}
+			m[k] = tmpArr
 		}
 	}
 	return m
