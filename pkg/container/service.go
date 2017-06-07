@@ -281,12 +281,22 @@ func (s *service) RemoveContainer(refID uint, id string) error {
 }
 
 func (s *service) Instances(refID uint) []Container {
-	s.db.Where("RefID = ?", refID)
+	s.db.Where("ref_id = ?", refID)
 
 	cs := []Container{}
 	err := s.db.Find(&cs)
 	if err != nil {
 		return []Container{}
+	}
+
+	for k := range cs {
+		cKMI := CKMI{}
+		err = s.db.First(&cKMI, "id = ?", cs[k].KMIID)
+		if err != nil {
+			return []Container{}
+		}
+
+		cs[k].KMI = cKMI
 	}
 
 	return cs

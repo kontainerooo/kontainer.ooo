@@ -406,7 +406,10 @@ func EncodeGRPCIDForNameResponse(_ context.Context, response interface{}) (inter
 // messages/container.proto-domain getcontainerkmi response to a gRPC GetContainerKMI response.
 func EncodeGRPCGetContainerKMIResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(GetContainerKMIResponse)
-	gRPCRes := &pb.GetContainerKMIResponse{}
+	ckmi := CKMI(res.ContainerKMI)
+	gRPCRes := &pb.GetContainerKMIResponse{
+		ContainerKMI: convertPBKMI(&ckmi),
+	}
 	if res.Error != nil {
 		gRPCRes.Error = res.Error.Error()
 	}
