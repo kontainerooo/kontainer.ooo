@@ -7,7 +7,6 @@ import (
 	grpctransport "github.com/go-kit/kit/transport/grpc"
 	"github.com/kontainerooo/kontainer.ooo/pkg/container/pb"
 	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
-	kmiPB "github.com/kontainerooo/kontainer.ooo/pkg/kmi/pb"
 	oldcontext "golang.org/x/net/context"
 )
 
@@ -85,51 +84,6 @@ type grpcServer struct {
 	setenv          grpctransport.Handler
 	idforname       grpctransport.Handler
 	getcontainerkmi grpctransport.Handler
-}
-
-func convertPBFrontendModule(f *kmi.FrontendModule) *kmiPB.FrontendModule {
-	return &kmiPB.FrontendModule{
-		Template:   f.Template,
-		Parameters: f.Parameters.ToStringMap(),
-	}
-}
-
-func convertPBFrontendModuleArray(f kmi.FrontendArray) []*kmiPB.FrontendModule {
-	a := make([]*kmiPB.FrontendModule, len(f))
-	for i, m := range f {
-		a[i] = convertPBFrontendModule(m)
-	}
-	return a
-}
-
-func convertPBKMDI(k kmi.KMDI) *kmiPB.KMDI {
-	return &kmiPB.KMDI{
-		ID:          uint32(k.ID),
-		Name:        k.Name,
-		Version:     k.Version,
-		Description: k.Description,
-	}
-}
-
-func convertPBKMI(k *CKMI) *kmiPB.KMI {
-	return &kmiPB.KMI{
-		KMDI:            convertPBKMDI(k.KMDI),
-		ProvisionScript: k.ProvisionScript,
-		Commands:        k.Commands.ToStringMap(),
-		Environment:     k.Environment.ToStringMap(),
-		Frontend:        convertPBFrontendModuleArray(k.Frontend),
-		Imports:         k.Imports,
-		Interfaces:      k.Interfaces.ToStringMap(),
-		Resources:       k.Resources.ToStringMap(),
-	}
-}
-
-func convertPBKMDIArray(k *[]kmi.KMDI) []*kmiPB.KMDI {
-	a := make([]*kmiPB.KMDI, len(*k))
-	for i, d := range *k {
-		a[i] = convertPBKMDI(d)
-	}
-	return a
 }
 
 func (s *grpcServer) CreateContainer(ctx oldcontext.Context, req *pb.CreateContainerRequest) (*pb.CreateContainerResponse, error) {
@@ -327,10 +281,11 @@ func EncodeGRPCInstancesResponse(_ context.Context, response interface{}) (inter
 	res := response.(InstancesResponse)
 	cts := []*pb.Container{}
 	for _, v := range res.Containers {
+		kmiWrapper := kmi.KMI(v.KMI)
 		c := &pb.Container{
 			ContainerID:   v.ContainerID,
 			ContainerName: v.ContainerName,
-			Kmi:           convertPBKMI(&v.KMI),
+			Kmi:           kmi.ConvertPBKMI(&kmiWrapper),
 			RefID:         uint32(v.RefID),
 		}
 		cts = append(cts, c)
@@ -406,9 +361,8 @@ func EncodeGRPCIDForNameResponse(_ context.Context, response interface{}) (inter
 // messages/container.proto-domain getcontainerkmi response to a gRPC GetContainerKMI response.
 func EncodeGRPCGetContainerKMIResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(GetContainerKMIResponse)
-	ckmi := CKMI(res.ContainerKMI)
 	gRPCRes := &pb.GetContainerKMIResponse{
-		ContainerKMI: convertPBKMI(&ckmi),
+		ContainerKMI: kmi.ConvertPBKMI(&res.ContainerKMI),
 	}
 	if res.Error != nil {
 		gRPCRes.Error = res.Error.Error()

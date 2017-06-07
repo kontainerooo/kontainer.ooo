@@ -7,15 +7,12 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
 	grpctransport "github.com/go-kit/kit/transport/grpc"
-	"github.com/lib/pq"
 	"google.golang.org/grpc"
 
-	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 	"github.com/kontainerooo/kontainer.ooo/pkg/container"
-	"github.com/kontainerooo/kontainer.ooo/pkg/kmi"
 
 	containerPB "github.com/kontainerooo/kontainer.ooo/pkg/container/pb"
-	kmiPB "github.com/kontainerooo/kontainer.ooo/pkg/kmi/pb"
+	kmiClient "github.com/kontainerooo/kontainer.ooo/pkg/kmi/client"
 )
 
 // New creates a set of endpoints based on a gRPC connection
@@ -156,101 +153,11 @@ func pbContainersToContainers(pbc []*containerPB.Container) []container.Containe
 			RefID:         uint(c.RefID),
 			ContainerID:   c.ContainerID,
 			ContainerName: c.ContainerName,
-			KMI:           container.CKMI(*convertKMI(c.Kmi)),
+			KMI:           container.CKMI(*kmiClient.ConvertKMI(c.Kmi)),
 		})
 	}
 
 	return cts
-}
-
-func convertPBFrontendModule(f *kmi.FrontendModule) *kmiPB.FrontendModule {
-	return &kmiPB.FrontendModule{
-		Template:   f.Template,
-		Parameters: f.Parameters.ToStringMap(),
-	}
-}
-
-func convertPBFrontendModuleArray(f kmi.FrontendArray) []*kmiPB.FrontendModule {
-	a := make([]*kmiPB.FrontendModule, len(f))
-	for i, m := range f {
-		a[i] = convertPBFrontendModule(m)
-	}
-	return a
-}
-
-func convertPBKMDI(k kmi.KMDI) *kmiPB.KMDI {
-	return &kmiPB.KMDI{
-		ID:          uint32(k.ID),
-		Name:        k.Name,
-		Version:     k.Version,
-		Description: k.Description,
-	}
-}
-
-func convertPBKMI(k *kmi.KMI) *kmiPB.KMI {
-	return &kmiPB.KMI{
-		KMDI:            convertPBKMDI(k.KMDI),
-		ProvisionScript: k.ProvisionScript,
-		Commands:        k.Commands.ToStringMap(),
-		Environment:     k.Environment.ToStringMap(),
-		Frontend:        convertPBFrontendModuleArray(k.Frontend),
-		Imports:         k.Imports,
-		Interfaces:      k.Interfaces.ToStringMap(),
-		Resources:       k.Resources.ToStringMap(),
-	}
-}
-
-func convertPBKMDIArray(k *[]kmi.KMDI) []*kmiPB.KMDI {
-	a := make([]*kmiPB.KMDI, len(*k))
-	for i, d := range *k {
-		a[i] = convertPBKMDI(d)
-	}
-	return a
-}
-
-func convertFrontendModule(f *kmiPB.FrontendModule) *kmi.FrontendModule {
-	return &kmi.FrontendModule{
-		Template:   f.Template,
-		Parameters: abstraction.NewJSONFromMap(f.Parameters),
-	}
-}
-
-func convertFrontendModuleArray(f []*kmiPB.FrontendModule) kmi.FrontendArray {
-	a := make(kmi.FrontendArray, len(f))
-	for i, m := range f {
-		a[i] = convertFrontendModule(m)
-	}
-	return a
-}
-
-func convertKMDI(k *kmiPB.KMDI) kmi.KMDI {
-	return kmi.KMDI{
-		ID:          uint(k.ID),
-		Name:        k.Name,
-		Version:     k.Version,
-		Description: k.Description,
-	}
-}
-
-func convertKMI(k *kmiPB.KMI) *kmi.KMI {
-	return &kmi.KMI{
-		KMDI:            convertKMDI(k.KMDI),
-		ProvisionScript: k.ProvisionScript,
-		Commands:        abstraction.NewJSONFromMap(k.Commands),
-		Environment:     abstraction.NewJSONFromMap(k.Environment),
-		Frontend:        convertFrontendModuleArray(k.Frontend),
-		Imports:         pq.StringArray(k.Imports),
-		Interfaces:      abstraction.NewJSONFromMap(k.Interfaces),
-		Resources:       abstraction.NewJSONFromMap(k.Resources),
-	}
-}
-
-func convertKMDIArray(k []*kmiPB.KMDI) *[]kmi.KMDI {
-	a := make([]kmi.KMDI, len(k))
-	for i, d := range k {
-		a[i] = convertKMDI(d)
-	}
-	return &a
 }
 
 // EncodeGRPCCreateContainerRequest is a transport/grpc.EncodeRequestFunc that converts a
@@ -426,7 +333,7 @@ func EncodeGRPCGetContainerKMIRequest(_ context.Context, request interface{}) (i
 // gRPC GetContainerKMI response to a messages/container.proto-domain getcontainerkmi response.
 func DecodeGRPCGetContainerKMIResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
 	response := grpcResponse.(*containerPB.GetContainerKMIResponse)
-	kmi := convertKMI(response.ContainerKMI)
+	kmi := kmiClient.ConvertKMI(response.ContainerKMI)
 	return &container.GetContainerKMIResponse{
 		Error:        getError(response.Error),
 		ContainerKMI: *kmi,
