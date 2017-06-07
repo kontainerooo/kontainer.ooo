@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"golang.org/x/net/context"
 
@@ -56,6 +57,7 @@ type service struct {
 	container *container.Endpoints
 	logger    log.Logger
 	config    util.ConfigFile
+	mtx       *sync.Mutex
 }
 
 func (s *service) makePath(refID uint, containerName string) (string, error) {
@@ -80,6 +82,13 @@ func (s *service) makePath(refID uint, containerName string) (string, error) {
 }
 
 func (s *service) SetPublicKey(refID uint, containerName string, key string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.setPublicKey(refID, containerName, key)
+}
+
+func (s *service) setPublicKey(refID uint, containerName string, key string) error {
 	coPath, err := s.makePath(refID, containerName)
 	if err != nil {
 		return err
@@ -94,6 +103,13 @@ func (s *service) SetPublicKey(refID uint, containerName string, key string) err
 }
 
 func (s *service) RemoveFile(refID uint, containerName string, filename string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.removeFile(refID, containerName, filename)
+}
+
+func (s *service) removeFile(refID uint, containerName string, filename string) error {
 	coPath, err := s.makePath(refID, containerName)
 	if err != nil {
 		return err
@@ -112,6 +128,13 @@ func (s *service) RemoveFile(refID uint, containerName string, filename string) 
 }
 
 func (s *service) RemoveDirectory(refID uint, containerName string, dir string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.removeDirectory(refID, containerName, dir)
+}
+
+func (s *service) removeDirectory(refID uint, containerName string, dir string) error {
 	coPath, err := s.makePath(refID, containerName)
 	if err != nil {
 		return err
@@ -134,6 +157,13 @@ func (s *service) RemoveDirectory(refID uint, containerName string, dir string) 
 }
 
 func (s *service) GetFiles(refID uint, containerName string, dir string) (map[string]string, error) {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.getFiles(refID, containerName, dir)
+}
+
+func (s *service) getFiles(refID uint, containerName string, dir string) (map[string]string, error) {
 	flist := make(map[string]string)
 
 	coPath, err := s.makePath(refID, containerName)
@@ -163,6 +193,13 @@ func (s *service) GetFiles(refID uint, containerName string, dir string) (map[st
 }
 
 func (s *service) GetFile(refID uint, containerName string, filepath string) ([]byte, error) {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.getFile(refID, containerName, filepath)
+}
+
+func (s *service) getFile(refID uint, containerName string, filepath string) ([]byte, error) {
 	coPath, err := s.makePath(refID, containerName)
 	if err != nil {
 		return []byte{}, err
@@ -190,6 +227,13 @@ func (s *service) GetFile(refID uint, containerName string, filepath string) ([]
 }
 
 func (s *service) UploadFile(refID uint, containerName string, fpath string, content []byte, override bool) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.uploadFile(refID, containerName, fpath, content, override)
+}
+
+func (s *service) uploadFile(refID uint, containerName string, fpath string, content []byte, override bool) error {
 	coPath, err := s.makePath(refID, containerName)
 	if err != nil {
 		return err
@@ -233,6 +277,13 @@ func (s *service) UploadFile(refID uint, containerName string, fpath string, con
 }
 
 func (s *service) GetModuleConfig(refID uint, containerName string) (kmi.KMI, error) {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.getModuleConfig(refID, containerName)
+}
+
+func (s *service) getModuleConfig(refID uint, containerName string) (kmi.KMI, error) {
 	id, err := s.getContainerIDForName(refID, containerName)
 	if err != nil {
 		return kmi.KMI{}, err
@@ -254,6 +305,13 @@ func (s *service) GetModuleConfig(refID uint, containerName string) (kmi.KMI, er
 }
 
 func (s *service) SendCommand(refID uint, containerName string, command string, env map[string]string) (string, error) {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.sendCommand(refID, containerName, command, env)
+}
+
+func (s *service) sendCommand(refID uint, containerName string, command string, env map[string]string) (string, error) {
 	id, err := s.getContainerIDForName(refID, containerName)
 	if err != nil {
 		return "", err
@@ -297,6 +355,13 @@ func (s *service) SendCommand(refID uint, containerName string, command string, 
 }
 
 func (s *service) SetEnv(refID uint, containerName string, key string, value string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.setEnv(refID, containerName, key, value)
+}
+
+func (s *service) setEnv(refID uint, containerName string, key string, value string) error {
 	id, err := s.getContainerIDForName(refID, containerName)
 	if err != nil {
 		return err
@@ -316,6 +381,13 @@ func (s *service) SetEnv(refID uint, containerName string, key string, value str
 }
 
 func (s *service) GetEnv(refID uint, containerName string, key string) (string, error) {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.getEnv(refID, containerName, key)
+}
+
+func (s *service) getEnv(refID uint, containerName string, key string) (string, error) {
 	id, err := s.getContainerIDForName(refID, containerName)
 	if err != nil {
 		return "", err
@@ -366,6 +438,7 @@ func NewService(ce *container.Endpoints, l log.Logger) (Service, error) {
 		container: ce,
 		logger:    l,
 		config:    conf,
+		mtx:       &sync.Mutex{},
 	}
 
 	return s, nil
