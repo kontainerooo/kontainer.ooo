@@ -238,7 +238,7 @@ func (s *service) GetModuleConfig(refID uint, containerName string) (kmi.KMI, er
 		return kmi.KMI{}, err
 	}
 
-	res, err := s.container.GetContainerKMIEndpoint(context.Background(), &container.GetContainerKMIRequest{
+	res, err := s.container.GetContainerKMIEndpoint(context.Background(), container.GetContainerKMIRequest{
 		ContainerID: id,
 	})
 	if err != nil {
@@ -259,10 +259,29 @@ func (s *service) SendCommand(refID uint, containerName string, command string, 
 		return "", err
 	}
 
-	res, err := s.container.ExecuteEndpoint(context.Background(), &container.ExecuteRequest{
+	res, err := s.container.GetContainerKMIEndpoint(context.Background(), container.GetContainerKMIRequest{
+		ContainerID: id,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	containerKMI, ok := res.(container.GetContainerKMIResponse)
+	if !ok {
+		return "", errors.New("service returned unexpected response")
+	}
+
+	// Check if the command exists
+	cmdMap := containerKMI.ContainerKMI.Commands.ToStringMap()
+	cmdString, ok := cmdMap[command]
+	if !ok {
+		return "", fmt.Errorf("Command %s not found", command)
+	}
+
+	res, err = s.container.ExecuteEndpoint(context.Background(), container.ExecuteRequest{
 		RefID: refID,
 		ID:    id,
-		CMD:   command,
+		CMD:   cmdString,
 		Env:   env,
 	})
 	if err != nil {
@@ -283,7 +302,7 @@ func (s *service) SetEnv(refID uint, containerName string, key string, value str
 		return err
 	}
 
-	_, err = s.container.SetEnvEndpoint(context.Background(), &container.SetEnvRequest{
+	_, err = s.container.SetEnvEndpoint(context.Background(), container.SetEnvRequest{
 		RefID: refID,
 		ID:    id,
 		Key:   key,
@@ -302,7 +321,7 @@ func (s *service) GetEnv(refID uint, containerName string, key string) (string, 
 		return "", err
 	}
 
-	res, err := s.container.GetEnvEndpoint(context.Background(), &container.GetEnvRequest{
+	res, err := s.container.GetEnvEndpoint(context.Background(), container.GetEnvRequest{
 		RefID: refID,
 		ID:    id,
 		Key:   key,
