@@ -3,6 +3,7 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -97,6 +98,15 @@ func fillRequestStruct(c *ishell.Context, value *reflect.Value, typ reflect.Type
 					continue
 				}
 				valField.SetBool(bul)
+			case reflect.Array:
+				el := valField.Index(0)
+				switch el.Kind() {
+				case reflect.Uint8:
+					str := ""
+					for i := 0; i < valField.Len(); i++ {
+						str = fmt.Sprintf("%s%c", str, el.Uint())
+					}
+				}
 			}
 			break
 		}
