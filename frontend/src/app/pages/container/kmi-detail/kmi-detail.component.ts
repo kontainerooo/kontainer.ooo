@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs/Rx';
+import { GlobalDataService } from '../../../services/global-data.service';
+import { kmi } from '../../../../messages/messages';
 
 @Component({
   selector: 'kro-kmi-detail',
@@ -8,16 +10,33 @@ import { Subscription } from 'rxjs/Rx';
   styleUrls: ['./kmi-detail.component.scss']
 })
 export class KmiDetailComponent implements OnInit, OnDestroy {
-  private routeId: number;
+  private containerId: string;
+  private refId: number;
+  private containerName: string;
+  private kmi: kmi.KMI;
   private routeSub: Subscription;
 
-  constructor(private route: ActivatedRoute) {
-    console.log(this.route);
+  private loaded: boolean;
+
+  constructor(private route: ActivatedRoute, private gds: GlobalDataService) {
+    this.loaded = false;
   }
 
   ngOnInit() {
     this.routeSub = this.route.params.subscribe(params => {
-      this.routeId = params['id'];
+      this.containerId = params['id'];
+      this.refId = params['refId'];
+      this.containerName = params['name'];
+
+      this.gds.setAndGetContainerKMI(this.containerName, this.containerId).subscribe(
+        value => {
+          this.kmi = value;
+          this.loaded = true;
+        },
+        error => {
+          console.log(error);
+        }
+      )
     });
   }
 

@@ -13,6 +13,9 @@ import { GlobalDataService } from './services/global-data.service';
 import { SocketService } from './services/socket.service';
 import { UserService } from './services/user.service';
 import { KenTheGuruService } from './services/ken-the-guru.service';
+import { KmiService } from './services/kmi.service';
+import { ContainerService } from './services/container.service';
+import { ModuleService } from './services/module.service';
 
 import { AppComponent } from './app.component';
 import { SignInComponent } from './sign-in/sign-in.component';
@@ -49,7 +52,10 @@ import { AvatarComponent } from './sidebar-navigation/account/avatar/avatar.comp
     GlobalDataService,
     SocketService,
     UserService,
-    KenTheGuruService
+    KenTheGuruService,
+    KmiService,
+    ContainerService,
+    ModuleService
   ],
   bootstrap: [AppComponent]
 })

@@ -5,7 +5,10 @@ import { SocketService } from './socket.service';
 import { UserService } from './user.service';
 import { KenTheGuruService } from './ken-the-guru.service';
 import { KmiService } from './kmi.service';
-import { user, kentheguru, kmi } from '../../messages/messages';
+import { ContainerService } from './container.service';
+import { ModuleService } from './module.service';
+
+import { user, kentheguru, kmi, container, module } from '../../messages/messages';
 import { ProtoResponse } from '../interfaces/proto-response';
 import { Observable, Subject } from 'rxjs/Rx';
 
@@ -13,13 +16,20 @@ import { Observable, Subject } from 'rxjs/Rx';
 export class GlobalDataService {
   private gd: GlobalData;
 
-  constructor(private http: Http, private us: UserService, private ktgs: KenTheGuruService, private kmis: KmiService) {
+  constructor(
+    private http: Http,
+    private us: UserService,
+    private ktgs: KenTheGuruService,
+    private kmis: KmiService,
+    private cs: ContainerService,
+    private ms: ModuleService
+  ) {
     this.gd = {};
   }
   
   /* User methods */
 
-  getUserId(): number {
+  getUserIdSnapshot(): number {
     if(this.gd.user && this.gd.user.ID) {
       return this.gd.user.ID;
     } else {
@@ -35,7 +45,22 @@ export class GlobalDataService {
     }
   }
 
+  setAndGetUserAutomatically(): Observable<user.User> {
+    if(this.getUserIdSnapshot() !== -1) {
+      return this.setAndGetUserById(this.getUserIdSnapshot());
+    }
+    return this.setAndGetUserByCookie();
+  }
+
+  setAndGetUserByCookie(): Observable<user.User> {
+    return this.setAndGetUser();
+  }
+
   setAndGetUserById(id: number): Observable<user.User> {
+    return this.setAndGetUser(id);
+  }
+
+  private setAndGetUser(id?: number): Observable<user.User> {
     let obs = this.us
       .reconnect()
       .share()
@@ -54,10 +79,17 @@ export class GlobalDataService {
         console.log(error);
       }
     );
+
+    let requestObject = {
+      ID: 0
+    };
+    if(id != undefined || id != null) {
+      requestObject = {
+        ID: id
+      };
+    }
     
-    this.us.next('GetUserRequest', {
-      ID: id
-    });
+    this.us.next('GetUserRequest', requestObject);
 
     return obs;
   }
@@ -92,7 +124,7 @@ export class GlobalDataService {
     obs.subscribe(
       success => {
         if(success) {
-          this.setAndGetUserById(this.getUserId());
+          this.setAndGetUserById(this.getUserIdSnapshot());
         }
       },
       error => {
@@ -132,6 +164,7 @@ export class GlobalDataService {
 
         this.http.post(`http://${SocketService.SOCKET_ADDRESS}/auth`, body).share().subscribe(
           data => {
+            this.setAndGetUserById(1);
             if(data.text() == 'Authenticated!') {
               cookieRequest.next(data);
             }
@@ -188,8 +221,9 @@ export class GlobalDataService {
         let kr = kmi.KMIResponse.from(value.data);
         let kmdiArray: kmi.KMDI[] = [];
         if(!kr.error) {
-          for(let element of kr.kmdi) {
-            kmdiArray.push(kmi.KMDI.from(element));
+          for(let i in kr.kmdi) {
+            kr.kmdi[i].type = (<any>value.data).kmdi[i].type;
+            kmdiArray.push(kmi.KMDI.from(kr.kmdi[i]));
           }
           return kmdiArray;
         }
@@ -205,6 +239,151 @@ export class GlobalDataService {
     )
 
     this.kmis.next('KMIRequest', {});
+
+    return obs;
+  }
+
+  /* Container methods */
+
+  createContainer(kmiId: number, name: string): Observable<string> {
+    let obs = this.cs
+      .reconnect()
+      .share()
+      .first((value: ProtoResponse) => {
+        return value.message == 'CreateContainerResponse';
+      })
+      .map((value: ProtoResponse): string => {
+        let ccr = container.CreateContainerResponse.from(value.data);
+        console.log(ccr);
+        if(!ccr.error) {
+          return ccr.ID;
+        }
+      });
+
+    this.cs.next('CreateContainerRequest', {
+      refID: this.getUserIdSnapshot(),
+      kmiID: kmiId,
+      name: name
+    });
+
+    return obs;
+  }
+
+  getContainers(): Observable<container.container[]> {
+    let obs = this.cs
+      .reconnect()
+      .share()
+      .first((value: ProtoResponse) => {
+        return value.message == 'InstancesResponse';
+      })
+      .map((value: ProtoResponse): container.container[] => {
+        let ir = container.InstancesResponse.from(value.data);
+        let containerArray: container.container[] = [];
+        for(let i in ir.instances) {
+          ir.instances[i].kmi.KMDI.type = (<any>value.data).instances[i].kmi.KMDI.type;
+          containerArray.push(container.container.from(ir.instances[i]));
+        }
+        return containerArray;
+      });
+    
+    this.cs.next('InstancesRequest', {
+      refID: this.getUserIdSnapshot()
+    });
+
+    return obs;
+  }
+
+  removeContainer(refId: number, id: string): Observable<boolean> {
+    let obs = this.cs
+      .reconnect()
+      .share()
+      .first((value: ProtoResponse) => {
+        return value.message == 'RemoveContainerResponse';
+      })
+      .map((value: ProtoResponse): boolean => {
+        let rcr = container.RemoveContainerResponse.from(value.data);
+        if(!rcr.error) {
+          return true;
+        }
+      });
+
+    this.cs.next('RemoveContainerRequest', {
+      refID: refId,
+      ID: id
+    });
+
+    return obs;
+  }
+
+  /* Module methods */
+
+  setAndGetContainerKMI(name: string, containerId: string): Observable<kmi.KMI> {
+    let obs = this.cs
+      .reconnect()
+      .share()
+      .first((value: ProtoResponse) => {
+        return value.message == 'GetContainerKMIResponse';
+      })
+      .map((value: ProtoResponse): kmi.KMI => {
+        let gmcr = container.GetContainerKMIResponse.from(value.data);
+        if(!gmcr.error) {
+          gmcr.containerKMI.KMDI.type = (<any>value.data).containerKMI.KMDI.type;
+          return kmi.KMI.from(gmcr.containerKMI);
+        }
+      });
+
+    obs.subscribe(
+      value => {
+        this.gd.currentKMI = {
+          name: name,
+          kmi: value
+        };
+      },
+      error => {
+        console.log(error);
+      }
+    )
+
+    this.cs.next('GetContainerKMIRequest', {
+      containerID: containerId
+    });
+
+    return obs;
+  }
+
+  getValueSnapshot(template: string, name: string): string {
+    console.log(this.gd.currentKMI);
+    for(let module of this.gd.currentKMI.kmi.frontend) {
+      if(module.template == template) {
+        return module.parameters[name];
+      }
+    }
+  }
+
+  sendCommand(command: string, env?: {[k: string]: string}) {
+    if(!env) {
+      let env = {};
+    }
+
+    let obs = this.ms
+      .reconnect()
+      .share()
+      .first((value: ProtoResponse) => {
+        return value.message == 'SendCommandResponse';
+      })
+      .map((value: ProtoResponse): string => {
+        let scr = module.SendCommandResponse.from(value.data);
+        if(!scr.error) {
+          return scr.response;
+        }
+      });
+
+    this.ms.next('SendCommandRequest', {
+      refID: this.getUserIdSnapshot(),
+      containerName: this.gd.currentKMI.name,
+      command: command,
+      env: env
+    });
 
     return obs;
   }

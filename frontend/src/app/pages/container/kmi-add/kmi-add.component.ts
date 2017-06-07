@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { MdlDialogService } from 'angular2-mdl';
 import { kmi } from '../../../../messages/messages';
 import { AddPathComponent } from './add-path/add-path.component';
+import { AddContainerModalComponent } from './add-container-modal/add-container-modal.component';
 import { GlobalDataService } from '../../../services/global-data.service';
 
 @Component({
@@ -40,6 +41,18 @@ export class KmiAddComponent implements OnInit {
     let addDialog = this.mdlds.showCustomDialog({
       component: AddPathComponent,
       providers: [],
+      isModal: true,
+      styles: {'width': '350px'},
+      clickOutsideToClose: true,
+      enterTransitionDuration: 400,
+      leaveTransitionDuration: 400
+    });
+  }
+
+  showAddContainer(kmiId: number) {
+    let addDialog = this.mdlds.showCustomDialog({
+      component: AddContainerModalComponent,
+      providers: [{provide: 'kmiId', useValue: kmiId}],
       isModal: true,
       styles: {'width': '350px'},
       clickOutsideToClose: true,

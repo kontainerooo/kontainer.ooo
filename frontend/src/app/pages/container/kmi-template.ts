@@ -1,12 +1,8 @@
-// TODO example import as there is no service for this right now
-import { KmiService } from '../../services/kmi.service';
+import { GlobalDataService } from '../../services/global-data.service';
 
 
 export class KmiTemplate {
-  private cKmiService: KmiService;
-
-  constructor(kmiService: KmiService) {
-    this.cKmiService = kmiService;
+  constructor(private gds: GlobalDataService) {
   }
 
   getParameter(name: string): string {
@@ -14,7 +10,7 @@ export class KmiTemplate {
     return 'aParameter';
   }
 
-  executeCommand(name: string) {
+  sendCommand(name: string) {
     
   }
 

@@ -91,6 +91,7 @@ export class SocketService {
       message += String.fromCharCode(messageArray[i]);
     }
     const identifiers: { pkg: string, message: string } = this.opcodeConverter.getIdentifiers(pkg, message);
+    console.log(identifiers, pb[identifiers.pkg][`${identifiers.message}Response`].decode(encodedMessage.slice(6)).toObject());
     if(identifiers.pkg == pkgWanted) {
       return {
         message: `${identifiers.message}Response`,

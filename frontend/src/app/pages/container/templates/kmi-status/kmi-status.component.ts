@@ -1,60 +1,92 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { KmiTemplate } from '../../kmi-template';
-// TODO example import as there is no service for this right now
-import { KmiService } from '../../../../services/kmi.service';
-import { kmi } from '../../../../../messages/messages';
+import { GlobalDataService } from '../../../../services/global-data.service';
+
+const template = {
+	"name": "status",
+	"parameters": [
+		{
+			"name": "start",
+			"type": "emit"
+		},
+		{
+			"name": "stop",
+			"type": "emit"
+		},
+		{
+			"name": "status", 
+			"type": "poll",
+			"interval": "500"
+		},
+		{
+			"name": "title",
+			"type": "value"
+		} 
+	]
+};
 
 @Component({
   selector: 'kro-kmi-status',
   templateUrl: './kmi-status.component.html',
   styleUrls: ['./kmi-status.component.scss']
 })
-export class KmiStatusComponent extends KmiTemplate implements OnInit {
+export class KmiStatusComponent implements OnInit {
   title: string;
   status: number;
+  statusInterval: NodeJS.Timer;
 
-  constructor(private kmiService: KmiService) {
-    super(kmiService);
-
-    this.title = this.getParameter('title');
-    this.status = parseInt(this.getParameter('status'));
-
-    // TODO remove mock data when service exists
-    this.status = 0;
-  }
-
-  toggleStatus() {
-    // TODO wait for service
-    if(this.status == 0) {
-      this.executeCommand('start');
-
-      this.status = 1;
-      setTimeout(() => {
-        this.status = 2;
-      }, 1000);
-    } else {
-      this.executeCommand('stop');
-
-      this.status = 0;
-    }
+  constructor(private gds: GlobalDataService) {
+    this.title = this.gds.getValueSnapshot(template.name, 'title');
+    this.statusInterval = setInterval(() => {
+      this.gds.sendCommand('status').subscribe(
+        value => {
+          let intValue = parseInt(value);
+          if(intValue == 1) {
+            this.status = 2;
+          } else if (intValue == 0) {
+            this.status = 0;
+          } else {
+            this.status = 1;
+          }
+        },
+        error => {
+          console.log(error);
+        }
+      );
+    }, 500);
   }
 
   ngOnInit() {
-    this.kmiService.messages.subscribe(
-      (value) => {
-        console.log(value);
-      },
-      (error) => {
-        console.log(error);
-      },
-      () => {
-        console.log('yup');
-      }
-    );
 
-    this.kmiService.next('GetKMIRequest', {
-      ID: 1
-    });
+  }
+
+  ngOnDestroy() {
+    clearInterval(this.statusInterval);
+  }
+
+  toggleStatus() {
+    if(this.status == 0) {
+      this.gds.sendCommand('start').subscribe(
+        value => {
+          console.log(value);
+        },
+        error => {
+          console.log(error);
+        }
+      );
+      this.status = 1;
+    } else {
+      this.gds.sendCommand('stop').subscribe(
+        value => {
+          console.log(value);
+        },
+        error => {
+          console.log(error);
+        }
+      );
+
+      this.status = 1;
+    }
   }
 
 }

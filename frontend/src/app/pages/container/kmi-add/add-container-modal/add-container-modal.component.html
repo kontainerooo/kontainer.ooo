@@ -1,0 +1,9 @@
+<form [formGroup]="addContainer">
+  <mdl-textfield
+          type="text"
+          label="Name of the container"
+          formControlName="name"
+          autofocus
+          floating-label></mdl-textfield>
+  <button mdl-button mdl-colored="primary" mdl-ripple mdl-button-type="raised" [disabled]="!addContainer.valid" (click)="submit()">Add</button>
+</form>

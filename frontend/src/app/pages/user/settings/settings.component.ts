@@ -57,7 +57,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     });
 
     if(this.edit) {
-      this.gds.setAndGetUserById(1).subscribe(
+      this.gds.setAndGetUserByCookie().subscribe(
         user => {
           this.gotUser(user);
         },
@@ -108,7 +108,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
         }
       );
     } else {
-      this.gds.editUser(this.gds.getUserId(), testObject.config).subscribe(
+      this.gds.editUser(this.gds.getUserIdSnapshot(), testObject.config).subscribe(
         success => {
           if(success) {
             this.mdlss.showToast('User saved');
