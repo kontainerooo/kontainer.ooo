@@ -351,12 +351,21 @@ func (s *service) Execute(refID uint, id string, cmd string, env map[string]stri
 		return "", err
 	}
 
-	_, err = p.Wait()
-	if err != nil {
-		return "", err
-	}
+	errc := make(chan error)
 
-	return buf.String(), nil
+	go func() {
+		_, err = p.Wait()
+		if err != nil {
+			errc <- err
+		}
+	}()
+
+	select {
+	case err := <-errc:
+		return "", err
+	case <-time.After(time.Second * 30):
+		return "Timeout:" + buf.String(), nil
+	}
 }
 
 func (s *service) GetEnv(refID uint, id string, key string) (string, error) {
