@@ -27,6 +27,18 @@ func (j JSON) ToStringMap() map[string]string {
 	return m
 }
 
+// ToStringArrayMap returns a string array map with the contents of the json
+func (j JSON) ToStringArrayMap() map[string][]string {
+	m := make(map[string][]string)
+	for k, v := range j {
+		switch v.(type) {
+		case []string:
+			m[k] = v.([]string)
+		}
+	}
+	return m
+}
+
 // Value get value of JSON
 func (j JSON) Value() (driver.Value, error) {
 	return json.Marshal(j)
@@ -63,6 +75,15 @@ func NewJSONFromMap(m map[string]string) JSON {
 			continue
 		}
 		j[k] = int(i)
+	}
+	return j
+}
+
+// NewJSONFromMapArray creates a new JSON given a string->[]string map
+func NewJSONFromMapArray(m map[string][]string) JSON {
+	j := make(JSON)
+	for k, v := range m {
+		j[k] = v
 	}
 	return j
 }
