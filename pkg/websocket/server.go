@@ -16,7 +16,7 @@ type ErrorHandler func(*ProtoID, *ProtoID, error, ProtocolHandler) []byte
 // Its parameters are the service and method id in a message as well as its data
 // furthermore the session information is added
 // Its return value may be an error
-type MiddlewareFunc func(ProtoID, ProtoID, interface{}, interface{}) error
+type MiddlewareFunc func(ProtoID, ProtoID, *MiddlewareData, interface{}) error
 
 type position uint8
 
@@ -29,6 +29,11 @@ const (
 type Middleware struct {
 	mid MiddlewareFunc
 	pos position
+}
+
+// MiddlewareData is used
+type MiddlewareData struct {
+	Value interface{}
 }
 
 // Before returns a middleware, which will be executed in the websocket loop
@@ -210,7 +215,7 @@ HANDLER:
 		}
 
 		for _, middleware := range s.after {
-			err = middleware.mid(*srv, *me, res, &session)
+			err = middleware.mid(*srv, *me, &MiddlewareData{res}, &session)
 			if err != nil {
 				err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
 				if err != nil {

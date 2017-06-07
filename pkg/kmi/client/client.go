@@ -100,12 +100,13 @@ func convertKMDI(k *pb.KMDI) kmi.KMDI {
 	return kmi.KMDI{
 		ID:          uint(k.ID),
 		Name:        k.Name,
+		Type:        int(k.Type),
 		Version:     k.Version,
 		Description: k.Description,
 	}
 }
 
-func convertKMI(k *pb.KMI) *kmi.KMI {
+func ConvertKMI(k *pb.KMI) *kmi.KMI {
 	return &kmi.KMI{
 		KMDI:            convertKMDI(k.KMDI),
 		ProvisionScript: k.ProvisionScript,
@@ -178,7 +179,7 @@ func DecodeGRPCGetKMIResponse(_ context.Context, grpcResponse interface{}) (inte
 	response := grpcResponse.(*pb.GetKMIResponse)
 	return &kmi.GetKMIResponse{
 		Error: getError(response.Error),
-		KMI:   convertKMI(response.Kmi),
+		KMI:   ConvertKMI(response.Kmi),
 	}, nil
 }
 
