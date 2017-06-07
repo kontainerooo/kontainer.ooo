@@ -167,80 +167,82 @@ func (s *Server) handleConnection(conn *websocket.Conn, session interface{}) {
 		return
 	}
 
-HANDLER:
 	for {
+		// check if a write error occured to stop handler
 		messageType, request, err := conn.ReadMessage()
 		if err != nil {
 			return
 		}
 
-		srv, me, data, err := protocolHandler.Decode(request)
-		if err != nil {
-			err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
-			if err != nil {
-				s.Logger.Log("err", err)
-				return
-			}
-			continue
-		}
-
-		service, err := s.GetService(*srv)
-		if err != nil {
-			err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
-			if err != nil {
-				s.Logger.Log("err", err)
-				return
-			}
-			continue
-		}
-
-		handler, err := service.GetEndpointHandler(*me, s.before, session)
-		if err != nil {
-			err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
-			if err != nil {
-				s.Logger.Log("err", err)
-				return
-			}
-			continue
-		}
-
-		res, err := handler(data)
-		if err != nil {
-			err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
-			if err != nil {
-				s.Logger.Log("err", err)
-				return
-			}
-			continue
-		}
-
-		for _, middleware := range s.after {
-			err = middleware.mid(*srv, *me, &MiddlewareData{res}, &session)
+		go func() {
+			srv, me, data, err := protocolHandler.Decode(request)
 			if err != nil {
 				err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
 				if err != nil {
-					s.Logger.Log("err", err)
+					s.Logger.Log("error", err)
 					return
 				}
-				continue HANDLER
-			}
-		}
-
-		response, err := protocolHandler.Encode(srv, me, res)
-		if err != nil {
-			err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
-			if err != nil {
-				s.Logger.Log("err", err)
 				return
 			}
-			continue
-		}
 
-		err = conn.WriteMessage(messageType, response)
-		if err != nil {
-			s.Logger.Log("err", err)
-			return
-		}
+			service, err := s.GetService(*srv)
+			if err != nil {
+				err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
+				if err != nil {
+					s.Logger.Log("error", err)
+					return
+				}
+				return
+			}
+
+			handler, err := service.GetEndpointHandler(*me, s.before, session)
+			if err != nil {
+				err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
+				if err != nil {
+					s.Logger.Log("error", err)
+					return
+				}
+				return
+			}
+
+			res, err := handler(data)
+			if err != nil {
+				err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
+				if err != nil {
+					s.Logger.Log("error", err)
+					return
+				}
+				return
+			}
+
+			for _, middleware := range s.after {
+				err = middleware.mid(*srv, *me, &MiddlewareData{res}, &session)
+				if err != nil {
+					err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
+					if err != nil {
+						s.Logger.Log("error", err)
+						return
+					}
+					return
+				}
+			}
+
+			response, err := protocolHandler.Encode(srv, me, res)
+			if err != nil {
+				err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
+				if err != nil {
+					s.Logger.Log("error", err)
+					return
+				}
+				return
+			}
+
+			err = conn.WriteMessage(messageType, response)
+			if err != nil {
+				s.Logger.Log("error", err)
+				return
+			}
+		}()
 	}
 }
 

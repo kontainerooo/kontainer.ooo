@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"sync"
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 	"github.com/kontainerooo/kontainer.ooo/pkg/firewall"
@@ -57,9 +58,17 @@ type service struct {
 	dcli     abstraction.DCli
 	fwClient *firewall.Endpoints
 	logger   log.Logger
+	mtx      *sync.Mutex
 }
 
 func (s *service) InitializeDatabases() error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.initializeDatabases()
+}
+
+func (s *service) initializeDatabases() error {
 	return s.db.AutoMigrate(&Networks{}, &Containers{})
 }
 
@@ -76,7 +85,7 @@ func (s *service) getNetworkByName(refid uint, name string) (Networks, error) {
 	return nw, nil
 }
 
-func (s *service) createNetwork(refid uint, cfg *Config, isPrimary bool) error {
+func (s *service) createNetworkPrime(refid uint, cfg *Config, isPrimary bool) error {
 	name := cfg.Name
 
 	nw, err := s.getNetworkByName(refid, name)
@@ -111,16 +120,30 @@ func (s *service) createNetwork(refid uint, cfg *Config, isPrimary bool) error {
 }
 
 func (s *service) CreateNetwork(refid uint, cfg *Config) error {
-	return s.createNetwork(refid, cfg, false)
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.createNetwork(refid, cfg)
+}
+
+func (s *service) createNetwork(refid uint, cfg *Config) error {
+	return s.createNetworkPrime(refid, cfg, false)
 }
 
 func (s *service) CreatePrimaryNetworkForContainer(refid uint, cfg *Config, containerID string) error {
-	err := s.createNetwork(refid, cfg, true)
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.createPrimaryNetworkForContainer(refid, cfg, containerID)
+}
+
+func (s *service) createPrimaryNetworkForContainer(refid uint, cfg *Config, containerID string) error {
+	err := s.createNetworkPrime(refid, cfg, true)
 	if err != nil {
 		return err
 	}
 
-	err = s.AddContainerToNetwork(refid, cfg.Name, containerID)
+	err = s.addContainerToNetwork(refid, cfg.Name, containerID)
 	if err != nil {
 		return err
 	}
@@ -129,6 +152,13 @@ func (s *service) CreatePrimaryNetworkForContainer(refid uint, cfg *Config, cont
 }
 
 func (s *service) RemoveNetworkByName(refid uint, name string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.removeNetworkByName(refid, name)
+}
+
+func (s *service) removeNetworkByName(refid uint, name string) error {
 	nw, err := s.getNetworkByName(refid, name)
 	if err != nil {
 		return err
@@ -163,6 +193,13 @@ func (s *service) RemoveNetworkByName(refid uint, name string) error {
 }
 
 func (s *service) AddContainerToNetwork(refid uint, name string, containerID string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.addContainerToNetwork(refid, name, containerID)
+}
+
+func (s *service) addContainerToNetwork(refid uint, name string, containerID string) error {
 	nw, err := s.getNetworkByName(refid, name)
 	if err != nil {
 		return err
@@ -220,6 +257,13 @@ func (s *service) AddContainerToNetwork(refid uint, name string, containerID str
 }
 
 func (s *service) RemoveContainerFromNetwork(refid uint, name string, containerID string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.removeContainerFromNetwork(refid, name, containerID)
+}
+
+func (s *service) removeContainerFromNetwork(refid uint, name string, containerID string) error {
 	nw, err := s.getNetworkByName(refid, name)
 	if err != nil {
 		return err
@@ -374,6 +418,13 @@ func (s *service) getExposeData(refid uint, srcContainerID string, port uint16, 
 }
 
 func (s *service) ExposePortToContainer(refid uint, srcContainerID string, port uint16, protocol string, destContainerID string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.exposePortToContainer(refid, srcContainerID, port, protocol, destContainerID)
+}
+
+func (s *service) exposePortToContainer(refid uint, srcContainerID string, port uint16, protocol string, destContainerID string) error {
 	exp, err := s.getExposeData(refid, srcContainerID, port, protocol, destContainerID)
 	if err != nil {
 		return err
@@ -395,6 +446,13 @@ func (s *service) ExposePortToContainer(refid uint, srcContainerID string, port 
 }
 
 func (s *service) RemovePortFromContainer(refid uint, srcContainerID string, port uint16, protocol string, destContainerID string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.removePortFromContainer(refid, srcContainerID, port, protocol, destContainerID)
+}
+
+func (s *service) removePortFromContainer(refid uint, srcContainerID string, port uint16, protocol string, destContainerID string) error {
 	exp, err := s.getExposeData(refid, srcContainerID, port, protocol, destContainerID)
 	if err != nil {
 		return err
@@ -421,9 +479,10 @@ func NewService(dcli abstraction.DCli, db dbAdapter, fw *firewall.Endpoints) (Se
 		dcli:     dcli,
 		db:       db,
 		fwClient: fw,
+		mtx:      &sync.Mutex{},
 	}
 
-	err := s.InitializeDatabases()
+	err := s.initializeDatabases()
 	if err != nil {
 		return s, err
 	}
