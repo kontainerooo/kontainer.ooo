@@ -247,16 +247,16 @@ func (s *service) UploadFile(refID uint, containerName string, fpath string, con
 		} else {
 			return err
 		}
-	}
+	} else {
+		if f.IsDir() {
+			return fmt.Errorf("%s is a directory", fpath)
+		}
 
-	if f.IsDir() {
-		return fmt.Errorf("%s is a directory", fpath)
-	}
-
-	if override {
-		err = ioutil.WriteFile(coPath, content, 0644)
-		if err != nil {
-			return err
+		if override {
+			err = ioutil.WriteFile(coPath, content, 0644)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
