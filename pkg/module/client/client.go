@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
@@ -344,8 +345,15 @@ func EncodeGRPCGetModuleConfigRequest(_ context.Context, request interface{}) (i
 // gRPC GetModuleConfig response to a module.proto-domain getmoduleconfig response.
 func DecodeGRPCGetModuleConfigResponse(_ context.Context, grpcResponse interface{}) (interface{}, error) {
 	response := grpcResponse.(*pb.GetModuleConfigResponse)
+
+	arrayMap := make(map[string][]string)
+	for k, v := range response.Links {
+		arrayMap[k] = strings.Split(v, ",")
+	}
+
 	return &module.GetModuleConfigResponse{
 		ContainerKMI: *convertKMI(response.Kmi),
+		Links:        arrayMap,
 		Error:        getError(response.Error),
 	}, nil
 }
