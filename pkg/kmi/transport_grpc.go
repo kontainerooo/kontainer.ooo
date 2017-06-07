@@ -107,7 +107,7 @@ func convertPBKMDI(k KMDI) *pb.KMDI {
 	}
 }
 
-func convertPBKMI(k *KMI) *pb.KMI {
+func ConvertPBKMI(k *KMI) *pb.KMI {
 	return &pb.KMI{
 		KMDI:            convertPBKMDI(k.KMDI),
 		ProvisionScript: k.ProvisionScript,
@@ -191,7 +191,7 @@ func EncodeGRPCGetKMIResponse(_ context.Context, response interface{}) (interfac
 	res := response.(GetKMIResponse)
 	gRPCRes := &pb.GetKMIResponse{}
 	if res.KMI != nil {
-		gRPCRes.Kmi = convertPBKMI(res.KMI)
+		gRPCRes.Kmi = ConvertPBKMI(res.KMI)
 	}
 	if res.Error != nil {
 		gRPCRes.Error = res.Error.Error()
