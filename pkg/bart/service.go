@@ -18,10 +18,13 @@ var refRegexp = regexp.MustCompile("ref")
 // Bus is a permission management system
 type Bus interface {
 	// GetOff should be used as a websocket before middleware
-	GetOff(ws.ProtoID, ws.ProtoID, interface{}, interface{}) error
+	GetOff(ws.ProtoID, ws.ProtoID, *ws.MiddlewareData, interface{}) error
 
 	// GetOn should be used as a websocket after middleware
-	GetOn(ws.ProtoID, ws.ProtoID, interface{}, interface{}) error
+	GetOn(ws.ProtoID, ws.ProtoID, *ws.MiddlewareData, interface{}) error
+
+	// LostAndFound should be used as a websocket before middleware
+	LostAndFound(ws.ProtoID, ws.ProtoID, *ws.MiddlewareData, interface{}) error
 }
 
 type bus struct {
@@ -67,7 +70,7 @@ func (b *bus) CheckTierConformity(srv, me string, data interface{}, id uint) err
 }
 
 func (b *bus) CheckID(srv, me string, data interface{}, id uint) error {
-	val := reflect.ValueOf(data).Elem().Elem()
+	val := reflect.ValueOf(data)
 	typ := val.Type()
 
 	if val.Kind() != reflect.Struct {
@@ -102,7 +105,7 @@ func (b *bus) CheckID(srv, me string, data interface{}, id uint) error {
 	return nil
 }
 
-func (b *bus) GetOff(srv, me ws.ProtoID, data interface{}, session interface{}) error {
+func (b *bus) GetOff(srv, me ws.ProtoID, data *ws.MiddlewareData, session interface{}) error {
 	service := srv.String()
 	method := me.String()
 
@@ -135,12 +138,12 @@ func (b *bus) GetOff(srv, me ws.ProtoID, data interface{}, session interface{}) 
 		return err
 	}
 
-	err = b.CheckTierConformity(service, method, data, id)
+	err = b.CheckTierConformity(service, method, data.Value, id)
 	if err != nil {
 		return err
 	}
 
-	err = b.CheckID(service, method, data, id)
+	err = b.CheckID(service, method, data.Value, id)
 	if err != nil {
 		return err
 	}
@@ -148,9 +151,9 @@ func (b *bus) GetOff(srv, me ws.ProtoID, data interface{}, session interface{}) 
 	return nil
 }
 
-func (b *bus) GetOn(srv, me ws.ProtoID, data interface{}, session interface{}) error {
+func (b *bus) GetOn(srv, me ws.ProtoID, data *ws.MiddlewareData, session interface{}) error {
 	if srv == ws.ProtoIDFromString("KTG") && me == ws.ProtoIDFromString("AUT") {
-		res, ok := data.(*pb.AuthenticationResponse)
+		res, ok := data.Value.(*pb.AuthenticationResponse)
 		if !ok {
 			return errors.New("malformed response")
 		}
@@ -185,6 +188,41 @@ func (b *bus) GetOn(srv, me ws.ProtoID, data interface{}, session interface{}) e
 
 		val.Set(reflect.ValueOf(valMap))
 	}
+
+	return nil
+}
+
+func (b *bus) LostAndFound(srv, me ws.ProtoID, data *ws.MiddlewareData, session interface{}) error {
+	if srv != ws.ProtoIDFromString("USR") || me != ws.ProtoIDFromString("GET") {
+		return nil
+	}
+
+	req, ok := data.Value.(user.GetUserRequest)
+	if !ok {
+		return errors.New("request malformed")
+	}
+
+	if req.ID != 0 {
+		return nil
+	}
+
+	sessionMap, ok := session.(map[interface{}]interface{})
+	if !ok {
+		return errors.New("session malformed")
+	}
+
+	idInterface, ok := sessionMap["ID"]
+	if !ok {
+		return errors.New("no id present in session data")
+	}
+
+	id64, ok := idInterface.(float64)
+	if !ok {
+		return errors.New("id malformed")
+	}
+	req.ID = uint(id64)
+
+	reflect.ValueOf(data).Elem().Set(reflect.ValueOf(ws.MiddlewareData{Value: req}))
 
 	return nil
 }

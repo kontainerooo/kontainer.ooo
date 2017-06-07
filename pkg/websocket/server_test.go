@@ -17,12 +17,12 @@ import (
 var _ = Describe("Server", func() {
 	Context("Middleware", func() {
 		It("Should return a Before Middleware", func() {
-			bm := ws.Before(func(ws.ProtoID, ws.ProtoID, interface{}, interface{}) error { return nil })
+			bm := ws.Before(func(ws.ProtoID, ws.ProtoID, *ws.MiddlewareData, interface{}) error { return nil })
 			Ω(bm).ShouldNot(BeNil())
 		})
 
 		It("Should return an After Middleware", func() {
-			bm := ws.After(func(ws.ProtoID, ws.ProtoID, interface{}, interface{}) error { return nil })
+			bm := ws.After(func(ws.ProtoID, ws.ProtoID, *ws.MiddlewareData, interface{}) error { return nil })
 			Ω(bm).ShouldNot(BeNil())
 		})
 	})
@@ -36,8 +36,8 @@ var _ = Describe("Server", func() {
 
 			It("Should accept middleware", func() {
 				server := ws.NewServer(protocolMap, log.NewNopLogger(), websocket.Upgrader{}, testAuth{}, ws.SSLConfig{}, errh,
-					ws.Before(func(ws.ProtoID, ws.ProtoID, interface{}, interface{}) error { return nil }),
-					ws.After(func(ws.ProtoID, ws.ProtoID, interface{}, interface{}) error { return nil }))
+					ws.Before(func(ws.ProtoID, ws.ProtoID, *ws.MiddlewareData, interface{}) error { return nil }),
+					ws.After(func(ws.ProtoID, ws.ProtoID, *ws.MiddlewareData, interface{}) error { return nil }))
 				Ω(server).ShouldNot(BeNil())
 			})
 

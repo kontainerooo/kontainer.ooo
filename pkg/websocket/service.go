@@ -124,7 +124,9 @@ func (s *ServiceDescription) GetEndpointHandler(name ProtoID, before []*Middlewa
 		}
 
 		for _, middleware := range before {
-			err = middleware.mid(s.ProtocolName, name, &req, session)
+			data := &MiddlewareData{req}
+			err = middleware.mid(s.ProtocolName, name, data, session)
+			req = data.Value
 			if err != nil {
 				return nil, err
 			}

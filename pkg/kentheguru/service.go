@@ -40,7 +40,7 @@ type service struct {
 
 func (s *service) StartWebsocketTransport(errc chan error, logger log.Logger, wsAddr string) {
 	logger = log.With(logger, "transport", "ws")
-	wss := ws.NewServer(s.ProtocolMap, logger, s.WebsocketUpgrader, s.TokenAuth, s.SSLConfig, s.ErrorHandler, ws.Before(s.BartBus.GetOff), ws.After(s.BartBus.GetOn))
+	wss := ws.NewServer(s.ProtocolMap, logger, s.WebsocketUpgrader, s.TokenAuth, s.SSLConfig, s.ErrorHandler, ws.Before(s.BartBus.LostAndFound), ws.Before(s.BartBus.GetOff), ws.After(s.BartBus.GetOn))
 
 	userService := user.MakeWebsocketService(s.UserEndpoints)
 	wss.RegisterService(userService)
