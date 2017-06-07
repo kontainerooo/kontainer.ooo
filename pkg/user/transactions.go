@@ -67,13 +67,10 @@ func (t *transactionBasedService) ResetPassword(email string) error {
 }
 
 func (t *transactionBasedService) GetUser(id uint, user *User) error {
-	t.db.Begin()
 	err := t.s.GetUser(id, user)
 	if err != nil {
-		t.db.Rollback()
 		return err
 	}
-	t.db.Commit()
 	return nil
 }
 
