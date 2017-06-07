@@ -54,6 +54,15 @@ type Service interface {
 
 	// GetContainerKMI returns the KMI for a given container
 	GetContainerKMI(containerID string) (kmi.KMI, error)
+
+	// SetLink links a container's interface into a container
+	SetLink(refID uint, containerID string, linkID string, linkName string, linkInterface string) error
+
+	// RemoveLink links a container's interface into a container
+	RemoveLink(refID uint, containerID string, linkID string, linkName string, linkInterface string) error
+
+	// GetLinks returns all links a container has
+	GetLinks(refID uint, containerID string) (map[string][]string, error)
 }
 
 type dbAdapter interface {
@@ -139,6 +148,12 @@ func (s *service) CreateContainer(refID uint, kmiID uint, name string) (id strin
 
 	s.initRootfs(refID, kmi.ProvisionScript, containerID, kmi)
 
+	netnsCmd := configs.NewCommandHook(configs.Command{
+		Path: s.config.NetNSPath,
+		Args: []string{"netns", fmt.Sprintf("-ipfile %s", path.Join(s.config.CustomerPath, fmt.Sprintf("%d", refID), containerID, ".ip"))},
+		Dir:  path.Join(s.config.CustomerPath, fmt.Sprintf("%d", refID), containerID),
+	})
+
 	mountCfg := []*configs.Mount{&configs.Mount{
 		Source:      "proc",
 		Destination: "/proc",
@@ -207,7 +222,7 @@ func (s *service) CreateContainer(refID uint, kmiID uint, name string) (id strin
 		Hostname: name,
 		Hooks: &configs.Hooks{
 			Prestart: []configs.Hook{
-				configs.CommandHook{Command: configs.Command{Path: s.config.NetNSPath}},
+				netnsCmd,
 			},
 		},
 	})
@@ -234,7 +249,7 @@ func (s *service) CreateContainer(refID uint, kmiID uint, name string) (id strin
 		ContainerID:   containerID,
 	}
 
-	ckmi := CKMI(kmi)
+	ckmi := CKMI{KMI: kmi}
 	ckmi.ID = 0
 
 	s.db.Begin()
@@ -325,12 +340,12 @@ func (s *service) Execute(refID uint, id string, cmd string, env map[string]stri
 	b := []byte{}
 	buf := bytes.NewBuffer(b)
 
-	cKMI, err := s.GetContainerKMI(id)
+	cKMI, err := s.getCKMI(id)
 	if err != nil {
 		return "", err
 	}
 
-	execEnv := s.createEnvironmentMap(cKMI, env)
+	execEnv := s.createEnvironmentMap(refID, cKMI, env)
 
 	// Make env string array
 	envString := []string{}
@@ -400,7 +415,9 @@ func (s *service) SetEnv(refID uint, id string, key string, value string) error 
 	c := &Container{
 		ContainerID: id,
 		KMI: CKMI{
-			Environment: abstraction.NewJSONFromMap(env),
+			KMI: kmi.KMI{
+				Environment: abstraction.NewJSONFromMap(env),
+			},
 		},
 	}
 
@@ -409,6 +426,8 @@ func (s *service) SetEnv(refID uint, id string, key string, value string) error 
 		s.db.Rollback()
 		return err
 	}
+
+	s.db.Commit()
 
 	return nil
 }
@@ -422,7 +441,7 @@ func (s *service) IDForName(refID uint, name string) (string, error) {
 	return c.ContainerID, nil
 }
 
-func (s *service) createEnvironmentMap(cKMI kmi.KMI, env map[string]string) map[string]string {
+func (s *service) createEnvironmentMap(refID uint, cKMI CKMI, env map[string]string) map[string]string {
 
 	// Prefix interfaces to create the environment variables
 	execEnv := make(map[string]string)
@@ -433,6 +452,42 @@ func (s *service) createEnvironmentMap(cKMI kmi.KMI, env map[string]string) map[
 	// Prefix commands to create command environment variables
 	for k, v := range cKMI.Commands.ToStringMap() {
 		execEnv[fmt.Sprintf("KROO_CMD_%s", strings.ToUpper(k))] = v
+	}
+
+	// Create link environment variables
+	links := cKMI.Links.ToStringArrayMap()
+
+	for k, v := range links {
+		containerID, err := s.IDForName(refID, k)
+		if err != nil {
+			continue
+		}
+
+		linkKMI, err := s.getCKMI(containerID)
+		if err != nil {
+			continue
+		}
+
+		// Get link container's IP
+		ip := s.getContainerIP(refID, containerID)
+		if ip == "" {
+			continue
+		}
+
+		// set ip addres
+		execEnv[fmt.Sprintf("KROO_LINK_%s_IP", strings.ToUpper(k))] = ip
+
+		// Get the ports of the link interfaces
+		for _, ports := range v {
+			p, ok := linkKMI.Interfaces.ToStringMap()[ports]
+			if !ok {
+				continue
+			}
+
+			// set port
+			execEnv[fmt.Sprintf("KROO_LINK_%s_PORT", ports)] = p
+		}
+
 	}
 
 	// Add the KMIs configured environment, possibly overriding
@@ -488,19 +543,136 @@ func (s *service) getTemplateKMI(kmiID uint) (kmi.KMI, error) {
 
 func (s *service) GetContainerKMI(containerID string) (kmi.KMI, error) {
 	// TODO: cache container KMIs
+	cKMI, err := s.getCKMI(containerID)
+	if err != nil {
+		return kmi.KMI{}, err
+	}
+
+	return kmi.KMI(cKMI.KMI), nil
+}
+
+func (s *service) getCKMI(containerID string) (CKMI, error) {
 	c := Container{}
 	err := s.db.First(&c, "container_id = ?", containerID)
 	if err != nil {
-		return kmi.KMI{}, err
+		return CKMI{}, err
 	}
 
 	cKMI := CKMI{}
 	err = s.db.First(&cKMI, "id = ?", c.KMIID)
 	if err != nil {
-		return kmi.KMI{}, err
+		return CKMI{}, err
 	}
 
-	return kmi.KMI(cKMI), nil
+	return cKMI, nil
+}
+
+func (s *service) getContainerIP(refID uint, containerID string) string {
+	ipPath := path.Join(s.config.CustomerPath, fmt.Sprintf("%d", refID), containerID, ".ip")
+	ip, err := ioutil.ReadFile(ipPath)
+	if err != nil {
+		return ""
+	}
+
+	n := bytes.IndexByte(ip, 0)
+	return string(ip[:n])
+}
+
+func (s *service) SetLink(refID uint, containerID string, linkID string, linkName string, linkInterface string) error {
+	containerKMI, err := s.getCKMI(containerID)
+	if err != nil {
+		return err
+	}
+
+	// construct links
+	links := containerKMI.Links.ToStringArrayMap()
+
+	// check if container already has a link
+	ar, ok := links[linkName]
+	if !ok {
+		ar = []string{}
+	}
+	// check if this interface already exists
+	// TODO: make this more performant
+	var exists bool
+	for _, v := range ar {
+		if v == linkInterface {
+			exists = true
+			break
+		}
+	}
+	if !exists {
+		ar = append(ar, linkInterface)
+	}
+
+	links[linkName] = ar
+
+	s.db.Begin()
+	saveCKMI := CKMI{}
+	saveCKMI.Links = abstraction.NewJSONFromMapArray(links)
+
+	err = s.db.Update(&CKMI{}, saveCKMI)
+	if err != nil {
+		s.db.Rollback()
+		return err
+	}
+
+	s.db.Commit()
+	return nil
+}
+
+func (s *service) RemoveLink(refID uint, containerID string, linkID string, linkName string, linkInterface string) error {
+	containerKMI, err := s.getCKMI(containerID)
+	if err != nil {
+		return err
+	}
+
+	// construct links
+	links := containerKMI.Links.ToStringArrayMap()
+
+	// check if link exists
+	ar, ok := links[linkName]
+	if !ok {
+		return errors.New("link does not exist")
+	}
+	// check if this interface exists
+	var exists bool
+	for i, v := range ar {
+		if v == linkInterface {
+			ar = append(ar[:i], ar[i+1:]...)
+			exists = true
+			break
+		}
+	}
+	if !exists {
+		return errors.New("link interface does not exist")
+	}
+
+	links[linkName] = ar
+
+	s.db.Begin()
+	saveCKMI := CKMI{}
+	saveCKMI.Links = abstraction.NewJSONFromMapArray(links)
+
+	err = s.db.Update(&CKMI{}, saveCKMI)
+	if err != nil {
+		s.db.Rollback()
+		return err
+	}
+
+	s.db.Commit()
+	return nil
+}
+
+func (s *service) GetLinks(refID uint, containerID string) (map[string][]string, error) {
+	containerKMI, err := s.getCKMI(containerID)
+	if err != nil {
+		return make(map[string][]string), err
+	}
+
+	links := containerKMI.Links.ToStringArrayMap()
+
+	return links, nil
 }
 
 func (s *service) initRootfs(refID uint, provisionScript string, id string, cKMI kmi.KMI) error {
