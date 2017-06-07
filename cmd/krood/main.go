@@ -288,15 +288,15 @@ func makeContainerServiceEndpoints(s container.Service) container.Endpoints {
 	}
 	var GetEnvEndpoint endpoint.Endpoint
 	{
-		GetEnvEndpoint = container.MakeGetContainerKMIEndpoint(s)
+		GetEnvEndpoint = container.MakeGetEnvEndpoint(s)
 	}
 	var SetEnvEndpoint endpoint.Endpoint
 	{
-		SetEnvEndpoint = container.MakeGetContainerKMIEndpoint(s)
+		SetEnvEndpoint = container.MakeSetEnvEndpoint(s)
 	}
 	var IDForNameEndpoint endpoint.Endpoint
 	{
-		IDForNameEndpoint = container.MakeGetContainerKMIEndpoint(s)
+		IDForNameEndpoint = container.MakeIDForNameEndpoint(s)
 	}
 	var GetContainerKMIEndpoint endpoint.Endpoint
 	{
