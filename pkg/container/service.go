@@ -249,7 +249,10 @@ func (s *service) CreateContainer(refID uint, kmiID uint, name string) (id strin
 		ContainerID:   containerID,
 	}
 
-	ckmi := CKMI{KMI: kmi}
+	ckmi := CKMI{
+		KMI:   kmi,
+		Links: abstraction.NewJSONFromMap(make(map[string]string)),
+	}
 	ckmi.ID = 0
 
 	s.db.Begin()
@@ -485,7 +488,7 @@ func (s *service) createEnvironmentMap(refID uint, cKMI CKMI, env map[string]str
 			}
 
 			// set port
-			execEnv[fmt.Sprintf("KROO_LINK_%s_PORT", ports)] = p
+			execEnv[fmt.Sprintf("KROO_LINK_%s_%s_PORT", strings.ToUpper(k), strings.ToUpper(ports))] = p
 		}
 
 	}
@@ -574,8 +577,7 @@ func (s *service) getContainerIP(refID uint, containerID string) string {
 		return ""
 	}
 
-	n := bytes.IndexByte(ip, 0)
-	return string(ip[:n])
+	return fmt.Sprintf("%s", ip)
 }
 
 func (s *service) SetLink(refID uint, containerID string, linkID string, linkName string, linkInterface string) error {
@@ -608,10 +610,9 @@ func (s *service) SetLink(refID uint, containerID string, linkID string, linkNam
 	links[linkName] = ar
 
 	s.db.Begin()
-	saveCKMI := CKMI{}
-	saveCKMI.Links = abstraction.NewJSONFromMapArray(links)
+	containerKMI.Links = abstraction.NewJSONFromMapArray(links)
 
-	err = s.db.Update(&CKMI{}, saveCKMI)
+	err = s.db.Update(&CKMI{}, containerKMI)
 	if err != nil {
 		s.db.Rollback()
 		return err
