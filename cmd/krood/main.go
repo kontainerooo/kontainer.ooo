@@ -302,6 +302,18 @@ func makeContainerServiceEndpoints(s container.Service) container.Endpoints {
 	{
 		GetContainerKMIEndpoint = container.MakeGetContainerKMIEndpoint(s)
 	}
+	var SetLinkEndpoint endpoint.Endpoint
+	{
+		SetLinkEndpoint = container.MakeSetLinkEndpoint(s)
+	}
+	var RemoveLinkEndpoint endpoint.Endpoint
+	{
+		RemoveLinkEndpoint = container.MakeRemoveLinkEndpoint(s)
+	}
+	var GetLinksEndpoint endpoint.Endpoint
+	{
+		GetLinksEndpoint = container.MakeGetLinksEndpoint(s)
+	}
 
 	return container.Endpoints{
 		CreateContainerEndpoint: CreateContainerEndpoint,
@@ -313,6 +325,9 @@ func makeContainerServiceEndpoints(s container.Service) container.Endpoints {
 		SetEnvEndpoint:          SetEnvEndpoint,
 		IDForNameEndpoint:       IDForNameEndpoint,
 		GetContainerKMIEndpoint: GetContainerKMIEndpoint,
+		SetLinkEndpoint:         SetLinkEndpoint,
+		RemoveLinkEndpoint:      RemoveLinkEndpoint,
+		GetLinksEndpoint:        GetLinksEndpoint,
 	}
 }
 
@@ -383,6 +398,10 @@ func makeRoutingServiceEndpoints(s routing.Service) routing.Endpoints {
 
 func makeModuleServiceEndpoints(s module.Service) module.Endpoints {
 
+	var CreateContainerModuleEndpoint endpoint.Endpoint
+	{
+		CreateContainerModuleEndpoint = module.MakeCreateContainerModuleEndpoint(s)
+	}
 	var SetPublicKeyEndpoint endpoint.Endpoint
 	{
 		SetPublicKeyEndpoint = module.MakeSetPublicKeyEndpoint(s)
@@ -423,17 +442,33 @@ func makeModuleServiceEndpoints(s module.Service) module.Endpoints {
 	{
 		GetEnvEndpoint = module.MakeGetEnvEndpoint(s)
 	}
+	var SetLinkEndpoint endpoint.Endpoint
+	{
+		SetLinkEndpoint = module.MakeSetLinkEndpoint(s)
+	}
+	var RemoveLinkEndpoint endpoint.Endpoint
+	{
+		RemoveLinkEndpoint = module.MakeRemoveLinkEndpoint(s)
+	}
+	var GetModulesEndpoint endpoint.Endpoint
+	{
+		GetModulesEndpoint = module.MakeGetModulesEndpoint(s)
+	}
 
 	return module.Endpoints{
-		SetPublicKeyEndpoint:    SetPublicKeyEndpoint,
-		RemoveFileEndpoint:      RemoveFileEndpoint,
-		RemoveDirectoryEndpoint: RemoveDirectoryEndpoint,
-		GetFilesEndpoint:        GetFilesEndpoint,
-		GetFileEndpoint:         GetFileEndpoint,
-		UploadFileEndpoint:      UploadFileEndpoint,
-		GetModuleConfigEndpoint: GetModuleConfigEndpoint,
-		SendCommandEndpoint:     SendCommandEndpoint,
-		SetEnvEndpoint:          SetEnvEndpoint,
-		GetEnvEndpoint:          GetEnvEndpoint,
+		CreateContainerModuleEndpoint: CreateContainerModuleEndpoint,
+		SetPublicKeyEndpoint:          SetPublicKeyEndpoint,
+		RemoveFileEndpoint:            RemoveFileEndpoint,
+		RemoveDirectoryEndpoint:       RemoveDirectoryEndpoint,
+		GetFilesEndpoint:              GetFilesEndpoint,
+		GetFileEndpoint:               GetFileEndpoint,
+		UploadFileEndpoint:            UploadFileEndpoint,
+		GetModuleConfigEndpoint:       GetModuleConfigEndpoint,
+		SendCommandEndpoint:           SendCommandEndpoint,
+		SetEnvEndpoint:                SetEnvEndpoint,
+		GetEnvEndpoint:                GetEnvEndpoint,
+		SetLinkEndpoint:               SetLinkEndpoint,
+		RemoveLinkEndpoint:            RemoveLinkEndpoint,
+		GetModulesEndpoint:            GetModulesEndpoint,
 	}
 }
