@@ -37,31 +37,45 @@ export class KmiStatusComponent implements OnInit {
 
   constructor(private gds: GlobalDataService) {
     this.title = this.gds.getValueSnapshot(template.name, 'title');
-    this.statusInterval = setInterval(() => {
-      this.gds.sendCommand('status').subscribe(
-        value => {
-          let intValue = parseInt(value);
-          if(intValue == 1) {
-            this.status = 2;
-          } else if (intValue == 0) {
-            this.status = 0;
-          } else {
-            this.status = 1;
-          }
-        },
-        error => {
-          console.log(error);
-        }
-      );
-    }, 1000);
+    // this.statusInterval = setInterval(() => {
+    //   this.gds.sendCommand('status').subscribe(
+    //     value => {
+    //       let intValue = parseInt(value);
+    //       if(intValue == 1) {
+    //         this.status = 2;
+    //       } else if (intValue == 0) {
+    //         this.status = 0;
+    //       } else {
+    //         this.status = 1;
+    //       }
+    //     },
+    //     error => {
+    //       console.log(error);
+    //     }
+    //   );
+    // }, 500);
   }
 
   ngOnInit() {
-
+    this.gds.sendCommand('status').subscribe(
+      value => {
+        let intValue = parseInt(value);
+        if(intValue == 1) {
+          this.status = 2;
+        } else if (intValue == 0) {
+          this.status = 0;
+        } else {
+          this.status = 1;
+        }
+      },
+      error => {
+        console.log(error);
+      }
+    );
   }
 
   ngOnDestroy() {
-    clearInterval(this.statusInterval);
+    // clearInterval(this.statusInterval);
   }
 
   toggleStatus() {
@@ -69,6 +83,7 @@ export class KmiStatusComponent implements OnInit {
       this.gds.sendCommand('start').subscribe(
         value => {
           console.log(value);
+          this.ngOnInit();
         },
         error => {
           console.log(error);
@@ -79,6 +94,7 @@ export class KmiStatusComponent implements OnInit {
       this.gds.sendCommand('stop').subscribe(
         value => {
           console.log(value);
+          this.ngOnInit();
         },
         error => {
           console.log(error);

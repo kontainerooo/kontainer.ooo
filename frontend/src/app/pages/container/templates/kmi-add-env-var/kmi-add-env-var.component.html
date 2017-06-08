@@ -1,22 +1,29 @@
 <mdl-card mdl-shadow="2">
   <mdl-card-title>
-    <h2 mdl-card-title-text>Environment variables</h2>
+    <h2 mdl-card-title-text>Set link</h2>
   </mdl-card-title>
   <mdl-card-supporting-text>
+    IP: {{ip}}
     <form [formGroup]='env'>
       <mdl-textfield
-        label="Key"
+        label="Link Name"
         type="text"
-        formControlName="path"
+        formControlName="name"
         floating-label></mdl-textfield>
       <mdl-textfield
-        label="Value"
+        label="Link Interface"
         type="text"
-        formControlName="file"
+        formControlName="interface"
         floating-label></mdl-textfield>
     </form>
   </mdl-card-supporting-text>
   <mdl-card-actions mdl-card-border>
+    <button
+      mdl-button
+      mdl-colored="primary"
+      mdl-ripple
+      mdl-button-type="raised"
+      (click)="getIP()">Get IP</button>
     <button
       mdl-button
       mdl-colored="primary"

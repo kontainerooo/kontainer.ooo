@@ -411,4 +411,33 @@ export class GlobalDataService {
 
     return obs;
   }
+
+  setLink(linkName: string, linkInterface: string): Observable<boolean> {
+    let obs = this.ms
+      .reconnect()
+      .share()
+      .first((value: ProtoResponse) => {
+        return value.message == 'SetLinkResponse';
+      })
+      .map((value: ProtoResponse): boolean => {
+        let slr = module.SetLinkResponse.from(value.data);
+        return !slr.error;
+      });
+
+    console.log({
+      refId: this.getUserIdSnapshot(),
+      containerName: this.gd.currentKMI.name,
+      linkName: linkName,
+      linkInterface: linkInterface
+    });
+    
+    this.ms.next('SetLinkRequest', {
+      refID: this.getUserIdSnapshot(),
+      containerName: this.gd.currentKMI.name,
+      linkName: linkName,
+      linkInterface: linkInterface
+    });
+
+    return obs;
+  }
 }

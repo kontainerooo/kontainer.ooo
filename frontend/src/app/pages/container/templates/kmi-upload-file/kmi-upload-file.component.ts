@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { MdlSnackbarService } from 'angular2-mdl';
 import { GlobalDataService } from '../../../../services/global-data.service';
 
 const template = {
@@ -30,7 +31,7 @@ export class KmiUploadFileComponent implements OnInit {
   private upload: FormGroup;
   private file;
 
-  constructor(private gds: GlobalDataService, private fb: FormBuilder) {
+  constructor(private gds: GlobalDataService, private fb: FormBuilder, private mdlss: MdlSnackbarService) {
     this.title = this.gds.getValueSnapshot('upload', 'title');
   }
 
@@ -51,7 +52,16 @@ export class KmiUploadFileComponent implements OnInit {
     fr.onload = () => {
       let ab = fr.result;
       resultArray = new Uint8Array(ab);
-      this.gds.uploadFile(this.upload.get('path').value, resultArray, true);
+      this.gds.uploadFile(this.upload.get('path').value, resultArray, true).subscribe(
+        value => {
+          if(value) {
+            this.mdlss.showToast('File uploaded!');
+          }
+        },
+        error => {
+          console.log(error);
+        }
+      );
     };
     fr.readAsArrayBuffer(this.file);
   }

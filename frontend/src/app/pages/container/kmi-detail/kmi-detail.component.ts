@@ -40,6 +40,15 @@ export class KmiDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  hasTemplate(name: string): boolean {
+    for(let module of this.kmi.frontend) {
+      if(module.template == name) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   ngOnDestroy() {
     this.routeSub.unsubscribe();
   }

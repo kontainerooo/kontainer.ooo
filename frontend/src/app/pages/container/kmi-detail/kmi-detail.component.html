@@ -1,5 +1,9 @@
 <div *ngIf="loaded" class="mdl-cell mdl-cell--12-col">
-  <kro-kmi-status></kro-kmi-status>
+  <kro-kmi-status *ngIf="hasTemplate('status')"></kro-kmi-status>
   <br>
-  <kro-kmi-upload-file></kro-kmi-upload-file>
+  <kro-kmi-upload-file *ngIf="hasTemplate('upload')"></kro-kmi-upload-file>
+  <br>
+  <kro-kmi-add-env-var></kro-kmi-add-env-var>
+  <br>
+  <kro-kmi-install *ngIf="hasTemplate('install')"></kro-kmi-install>
 </div>

@@ -18,7 +18,7 @@ import { AddPathComponent } from './../../pages/container/kmi-add/add-path/add-p
 import { AddContainerModalComponent } from '../../pages/container/kmi-add/add-container-modal/add-container-modal.component';
 import { KmiUploadFileComponent } from './../../pages/container/templates/kmi-upload-file/kmi-upload-file.component';
 import { KmiAddEnvVarComponent } from './../../pages/container/templates/kmi-add-env-var/kmi-add-env-var.component';
-
+import { KmiInstallComponent } from './../../pages/container/templates/kmi-install/kmi-install.component';
 
 const dashboardRoutes = [
   {
@@ -65,7 +65,8 @@ const dashboardRoutes = [
     AddPathComponent,
     AddContainerModalComponent,
     KmiUploadFileComponent,
-    KmiAddEnvVarComponent
+    KmiAddEnvVarComponent,
+    KmiInstallComponent
   ],
   entryComponents: [
     AddPathComponent,
