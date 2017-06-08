@@ -285,6 +285,8 @@ export class GlobalDataService {
         }
         return containerArray;
       });
+
+    console.log(this.getUserIdSnapshot());
     
     this.cs.next('InstancesRequest', {
       refID: this.getUserIdSnapshot()
@@ -352,7 +354,6 @@ export class GlobalDataService {
   }
 
   getValueSnapshot(template: string, name: string): string {
-    console.log(this.gd.currentKMI);
     for(let module of this.gd.currentKMI.kmi.frontend) {
       if(module.template == template) {
         return module.parameters[name];
@@ -383,6 +384,29 @@ export class GlobalDataService {
       containerName: this.gd.currentKMI.name,
       command: command,
       env: env
+    });
+
+    return obs;
+  }
+
+  uploadFile(path: string, content: Uint8Array, override: boolean): Observable<boolean> {
+    let obs = this.ms
+      .reconnect()
+      .share()
+      .first((value: ProtoResponse) => {
+        return value.message == 'UploadFileResponse';
+      })
+      .map((value: ProtoResponse): boolean => {
+        let ufr = module.UploadFileResponse.from(value.data);
+        return !ufr.error;
+      });
+
+    this.ms.next('UploadFileRequest', {
+      refID: this.getUserIdSnapshot(),
+      containerName: this.gd.currentKMI.name,
+      path: path,
+      content: content,
+      override: override
     });
 
     return obs;

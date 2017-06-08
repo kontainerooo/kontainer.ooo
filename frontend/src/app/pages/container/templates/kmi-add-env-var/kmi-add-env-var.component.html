@@ -1,0 +1,28 @@
+<mdl-card mdl-shadow="2">
+  <mdl-card-title>
+    <h2 mdl-card-title-text>Environment variables</h2>
+  </mdl-card-title>
+  <mdl-card-supporting-text>
+    <form [formGroup]='env'>
+      <mdl-textfield
+        label="Key"
+        type="text"
+        formControlName="path"
+        floating-label></mdl-textfield>
+      <mdl-textfield
+        label="Value"
+        type="text"
+        formControlName="file"
+        floating-label></mdl-textfield>
+    </form>
+  </mdl-card-supporting-text>
+  <mdl-card-actions mdl-card-border>
+    <button
+      mdl-button
+      mdl-colored="primary"
+      mdl-ripple
+      mdl-button-type="raised"
+      [disabled]="!env.valid"
+      (click)="submit()">Add</button>
+  </mdl-card-actions>
+</mdl-card>

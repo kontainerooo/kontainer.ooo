@@ -53,7 +53,7 @@ export class KmiStatusComponent implements OnInit {
           console.log(error);
         }
       );
-    }, 500);
+    }, 1000);
   }
 
   ngOnInit() {

@@ -1,0 +1,30 @@
+<mdl-card mdl-shadow="2">
+  <mdl-card-title>
+    <h2 mdl-card-title-text>{{title}}</h2>
+  </mdl-card-title>
+  <mdl-card-supporting-text>
+    <form [formGroup]='upload'>
+      <mdl-textfield
+        label="Upload Path"
+        type="text"
+        formControlName="path"
+        floating-label></mdl-textfield>
+      <mdl-textfield
+        id='file'
+        label="File"
+        type="file"
+        formControlName="file"
+        floating-label
+        (change)="onFileChange($event)"></mdl-textfield>
+    </form>
+  </mdl-card-supporting-text>
+  <mdl-card-actions mdl-card-border>
+    <button
+      mdl-button
+      mdl-colored="primary"
+      mdl-ripple
+      mdl-button-type="raised"
+      [disabled]="!upload.valid"
+      (click)="submit()">Upload</button>
+  </mdl-card-actions>
+</mdl-card>
