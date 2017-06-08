@@ -421,17 +421,23 @@ func (s *service) execute(refID uint, id string, cmd string, env map[string]stri
 	}
 
 	errc := make(chan error)
+	donec := make(chan bool)
 
 	go func() {
 		_, err = p.Wait()
 		if err != nil {
 			errc <- err
+			return
 		}
+
+		donec <- true
 	}()
 
 	select {
 	case err := <-errc:
 		return "", err
+	case <-donec:
+		return buf.String(), nil
 	case <-time.After(time.Second * 30):
 		return "Timeout:" + buf.String(), nil
 	}
