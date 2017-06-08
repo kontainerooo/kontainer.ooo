@@ -93,8 +93,14 @@ func (s *service) makePath(refID uint, containerName string) (string, error) {
 
 	return coPath, nil
 }
-
 func (s *service) CreateContainerModule(refID uint, kmidID uint, name string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.createContainerModule(refID, kmidID, name)
+}
+
+func (s *service) createContainerModule(refID uint, kmidID uint, name string) error {
 	res, err := s.container.CreateContainerEndpoint(context.Background(), container.CreateContainerRequest{
 		RefID: refID,
 		KmiID: kmidID,
@@ -487,8 +493,14 @@ func (s *service) getKMI(containerID string) (kmi.KMI, error) {
 	return containerKMI.ContainerKMI, nil
 }
 
-// SetLink links a container module's interface into a container module
 func (s *service) SetLink(refID uint, containerName string, linkName string, linkInterface string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.setLink(refID, containerName, linkName, linkInterface)
+}
+
+func (s *service) setLink(refID uint, containerName string, linkName string, linkInterface string) error {
 	srcID, err := s.getContainerIDForName(refID, containerName)
 	if err != nil {
 		return err
@@ -518,8 +530,14 @@ func (s *service) SetLink(refID uint, containerName string, linkName string, lin
 	return nil
 }
 
-// RemoveLink links a container module's interface into a container module
 func (s *service) RemoveLink(refID uint, containerName string, linkName string, linkInterface string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.removeLink(refID, containerName, linkName, linkInterface)
+}
+
+func (s *service) removeLink(refID uint, containerName string, linkName string, linkInterface string) error {
 	srcID, err := s.getContainerIDForName(refID, containerName)
 	if err != nil {
 		return err
@@ -549,8 +567,14 @@ func (s *service) RemoveLink(refID uint, containerName string, linkName string, 
 	return nil
 }
 
-// GetModules returns a user's modules
 func (s *service) GetModules(refID uint) ([]Module, error) {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.getModules(refID)
+}
+
+func (s *service) getModules(refID uint) ([]Module, error) {
 	res, err := s.container.InstancesEndpoint(context.Background(), container.InstancesRequest{
 		RefID: refID,
 	})
