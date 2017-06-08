@@ -669,6 +669,13 @@ func (s *service) getContainerIP(refID uint, containerID string) string {
 }
 
 func (s *service) SetLink(refID uint, containerID string, linkID string, linkName string, linkInterface string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.setLink(refID, containerID, linkID, linkName, linkInterface)
+}
+
+func (s *service) setLink(refID uint, containerID string, linkID string, linkName string, linkInterface string) error {
 	containerKMI, err := s.getCKMI(containerID)
 	if err != nil {
 		return err
@@ -711,6 +718,13 @@ func (s *service) SetLink(refID uint, containerID string, linkID string, linkNam
 }
 
 func (s *service) RemoveLink(refID uint, containerID string, linkID string, linkName string, linkInterface string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.removeLink(refID, containerID, linkID, linkName, linkInterface)
+}
+
+func (s *service) removeLink(refID uint, containerID string, linkID string, linkName string, linkInterface string) error {
 	containerKMI, err := s.getCKMI(containerID)
 	if err != nil {
 		return err
@@ -754,6 +768,13 @@ func (s *service) RemoveLink(refID uint, containerID string, linkID string, link
 }
 
 func (s *service) GetLinks(refID uint, containerID string) (map[string][]string, error) {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.getLinks(refID, containerID)
+}
+
+func (s *service) getLinks(refID uint, containerID string) (map[string][]string, error) {
 	containerKMI, err := s.getCKMI(containerID)
 	if err != nil {
 		return make(map[string][]string), err
