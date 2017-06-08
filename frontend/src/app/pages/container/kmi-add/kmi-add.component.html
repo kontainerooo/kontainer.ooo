@@ -1,0 +1,43 @@
+<div class="mdl-cell mdl-cell--12-col">
+  <mdl-card mdl-shadow="2">
+    <mdl-card-title>
+      <h2 mdl-card-title-text>Available Configurations</h2>
+    </mdl-card-title>
+    <mdl-card-supporting-text>
+      <mdl-textfield
+        type="text"
+        label="Search"
+        [(ngModel)]="searchTerm"
+        autofocus
+        floating-label></mdl-textfield>
+      <mdl-list>
+        <mdl-list-item *ngFor="let module of kmiModules | searchKmi: searchTerm; let i = index" lines="3">
+          <mdl-list-item-primary-content>
+            <mdl-icon mdl-list-item-avatar>view_module</mdl-icon>
+            <span>{{module.name}}</span>
+            <mdl-chip [mdl-label]="module.version.split('+')[0]">
+              <span mdl-chip-contact class="mdl-color--red mdl-color-text--white">V</span>
+            </mdl-chip>
+            <mdl-chip [mdl-label]="module.version.split('+')[1]">
+              <span mdl-chip-contact class="mdl-color--red mdl-color-text--white">OV</span>
+            </mdl-chip>
+            <mdl-chip [mdl-label]="this.convertType(module.type)"></mdl-chip>
+            <mdl-list-item-text-body>
+              {{module.description}}
+            </mdl-list-item-text-body>
+          </mdl-list-item-primary-content>
+          <mdl-list-item-secondary-content>
+            <button mdl-button mdl-button-type="icon" (click)="showAddContainer(module.ID)">
+              <mdl-icon>add</mdl-icon>
+            </button>
+          </mdl-list-item-secondary-content>
+        </mdl-list-item>
+      </mdl-list>
+    </mdl-card-supporting-text>
+    <mdl-card-menu>
+      <button mdl-button mdl-button-type="icon" mdl-ripple (click)="showAddKMI()">
+        <mdl-icon>add</mdl-icon>
+      </button>
+    </mdl-card-menu>
+  </mdl-card>
+</div>

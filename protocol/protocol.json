@@ -73,7 +73,8 @@
   "kentheguru": {
     "id": "KTG",
     "methods": {
-      "Authentication": "AUT"
+      "Authentication": "AUT",
+      "Error": "ERR"
     }
   }
 }

@@ -1,0 +1,35 @@
+<div class="mdl-cell mdl-cell--12-col">
+  <mdl-card mdl-shadow="2">
+    <mdl-card-title>
+      <h2 mdl-card-title-text>Your containers</h2>
+    </mdl-card-title>
+    <mdl-card-supporting-text>
+      <mdl-list>
+        <mdl-list-item *ngFor="let container of containers; let i = index" lines="3">
+          <mdl-list-item-primary-content [routerLink]="container.refID + '/' + container.containerName + '/' + container.containerID" routerLinkActive="active">
+            <mdl-icon mdl-list-item-avatar>view_module</mdl-icon>
+            <span>{{container.containerName}} - {{container.kmi.KMDI.name}}</span>
+            <mdl-chip [mdl-label]="container.kmi.KMDI.version.split('+')[0]">
+              <span mdl-chip-contact class="mdl-color--red mdl-color-text--white">V</span>
+            </mdl-chip>
+            <mdl-chip [mdl-label]="container.kmi.KMDI.version.split('+')[1]">
+              <span mdl-chip-contact class="mdl-color--red mdl-color-text--white">OV</span>
+            </mdl-chip>
+            <mdl-chip [mdl-label]="this.convertType(container.kmi.KMDI.type)"></mdl-chip>
+            <mdl-list-item-text-body>
+              {{container.kmi.KMDI.description}}
+            </mdl-list-item-text-body>
+          </mdl-list-item-primary-content>
+          <!--<mdl-list-item-secondary-content>
+            <mdl-switch [(ngModel)]="container.running"></mdl-switch>
+          </mdl-list-item-secondary-content>-->
+        </mdl-list-item>
+      </mdl-list>
+    </mdl-card-supporting-text>
+    <mdl-card-menu>
+      <button mdl-button mdl-button-type="icon" mdl-ripple routerLink="add" routerLinkActive="active">
+        <mdl-icon>add</mdl-icon>
+      </button>
+    </mdl-card-menu>
+  </mdl-card>
+</div>

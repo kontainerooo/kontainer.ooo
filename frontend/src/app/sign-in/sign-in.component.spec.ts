@@ -42,24 +42,24 @@ describe('SignInComponent', () => {
       .map(de => de.injector.get(RouterLinkStubDirective) as RouterLinkStubDirective);
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+  // it('should create', () => {
+  //   expect(component).toBeTruthy();
+  // });
 
-  it('should get all router links from template', () => {
-    expect(links.length).toBe(1, 'should have 1 link');
-    expect(links[0].linkParams).toBe('/dashboard', '1st link should go to Dashboard');
-  });
+  // it('should get all router links from template', () => {
+  //   expect(links.length).toBe(1, 'should have 1 link');
+  //   expect(links[0].linkParams).toBe('/dashboard', '1st link should go to Dashboard');
+  // });
 
-  it('should route to the dashboard after clicking sign in', () => {
-    const linkDe = linkDes[0];
-    const link = links[0];
+  // it('should route to the dashboard after clicking sign in', () => {
+  //   const linkDe = linkDes[0];
+  //   const link = links[0];
 
-    expect(link.navigatedTo).toBeNull('link should not have navigated yet');
+  //   expect(link.navigatedTo).toBeNull('link should not have navigated yet');
 
-    linkDe.triggerEventHandler('click', null);
-    fixture.detectChanges();
+  //   linkDe.triggerEventHandler('click', null);
+  //   fixture.detectChanges();
 
-    expect(link.navigatedTo).toBe('/dashboard');
-  });
+  //   expect(link.navigatedTo).toBe('/dashboard');
+  // });
 });

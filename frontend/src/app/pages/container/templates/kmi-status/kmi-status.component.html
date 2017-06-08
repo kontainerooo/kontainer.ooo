@@ -1,0 +1,14 @@
+<mdl-card mdl-shadow="2">
+  <mdl-card-title>
+    <h2 mdl-card-title-text>{{title}}</h2>
+  </mdl-card-title>
+  <mdl-card-menu>
+    <mdl-icon class="status" *ngIf="status == 0">lens</mdl-icon>
+    <mdl-icon class="status transition" *ngIf="status == 1">lens</mdl-icon>
+    <mdl-icon class="status running" *ngIf="status == 2">lens</mdl-icon>
+    <button class="toggle" mdl-button mdl-button-type="icon" mdl-ripple (click)="toggleStatus()">
+      <mdl-icon *ngIf="status == 0">play_arrow</mdl-icon>
+      <mdl-icon *ngIf="status != 0">stop</mdl-icon>
+    </button>
+  </mdl-card-menu>
+</mdl-card>
