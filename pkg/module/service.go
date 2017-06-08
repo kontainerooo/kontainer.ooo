@@ -487,10 +487,6 @@ func (s *service) getKMI(containerID string) (kmi.KMI, error) {
 	return containerKMI.ContainerKMI, nil
 }
 
-func (s *service) linkExists(ckmi container.CKMI) {
-
-}
-
 // SetLink links a container module's interface into a container module
 func (s *service) SetLink(refID uint, containerName string, linkName string, linkInterface string) error {
 	srcID, err := s.getContainerIDForName(refID, containerName)
