@@ -45,12 +45,16 @@
       "GetEnv": "GEV",
       "SetEnv": "SEV",
       "IDFromName": "IFN",
-      "GetContainerKMI": "GCK"
+      "GetContainerKMI": "GCK",
+      "SetLink": "SLI",
+      "RemoveLink": "RLI",
+      "GetLinks": "GLI"
     }
   },
   "module": {
     "id": "MDL",
     "methods": {
+      "CreateContainerModule": "CCM",
       "SetPublicKey": "SPK",
       "RemoveFile": "RMF",
       "RemoveDirectory": "RMD",
@@ -60,7 +64,10 @@
       "GetModuleConfig": "GMC",
       "SendCommand": "SCM",
       "SetEnv": "SEV",
-      "GetEnv": "GEV"
+      "GetEnv": "GEV",
+      "SetLink": "SLI",
+      "RemoveLink": "RLI",
+      "GetModules": "GMS"
     }
   },
   "kentheguru": {

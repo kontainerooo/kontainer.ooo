@@ -9,16 +9,43 @@ import (
 
 // Endpoints is a struct which collects all endpoints for the module service
 type Endpoints struct {
-	SetPublicKeyEndpoint    endpoint.Endpoint
-	RemoveFileEndpoint      endpoint.Endpoint
-	RemoveDirectoryEndpoint endpoint.Endpoint
-	GetFilesEndpoint        endpoint.Endpoint
-	GetFileEndpoint         endpoint.Endpoint
-	UploadFileEndpoint      endpoint.Endpoint
-	GetModuleConfigEndpoint endpoint.Endpoint
-	SendCommandEndpoint     endpoint.Endpoint
-	SetEnvEndpoint          endpoint.Endpoint
-	GetEnvEndpoint          endpoint.Endpoint
+	CreateContainerModuleEndpoint endpoint.Endpoint
+	SetPublicKeyEndpoint          endpoint.Endpoint
+	RemoveFileEndpoint            endpoint.Endpoint
+	RemoveDirectoryEndpoint       endpoint.Endpoint
+	GetFilesEndpoint              endpoint.Endpoint
+	GetFileEndpoint               endpoint.Endpoint
+	UploadFileEndpoint            endpoint.Endpoint
+	GetModuleConfigEndpoint       endpoint.Endpoint
+	SendCommandEndpoint           endpoint.Endpoint
+	SetEnvEndpoint                endpoint.Endpoint
+	GetEnvEndpoint                endpoint.Endpoint
+	SetLinkEndpoint               endpoint.Endpoint
+	RemoveLinkEndpoint            endpoint.Endpoint
+	GetModulesEndpoint            endpoint.Endpoint
+}
+
+// CreateContainerModuleRequest is the request struct for the CreateContainerModuleEndpoint
+type CreateContainerModuleRequest struct {
+	RefID uint
+	KmiID uint
+	Name  string
+}
+
+// CreateContainerModuleResponse is the response struct for the CreateContainerModuleEndpoint
+type CreateContainerModuleResponse struct {
+	Error error
+}
+
+// MakeCreateContainerModuleEndpoint creates a gokit endpoint which invokes CreateContainerModule
+func MakeCreateContainerModuleEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(CreateContainerModuleRequest)
+		err := s.CreateContainerModule(req.RefID, req.KmiID, req.Name)
+		return CreateContainerModuleResponse{
+			Error: err,
+		}, nil
+	}
 }
 
 // SetPublicKeyRequest is the request struct for the SetPublicKeyEndpoint
@@ -174,6 +201,7 @@ type GetModuleConfigRequest struct {
 // GetModuleConfigResponse is the response struct for the GetModuleConfigEndpoint
 type GetModuleConfigResponse struct {
 	ContainerKMI kmi.KMI
+	Links        map[string][]string
 	Error        error
 }
 
@@ -181,9 +209,10 @@ type GetModuleConfigResponse struct {
 func MakeGetModuleConfigEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GetModuleConfigRequest)
-		cKMI, err := s.GetModuleConfig(req.RefID, req.ContainerName)
+		cKMI, links, err := s.GetModuleConfig(req.RefID, req.ContainerName)
 		return GetModuleConfigResponse{
 			ContainerKMI: cKMI,
+			Links:        links,
 			Error:        err,
 		}, nil
 	}
@@ -260,6 +289,77 @@ func MakeGetEnvEndpoint(s Service) endpoint.Endpoint {
 		return GetEnvResponse{
 			Value: val,
 			Error: err,
+		}, nil
+	}
+}
+
+// SetLinkRequest is the request struct for the SetLinkEndpoint
+type SetLinkRequest struct {
+	RefID         uint
+	ContainerName string
+	LinkName      string
+	LinkInterface string
+}
+
+// SetLinkResponse is the response struct for the SetLinkEndpoint
+type SetLinkResponse struct {
+	Error error
+}
+
+// MakeSetLinkEndpoint creates a gokit endpoint which invokes SetLink
+func MakeSetLinkEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(SetLinkRequest)
+		err := s.SetLink(req.RefID, req.ContainerName, req.LinkName, req.LinkInterface)
+		return SetLinkResponse{
+			Error: err,
+		}, nil
+	}
+}
+
+// RemoveLinkRequest is the request struct for the RemoveLinkEndpoint
+type RemoveLinkRequest struct {
+	RefID         uint
+	ContainerName string
+	LinkName      string
+	LinkInterface string
+}
+
+// RemoveLinkResponse is the response struct for the RemoveLinkEndpoint
+type RemoveLinkResponse struct {
+	Error error
+}
+
+// MakeRemoveLinkEndpoint creates a gokit endpoint which invokes RemoveLink
+func MakeRemoveLinkEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(RemoveLinkRequest)
+		err := s.RemoveLink(req.RefID, req.ContainerName, req.LinkName, req.LinkInterface)
+		return RemoveLinkResponse{
+			Error: err,
+		}, nil
+	}
+}
+
+// GetModulesRequest is the request struct for the GetModulesEndpoint
+type GetModulesRequest struct {
+	RefID uint
+}
+
+// GetModulesResponse is the response struct for the GetModulesEndpoint
+type GetModulesResponse struct {
+	Modules []Module
+	Error   error
+}
+
+// MakeGetModulesEndpoint creates a gokit endpoint which invokes GetModules
+func MakeGetModulesEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GetModulesRequest)
+		mods, err := s.GetModules(req.RefID)
+		return GetModulesResponse{
+			Modules: mods,
+			Error:   err,
 		}, nil
 	}
 }

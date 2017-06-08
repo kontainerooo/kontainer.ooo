@@ -14,6 +14,9 @@ service ContainerService {
     rpc SetEnv (SetEnvRequest) returns (SetEnvResponse);
     rpc IDForName (IDForNameRequest) returns (IDForNameResponse);
     rpc GetContainerKMI (GetContainerKMIRequest) returns (GetContainerKMIResponse);
+    rpc SetLink (SetLinkRequest) returns (SetLinkResponse);
+    rpc RemoveLink (RemoveLinkRequest) returns (RemoveLinkResponse);
+    rpc GetLinks (GetLinksRequest) returns (GetLinksResponse);
 }
 
 message CreateContainerRequest {
@@ -111,5 +114,39 @@ message GetContainerKMIRequest {
 
 message GetContainerKMIResponse {
     kmi.KMI containerKMI = 1;
+    string error = 2;
+}
+
+message SetLinkRequest {
+    uint32 refID = 1;
+    string containerID = 2;
+    string linkID = 3;
+    string linkName = 4;
+    string linkInterface = 5;
+}
+
+message SetLinkResponse {
+    string error = 1;
+}
+
+message RemoveLinkRequest {
+    uint32 refID = 1;
+    string containerID = 2;
+    string linkID = 3;
+    string linkName = 4;
+    string linkInterface = 5;
+}
+
+message RemoveLinkResponse {
+    string error = 1;
+}
+
+message GetLinksRequest {
+    uint32 refID = 1;
+    string containerID = 2;
+}
+
+message GetLinksResponse {
+    map<string, string> links = 1;
     string error = 2;
 }

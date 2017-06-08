@@ -96,7 +96,7 @@ func convertFrontendModuleArray(f []*pb.FrontendModule) kmi.FrontendArray {
 	return a
 }
 
-func convertKMDI(k *pb.KMDI) kmi.KMDI {
+func ConvertKMDI(k *pb.KMDI) kmi.KMDI {
 	return kmi.KMDI{
 		ID:          uint(k.ID),
 		Name:        k.Name,
@@ -108,7 +108,7 @@ func convertKMDI(k *pb.KMDI) kmi.KMDI {
 
 func ConvertKMI(k *pb.KMI) *kmi.KMI {
 	return &kmi.KMI{
-		KMDI:            convertKMDI(k.KMDI),
+		KMDI:            ConvertKMDI(k.KMDI),
 		ProvisionScript: k.ProvisionScript,
 		Commands:        abstraction.NewJSONFromMap(k.Commands),
 		Environment:     abstraction.NewJSONFromMap(k.Environment),
@@ -122,7 +122,7 @@ func ConvertKMI(k *pb.KMI) *kmi.KMI {
 func convertKMDIArray(k []*pb.KMDI) *[]kmi.KMDI {
 	a := make([]kmi.KMDI, len(k))
 	for i, d := range k {
-		a[i] = convertKMDI(d)
+		a[i] = ConvertKMDI(d)
 	}
 	return &a
 }

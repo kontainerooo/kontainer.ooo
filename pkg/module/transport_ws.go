@@ -13,6 +13,14 @@ func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
 	service, _ := ws.NewServiceDescription("moduleService", ws.ProtoIDFromString("MDL"))
 
 	service.AddEndpoint(ws.NewServiceEndpoint(
+		"CreateContainerModule",
+		ws.ProtoIDFromString("CCM"),
+		endpoints.CreateContainerModuleEndpoint,
+		DecodeWSCreateContainerModuleRequest,
+		EncodeGRPCCreateContainerModuleResponse,
+	))
+
+	service.AddEndpoint(ws.NewServiceEndpoint(
 		"SetPublicKey",
 		ws.ProtoIDFromString("SPK"),
 		endpoints.SetPublicKeyEndpoint,
@@ -92,7 +100,43 @@ func MakeWebsocketService(endpoints Endpoints) *ws.ServiceDescription {
 		EncodeGRPCGetEnvResponse,
 	))
 
+	service.AddEndpoint(ws.NewServiceEndpoint(
+		"SetLink",
+		ws.ProtoIDFromString("SLI"),
+		endpoints.SetLinkEndpoint,
+		DecodeWSSetLinkRequest,
+		EncodeGRPCSetLinkResponse,
+	))
+
+	service.AddEndpoint(ws.NewServiceEndpoint(
+		"RemoveLink",
+		ws.ProtoIDFromString("RLI"),
+		endpoints.RemoveLinkEndpoint,
+		DecodeWSRemoveLinkRequest,
+		EncodeGRPCRemoveLinkResponse,
+	))
+
+	service.AddEndpoint(ws.NewServiceEndpoint(
+		"GetModules",
+		ws.ProtoIDFromString("GMS"),
+		endpoints.GetModulesEndpoint,
+		DecodeWSGetModulesRequest,
+		EncodeGRPCGetModulesResponse,
+	))
+
 	return service
+}
+
+// DecodeWSCreateContainerModuleRequest is a websocket.DecodeRequestFunc that converts a
+// WS CreateContainerModule request to a module.proto-domain createcontainermodule request.
+func DecodeWSCreateContainerModuleRequest(ctx context.Context, data interface{}) (interface{}, error) {
+	req := &pb.CreateContainerModuleRequest{}
+	err := proto.Unmarshal(data.([]byte), req)
+	if err != nil {
+		return nil, err
+	}
+
+	return DecodeGRPCCreateContainerModuleRequest(ctx, req)
 }
 
 // DecodeWSSetPublicKeyRequest is a websocket.DecodeRequestFunc that converts a
@@ -213,4 +257,40 @@ func DecodeWSGetEnvRequest(ctx context.Context, data interface{}) (interface{}, 
 	}
 
 	return DecodeGRPCGetEnvRequest(ctx, req)
+}
+
+// DecodeWSSetLinkRequest is a websocket.DecodeRequestFunc that converts a
+// WS SetLink request to a module.proto-domain setlink request.
+func DecodeWSSetLinkRequest(ctx context.Context, data interface{}) (interface{}, error) {
+	req := &pb.SetLinkRequest{}
+	err := proto.Unmarshal(data.([]byte), req)
+	if err != nil {
+		return nil, err
+	}
+
+	return DecodeGRPCSetLinkRequest(ctx, req)
+}
+
+// DecodeWSRemoveLinkRequest is a websocket.DecodeRequestFunc that converts a
+// WS RemoveLink request to a module.proto-domain removelink request.
+func DecodeWSRemoveLinkRequest(ctx context.Context, data interface{}) (interface{}, error) {
+	req := &pb.RemoveLinkRequest{}
+	err := proto.Unmarshal(data.([]byte), req)
+	if err != nil {
+		return nil, err
+	}
+
+	return DecodeGRPCRemoveLinkRequest(ctx, req)
+}
+
+// DecodeWSGetModulesRequest is a websocket.DecodeRequestFunc that converts a
+// WS GetModules request to a module.proto-domain getmodules request.
+func DecodeWSGetModulesRequest(ctx context.Context, data interface{}) (interface{}, error) {
+	req := &pb.GetModulesRequest{}
+	err := proto.Unmarshal(data.([]byte), req)
+	if err != nil {
+		return nil, err
+	}
+
+	return DecodeGRPCGetModulesRequest(ctx, req)
 }

@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"strings"
 
 	"github.com/go-kit/kit/log"
 	grpctransport "github.com/go-kit/kit/transport/grpc"
@@ -70,6 +71,26 @@ func MakeGRPCServer(ctx context.Context, endpoints Endpoints, logger log.Logger)
 			EncodeGRPCGetContainerKMIResponse,
 			options...,
 		),
+		setlink: grpctransport.NewServer(
+			endpoints.SetLinkEndpoint,
+			DecodeGRPCSetLinkRequest,
+			EncodeGRPCSetLinkResponse,
+			options...,
+		),
+
+		removelink: grpctransport.NewServer(
+			endpoints.RemoveLinkEndpoint,
+			DecodeGRPCRemoveLinkRequest,
+			EncodeGRPCRemoveLinkResponse,
+			options...,
+		),
+
+		getlinks: grpctransport.NewServer(
+			endpoints.GetLinksEndpoint,
+			DecodeGRPCGetLinksRequest,
+			EncodeGRPCGetLinksResponse,
+			options...,
+		),
 	}
 }
 
@@ -84,6 +105,9 @@ type grpcServer struct {
 	setenv          grpctransport.Handler
 	idforname       grpctransport.Handler
 	getcontainerkmi grpctransport.Handler
+	setlink         grpctransport.Handler
+	removelink      grpctransport.Handler
+	getlinks        grpctransport.Handler
 }
 
 func (s *grpcServer) CreateContainer(ctx oldcontext.Context, req *pb.CreateContainerRequest) (*pb.CreateContainerResponse, error) {
@@ -156,6 +180,30 @@ func (s *grpcServer) GetContainerKMI(ctx oldcontext.Context, req *pb.GetContaine
 		return nil, err
 	}
 	return res.(*pb.GetContainerKMIResponse), nil
+}
+
+func (s *grpcServer) SetLink(ctx oldcontext.Context, req *pb.SetLinkRequest) (*pb.SetLinkResponse, error) {
+	_, res, err := s.setlink.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res.(*pb.SetLinkResponse), nil
+}
+
+func (s *grpcServer) RemoveLink(ctx oldcontext.Context, req *pb.RemoveLinkRequest) (*pb.RemoveLinkResponse, error) {
+	_, res, err := s.removelink.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res.(*pb.RemoveLinkResponse), nil
+}
+
+func (s *grpcServer) GetLinks(ctx oldcontext.Context, req *pb.GetLinksRequest) (*pb.GetLinksResponse, error) {
+	_, res, err := s.getlinks.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res.(*pb.GetLinksResponse), nil
 }
 
 // DecodeGRPCCreateContainerRequest is a transport/grpc.DecodeRequestFunc that converts a
@@ -251,6 +299,42 @@ func DecodeGRPCGetContainerKMIRequest(_ context.Context, grpcReq interface{}) (i
 	}, nil
 }
 
+// DecodeGRPCSetLinkRequest is a transport/grpc.DecodeRequestFunc that converts a
+// gRPC SetLink request to a container.proto-domain setlink request.
+func DecodeGRPCSetLinkRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
+	req := grpcReq.(*pb.SetLinkRequest)
+	return SetLinkRequest{
+		RefID:         uint(req.RefID),
+		ContainerID:   req.ContainerID,
+		LinkID:        req.LinkID,
+		LinkName:      req.LinkName,
+		LinkInterface: req.LinkInterface,
+	}, nil
+}
+
+// DecodeGRPCRemoveLinkRequest is a transport/grpc.DecodeRequestFunc that converts a
+// gRPC RemoveLink request to a container.proto-domain removelink request.
+func DecodeGRPCRemoveLinkRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
+	req := grpcReq.(*pb.RemoveLinkRequest)
+	return RemoveLinkRequest{
+		RefID:         uint(req.RefID),
+		ContainerID:   req.ContainerID,
+		LinkID:        req.LinkID,
+		LinkName:      req.LinkName,
+		LinkInterface: req.LinkInterface,
+	}, nil
+}
+
+// DecodeGRPCGetLinksRequest is a transport/grpc.DecodeRequestFunc that converts a
+// gRPC GetLinks request to a container.proto-domain getlinks request.
+func DecodeGRPCGetLinksRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
+	req := grpcReq.(*pb.GetLinksRequest)
+	return GetLinksRequest{
+		RefID:       uint(req.RefID),
+		ContainerID: req.ContainerID,
+	}, nil
+}
+
 // EncodeGRPCCreateContainerResponse is a transport/grpc.EncodeRequestFunc that converts a
 // messages/container.proto-domain createcontainer response to a gRPC CreateContainer response.
 func EncodeGRPCCreateContainerResponse(_ context.Context, response interface{}) (interface{}, error) {
@@ -281,7 +365,7 @@ func EncodeGRPCInstancesResponse(_ context.Context, response interface{}) (inter
 	res := response.(InstancesResponse)
 	cts := []*pb.Container{}
 	for _, v := range res.Containers {
-		kmiWrapper := kmi.KMI(v.KMI)
+		kmiWrapper := kmi.KMI(v.KMI.KMI)
 		c := &pb.Container{
 			ContainerID:   v.ContainerID,
 			ContainerName: v.ContainerName,
@@ -363,6 +447,46 @@ func EncodeGRPCGetContainerKMIResponse(_ context.Context, response interface{}) 
 	res := response.(GetContainerKMIResponse)
 	gRPCRes := &pb.GetContainerKMIResponse{
 		ContainerKMI: kmi.ConvertPBKMI(&res.ContainerKMI),
+	}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
+}
+
+// EncodeGRPCSetLinkResponse is a transport/grpc.EncodeRequestFunc that converts a
+// container.proto-domain setlink response to a gRPC SetLink response.
+func EncodeGRPCSetLinkResponse(_ context.Context, response interface{}) (interface{}, error) {
+	res := response.(SetLinkResponse)
+	gRPCRes := &pb.SetLinkResponse{}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
+}
+
+// EncodeGRPCRemoveLinkResponse is a transport/grpc.EncodeRequestFunc that converts a
+// container.proto-domain removelink response to a gRPC RemoveLink response.
+func EncodeGRPCRemoveLinkResponse(_ context.Context, response interface{}) (interface{}, error) {
+	res := response.(RemoveLinkResponse)
+	gRPCRes := &pb.RemoveLinkResponse{}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
+}
+
+// EncodeGRPCGetLinksResponse is a transport/grpc.EncodeRequestFunc that converts a
+// container.proto-domain getlinks response to a gRPC GetLinks response.
+func EncodeGRPCGetLinksResponse(_ context.Context, response interface{}) (interface{}, error) {
+	res := response.(GetLinksResponse)
+	linkMap := make(map[string]string)
+	for k, v := range res.Links {
+		linkMap[k] = strings.Join(v[:], ",")
+	}
+
+	gRPCRes := &pb.GetLinksResponse{
+		Links: linkMap,
 	}
 	if res.Error != nil {
 		gRPCRes.Error = res.Error.Error()

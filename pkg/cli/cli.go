@@ -3,6 +3,7 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -97,6 +98,17 @@ func fillRequestStruct(c *ishell.Context, value *reflect.Value, typ reflect.Type
 					continue
 				}
 				valField.SetBool(bul)
+			case reflect.Array:
+				if valField.Len() > 1 {
+					el := valField.Index(0)
+					switch el.Kind() {
+					case reflect.Uint8:
+						str := ""
+						for i := 0; i < valField.Len(); i++ {
+							str = fmt.Sprintf("%s%c", str, el.Uint())
+						}
+					}
+				}
 			}
 			break
 		}
@@ -210,6 +222,14 @@ func moduleCommands(sh *ishell.Shell, moduleClient *module.Endpoints) *ishell.Cm
 		Help: "all Module Service commands",
 	}
 
+	moduleCmd.AddCmd(createCommand(
+		"create",
+		"create container module",
+		moduleClient.CreateContainerModuleEndpoint,
+		&module.CreateContainerModuleRequest{},
+		&module.CreateContainerModuleResponse{}),
+	)
+
 	setCmd := &ishell.Cmd{
 		Name: "set",
 	}
@@ -228,6 +248,14 @@ func moduleCommands(sh *ishell.Shell, moduleClient *module.Endpoints) *ishell.Cm
 		moduleClient.SetEnvEndpoint,
 		&module.SetEnvRequest{},
 		&module.SetEnvResponse{}),
+	)
+
+	setCmd.AddCmd(createCommand(
+		"link",
+		"set link",
+		moduleClient.SetLinkEndpoint,
+		&module.SetLinkRequest{},
+		&module.SetLinkResponse{}),
 	)
 
 	moduleCmd.AddCmd(setCmd)
@@ -268,6 +296,14 @@ func moduleCommands(sh *ishell.Shell, moduleClient *module.Endpoints) *ishell.Cm
 		&module.GetModuleConfigResponse{}),
 	)
 
+	getCmd.AddCmd(createCommand(
+		"modules",
+		"get all modules",
+		moduleClient.GetModulesEndpoint,
+		&module.GetModulesRequest{},
+		&module.GetModulesResponse{},
+	))
+
 	moduleCmd.AddCmd(getCmd)
 
 	moduleCmd.AddCmd(createCommand(
@@ -304,6 +340,13 @@ func moduleCommands(sh *ishell.Shell, moduleClient *module.Endpoints) *ishell.Cm
 		moduleClient.RemoveDirectoryEndpoint,
 		&module.RemoveDirectoryRequest{},
 		&module.RemoveDirectoryResponse{},
+	))
+
+	removeCmd.AddCmd(createCommand(
+		"link",
+		"remove link",
+		moduleClient.RemoveLinkEndpoint, &module.RemoveLinkRequest{},
+		&module.RemoveLinkResponse{},
 	))
 
 	moduleCmd.AddCmd(removeCmd)
@@ -371,6 +414,36 @@ func containerCommands(sh *ishell.Shell, containerClient *container.Endpoints) *
 		&container.GetContainerKMIRequest{},
 		&container.GetContainerKMIResponse{},
 	))
+
+	linkCmd := &ishell.Cmd{
+		Name: "link",
+	}
+
+	linkCmd.AddCmd(createCommand(
+		"set",
+		"set a link",
+		containerClient.SetLinkEndpoint,
+		&container.SetLinkRequest{},
+		&container.SetLinkResponse{},
+	))
+
+	linkCmd.AddCmd(createCommand(
+		"remove",
+		"remove a link",
+		containerClient.RemoveLinkEndpoint,
+		&container.RemoveLinkRequest{},
+		&container.RemoveLinkResponse{},
+	))
+
+	linkCmd.AddCmd(createCommand(
+		"get",
+		"get links of a module",
+		containerClient.GetContainerKMIEndpoint,
+		&container.RemoveLinkRequest{},
+		&container.RemoveLinkResponse{},
+	))
+
+	containerCmd.AddCmd(linkCmd)
 
 	return containerCmd
 }
