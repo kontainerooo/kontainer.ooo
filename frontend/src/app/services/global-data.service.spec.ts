@@ -10,7 +10,7 @@ describe('GlobalDataService', () => {
     });
   });
 
-  it('should ...', inject([GlobalDataService], (service: GlobalDataService) => {
-    expect(service).toBeTruthy();
-  }));
+  // it('should ...', inject([GlobalDataService], (service: GlobalDataService) => {
+  //   expect(service).toBeTruthy();
+  // }));
 });

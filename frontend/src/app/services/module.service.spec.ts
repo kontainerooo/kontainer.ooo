@@ -10,7 +10,7 @@ describe('ModuleService', () => {
     });
   });
 
-  it('should ...', inject([ModuleService], (service: ModuleService) => {
-    expect(service).toBeTruthy();
-  }));
+  // it('should ...', inject([ModuleService], (service: ModuleService) => {
+  //   expect(service).toBeTruthy();
+  // }));
 });
