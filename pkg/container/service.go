@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -82,6 +83,7 @@ type service struct {
 	kmiClient *kmi.Endpoints
 	logger    log.Logger
 	config    util.ConfigFile
+	mtx       *sync.Mutex
 }
 
 const (
@@ -91,6 +93,13 @@ const (
 
 // InitializeDatabases sets up the container service's database
 func (s *service) InitializeDatabases() error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.initializeDatabases()
+}
+
+func (s *service) initializeDatabases() error {
 	return s.db.AutoMigrate(&CKMI{}, &Container{})
 }
 
@@ -109,6 +118,13 @@ func (s *service) checkAndCreate(path string) error {
 
 // InitPaths initializes all paths this service needs
 func (s *service) InitPaths() error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.initPaths()
+}
+
+func (s *service) initPaths() error {
 	err := s.checkAndCreate(s.config.RootfsPath)
 	if err != nil {
 		return err
@@ -136,6 +152,13 @@ func (s *service) InitPaths() error {
 }
 
 func (s *service) CreateContainer(refID uint, kmiID uint, name string) (id string, err error) {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.createContainer(refID, kmiID, name)
+}
+
+func (s *service) createContainer(refID uint, kmiID uint, name string) (id string, err error) {
 	kmi, err := s.getTemplateKMI(kmiID)
 	if err != nil {
 		return "", err
@@ -276,7 +299,14 @@ func (s *service) CreateContainer(refID uint, kmiID uint, name string) (id strin
 }
 
 func (s *service) RemoveContainer(refID uint, id string) error {
-	err := s.StopContainer(refID, id)
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.removeContainer(refID, id)
+}
+
+func (s *service) removeContainer(refID uint, id string) error {
+	err := s.stopContainer(refID, id)
 	if err != nil {
 		return err
 	}
@@ -299,6 +329,13 @@ func (s *service) RemoveContainer(refID uint, id string) error {
 }
 
 func (s *service) Instances(refID uint) []Container {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.instances(refID)
+}
+
+func (s *service) instances(refID uint) []Container {
 	s.db.Where("ref_id = ?", refID)
 
 	cs := []Container{}
@@ -321,6 +358,13 @@ func (s *service) Instances(refID uint) []Container {
 }
 
 func (s *service) StopContainer(refID uint, id string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.stopContainer(refID, id)
+}
+
+func (s *service) stopContainer(refID uint, id string) error {
 	container, err := s.libcnt.Load(id)
 	if err != nil {
 		return err
@@ -335,6 +379,13 @@ func (s *service) StopContainer(refID uint, id string) error {
 }
 
 func (s *service) Execute(refID uint, id string, cmd string, env map[string]string) (string, error) {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.execute(refID, id, cmd, env)
+}
+
+func (s *service) execute(refID uint, id string, cmd string, env map[string]string) (string, error) {
 	container, err := s.libcnt.Load(id)
 	if err != nil {
 		return "", err
@@ -369,16 +420,32 @@ func (s *service) Execute(refID uint, id string, cmd string, env map[string]stri
 		return "", err
 	}
 
-	_, err = p.Wait()
-	if err != nil {
-		return "", err
-	}
+	errc := make(chan error)
 
-	return buf.String(), nil
+	go func() {
+		_, err = p.Wait()
+		if err != nil {
+			errc <- err
+		}
+	}()
+
+	select {
+	case err := <-errc:
+		return "", err
+	case <-time.After(time.Second * 30):
+		return "Timeout:" + buf.String(), nil
+	}
 }
 
 func (s *service) GetEnv(refID uint, id string, key string) (string, error) {
-	cKMI, err := s.GetContainerKMI(id)
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.getEnv(refID, id, key)
+}
+
+func (s *service) getEnv(refID uint, id string, key string) (string, error) {
+	cKMI, err := s.getContainerKMI(id)
 	if err != nil {
 		return "", err
 	}
@@ -405,7 +472,14 @@ func (s *service) GetEnv(refID uint, id string, key string) (string, error) {
 }
 
 func (s *service) SetEnv(refID uint, id string, key string, value string) error {
-	cKMI, err := s.GetContainerKMI(id)
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.setEnv(refID, id, key, value)
+}
+
+func (s *service) setEnv(refID uint, id string, key string, value string) error {
+	cKMI, err := s.getContainerKMI(id)
 	if err != nil {
 		return err
 	}
@@ -436,6 +510,13 @@ func (s *service) SetEnv(refID uint, id string, key string, value string) error 
 }
 
 func (s *service) IDForName(refID uint, name string) (string, error) {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.idForName(refID, name)
+}
+
+func (s *service) idForName(refID uint, name string) (string, error) {
 	c := &Container{}
 	err := s.db.First(c, "ref_id = ? AND container_name = ?", refID, name)
 	if err != nil {
@@ -545,6 +626,13 @@ func (s *service) getTemplateKMI(kmiID uint) (kmi.KMI, error) {
 }
 
 func (s *service) GetContainerKMI(containerID string) (kmi.KMI, error) {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.getContainerKMI(containerID)
+}
+
+func (s *service) getContainerKMI(containerID string) (kmi.KMI, error) {
 	// TODO: cache container KMIs
 	cKMI, err := s.getCKMI(containerID)
 	if err != nil {
@@ -832,14 +920,15 @@ func NewService(lc libcontainer.Factory, db dbAdapter, ke *kmi.Endpoints, l log.
 		kmiClient: ke,
 		logger:    l,
 		config:    conf,
+		mtx:       &sync.Mutex{},
 	}
 
-	err = s.InitializeDatabases()
+	err = s.initializeDatabases()
 	if err != nil {
 		return s, err
 	}
 
-	err = s.InitPaths()
+	err = s.initPaths()
 	if err != nil {
 		return s, err
 	}

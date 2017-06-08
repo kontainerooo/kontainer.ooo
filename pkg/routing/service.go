@@ -3,6 +3,7 @@ package routing
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 )
@@ -54,7 +55,8 @@ type dbAdapter interface {
 }
 
 type service struct {
-	db dbAdapter
+	db  dbAdapter
+	mtx *sync.Mutex
 }
 
 func (s service) InitializeDatabases() error {
@@ -62,6 +64,13 @@ func (s service) InitializeDatabases() error {
 }
 
 func (s *service) CreateRouterConfig(r *RouterConfig) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.createRouterConfig(r)
+}
+
+func (s *service) createRouterConfig(r *RouterConfig) error {
 	s.db.Where("RefID = ? AND Name = ?", r.RefID, r.Name)
 	res := s.db.GetValue()
 	if res != nil && res != (&RouterConfig{}) {
@@ -77,6 +86,13 @@ func (s *service) CreateRouterConfig(r *RouterConfig) error {
 }
 
 func (s *service) EditRouterConfig(refID uint, name string, r *RouterConfig) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.editRouterConfig(refID, name, r)
+}
+
+func (s *service) editRouterConfig(refID uint, name string, r *RouterConfig) error {
 	if r.RefID != 0 && refID != r.RefID {
 		return errors.New("can not change reference id")
 	}
@@ -98,6 +114,13 @@ func (s *service) EditRouterConfig(refID uint, name string, r *RouterConfig) err
 }
 
 func (s *service) GetRouterConfig(refID uint, name string, r *RouterConfig) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.getRouterConfig(refID, name, r)
+}
+
+func (s *service) getRouterConfig(refID uint, name string, r *RouterConfig) error {
 	s.db.Begin()
 	err := s.db.Where("RefID = ? AND Name = ?", refID, name)
 	if err != nil {
@@ -116,6 +139,13 @@ func (s *service) GetRouterConfig(refID uint, name string, r *RouterConfig) erro
 }
 
 func (s *service) RemoveRouterConfig(refID uint, name string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.removeRouterConfig(refID, name)
+}
+
+func (s *service) removeRouterConfig(refID uint, name string) error {
 	if refID == 0 || name == "" {
 		return errors.New("refID and name have to be set")
 	}
@@ -127,6 +157,13 @@ func (s *service) RemoveRouterConfig(refID uint, name string) error {
 }
 
 func (s *service) AddLocationRule(refID uint, name string, lr *LocationRule) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.addLocationRule(refID, name, lr)
+}
+
+func (s *service) addLocationRule(refID uint, name string, lr *LocationRule) error {
 	s.db.Begin()
 
 	err := s.db.AppendToArray(&RouterConfig{
@@ -143,6 +180,13 @@ func (s *service) AddLocationRule(refID uint, name string, lr *LocationRule) err
 }
 
 func (s *service) RemoveLocationRule(refID uint, name string, lid int) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.removeLocationRule(refID, name, lid)
+}
+
+func (s *service) removeLocationRule(refID uint, name string, lid int) error {
 	s.db.Begin()
 
 	err := s.db.RemoveFromArray(&RouterConfig{
@@ -159,6 +203,13 @@ func (s *service) RemoveLocationRule(refID uint, name string, lid int) error {
 }
 
 func (s *service) ChangeListenStatement(refID uint, name string, ls *ListenStatement) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.changeListenStatement(refID, name, ls)
+}
+
+func (s *service) changeListenStatement(refID uint, name string, ls *ListenStatement) error {
 	err := s.db.Where("RefID = ? AND Name = ?", refID, name)
 	if err != nil {
 		return err
@@ -174,6 +225,13 @@ func (s *service) ChangeListenStatement(refID uint, name string, ls *ListenState
 }
 
 func (s *service) AddServerName(refID uint, name string, sn string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.addServerName(refID, name, sn)
+}
+
+func (s *service) addServerName(refID uint, name string, sn string) error {
 	s.db.Begin()
 
 	err := s.db.AppendToArray(&RouterConfig{
@@ -190,6 +248,13 @@ func (s *service) AddServerName(refID uint, name string, sn string) error {
 }
 
 func (s *service) RemoveServerName(refID uint, name string, id int) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.removeServerName(refID, name, id)
+}
+
+func (s *service) removeServerName(refID uint, name string, id int) error {
 	s.db.Begin()
 
 	err := s.db.RemoveFromArray(&RouterConfig{
@@ -206,13 +271,21 @@ func (s *service) RemoveServerName(refID uint, name string, id int) error {
 }
 
 func (s *service) Configurations(r *[]RouterConfig) {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	s.configurations(r)
+}
+
+func (s *service) configurations(r *[]RouterConfig) {
 	s.db.Find(r)
 }
 
 // NewService creates a UserService with necessary dependencies.
 func NewService(db dbAdapter) (Service, error) {
 	s := &service{
-		db: db,
+		db:  db,
+		mtx: &sync.Mutex{},
 	}
 
 	err := s.InitializeDatabases()

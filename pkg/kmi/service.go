@@ -3,6 +3,7 @@ package kmi
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/kontainerooo/kontainer.ooo/pkg/abstraction"
 )
@@ -33,14 +34,29 @@ type dbAdapter interface {
 }
 
 type service struct {
-	db dbAdapter
+	db  dbAdapter
+	mtx *sync.Mutex
 }
 
 func (s *service) InitializeDatabases() error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.initializeDatabases()
+}
+
+func (s *service) initializeDatabases() error {
 	return s.db.AutoMigrate(&KMI{})
 }
 
 func (s *service) AddKMI(path string) (uint, error) {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.addKMI(path)
+}
+
+func (s *service) addKMI(path string) (uint, error) {
 	kC := NewContent()
 	err := Extract(path, kC)
 	if err != nil {
@@ -67,6 +83,13 @@ func (s *service) AddKMI(path string) (uint, error) {
 }
 
 func (s *service) RemoveKMI(id uint) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.removeKMI(id)
+}
+
+func (s *service) removeKMI(id uint) error {
 	k := &KMI{}
 	k.ID = id
 	err := s.db.Delete(k)
@@ -74,6 +97,13 @@ func (s *service) RemoveKMI(id uint) error {
 }
 
 func (s *service) GetKMI(id uint, k *KMI) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.getKMI(id, k)
+}
+
+func (s *service) getKMI(id uint, k *KMI) error {
 	err := s.db.First(k, "ID = ?", id)
 	if err != nil {
 		return err
@@ -82,6 +112,13 @@ func (s *service) GetKMI(id uint, k *KMI) error {
 }
 
 func (s *service) KMI(out *[]KMDI) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.kmi(out)
+}
+
+func (s *service) kmi(out *[]KMDI) error {
 	k := []KMI{}
 	err := s.db.Find(&k)
 	if err != nil {
@@ -96,10 +133,11 @@ func (s *service) KMI(out *[]KMDI) error {
 // NewService creates a KMIService with necessary dependencies.
 func NewService(db dbAdapter) (Service, error) {
 	s := &service{
-		db: db,
+		db:  db,
+		mtx: &sync.Mutex{},
 	}
 
-	err := s.InitializeDatabases()
+	err := s.initializeDatabases()
 	if err != nil {
 		return nil, err
 	}
