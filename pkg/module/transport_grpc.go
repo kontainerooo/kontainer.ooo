@@ -2,6 +2,7 @@ package module
 
 import (
 	"context"
+	"strings"
 
 	"github.com/go-kit/kit/log"
 	grpctransport "github.com/go-kit/kit/transport/grpc"
@@ -18,89 +19,108 @@ func MakeGRPCServer(ctx context.Context, endpoints Endpoints, logger log.Logger)
 	}
 
 	return &grpcServer{
+		createcontainermodule: grpctransport.NewServer(
+			endpoints.CreateContainerModuleEndpoint,
+			DecodeGRPCCreateContainerModuleRequest,
+			EncodeGRPCCreateContainerModuleResponse,
+			options...,
+		),
 		setpublickey: grpctransport.NewServer(
 			endpoints.SetPublicKeyEndpoint,
 			DecodeGRPCSetPublicKeyRequest,
 			EncodeGRPCSetPublicKeyResponse,
 			options...,
 		),
-
 		removefile: grpctransport.NewServer(
 			endpoints.RemoveFileEndpoint,
 			DecodeGRPCRemoveFileRequest,
 			EncodeGRPCRemoveFileResponse,
 			options...,
 		),
-
 		removedirectory: grpctransport.NewServer(
 			endpoints.RemoveDirectoryEndpoint,
 			DecodeGRPCRemoveDirectoryRequest,
 			EncodeGRPCRemoveDirectoryResponse,
 			options...,
 		),
-
 		getfiles: grpctransport.NewServer(
 			endpoints.GetFilesEndpoint,
 			DecodeGRPCGetFilesRequest,
 			EncodeGRPCGetFilesResponse,
 			options...,
 		),
-
 		getfile: grpctransport.NewServer(
 			endpoints.GetFileEndpoint,
 			DecodeGRPCGetFileRequest,
 			EncodeGRPCGetFileResponse,
 			options...,
 		),
-
 		uploadfile: grpctransport.NewServer(
 			endpoints.UploadFileEndpoint,
 			DecodeGRPCUploadFileRequest,
 			EncodeGRPCUploadFileResponse,
 			options...,
 		),
-
 		getmoduleconfig: grpctransport.NewServer(
 			endpoints.GetModuleConfigEndpoint,
 			DecodeGRPCGetModuleConfigRequest,
 			EncodeGRPCGetModuleConfigResponse,
 			options...,
 		),
-
 		sendcommand: grpctransport.NewServer(
 			endpoints.SendCommandEndpoint,
 			DecodeGRPCSendCommandRequest,
 			EncodeGRPCSendCommandResponse,
 			options...,
 		),
-
 		setenv: grpctransport.NewServer(
 			endpoints.SetEnvEndpoint,
 			DecodeGRPCSetEnvRequest,
 			EncodeGRPCSetEnvResponse,
 			options...,
 		),
-
 		getenv: grpctransport.NewServer(
 			endpoints.GetEnvEndpoint,
 			DecodeGRPCGetEnvRequest,
 			EncodeGRPCGetEnvResponse,
 			options...,
 		),
+		setlink: grpctransport.NewServer(
+			endpoints.SetLinkEndpoint,
+			DecodeGRPCSetLinkRequest,
+			EncodeGRPCSetLinkResponse,
+			options...,
+		),
+		removelink: grpctransport.NewServer(
+			endpoints.RemoveLinkEndpoint,
+			DecodeGRPCRemoveLinkRequest,
+			EncodeGRPCRemoveLinkResponse,
+			options...,
+		),
+		getmodules: grpctransport.NewServer(
+			endpoints.GetModulesEndpoint,
+			DecodeGRPCGetModulesRequest,
+			EncodeGRPCGetModulesResponse,
+			options...,
+		),
 	}
 }
 
 type grpcServer struct {
-	setpublickey    grpctransport.Handler
-	removefile      grpctransport.Handler
-	removedirectory grpctransport.Handler
-	getfiles        grpctransport.Handler
-	getfile         grpctransport.Handler
-	uploadfile      grpctransport.Handler
-	getmoduleconfig grpctransport.Handler
-	sendcommand     grpctransport.Handler
-	setenv          grpctransport.Handler
-	getenv          grpctransport.Handler
+	createcontainermodule grpctransport.Handler
+	setpublickey          grpctransport.Handler
+	removefile            grpctransport.Handler
+	removedirectory       grpctransport.Handler
+	getfiles              grpctransport.Handler
+	getfile               grpctransport.Handler
+	uploadfile            grpctransport.Handler
+	getmoduleconfig       grpctransport.Handler
+	sendcommand           grpctransport.Handler
+	setenv                grpctransport.Handler
+	getenv                grpctransport.Handler
+	setlink               grpctransport.Handler
+	removelink            grpctransport.Handler
+	getmodules            grpctransport.Handler
 }
 
 func convertPBFrontendModule(f *kmi.FrontendModule) *kmiPB.FrontendModule {
@@ -138,6 +158,14 @@ func convertPBKMI(k *kmi.KMI) *kmiPB.KMI {
 		Interfaces:      k.Interfaces.ToStringMap(),
 		Resources:       k.Resources.ToStringMap(),
 	}
+}
+
+func (s *grpcServer) CreateContainerModule(ctx oldcontext.Context, req *modulePB.CreateContainerModuleRequest) (*modulePB.CreateContainerModuleResponse, error) {
+	_, res, err := s.createcontainermodule.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res.(*modulePB.CreateContainerModuleResponse), nil
 }
 
 func (s *grpcServer) SetPublicKey(ctx oldcontext.Context, req *modulePB.SetPublicKeyRequest) (*modulePB.SetPublicKeyResponse, error) {
@@ -218,6 +246,41 @@ func (s *grpcServer) GetEnv(ctx oldcontext.Context, req *modulePB.GetEnvRequest)
 		return nil, err
 	}
 	return res.(*modulePB.GetEnvResponse), nil
+}
+
+func (s *grpcServer) SetLink(ctx oldcontext.Context, req *modulePB.SetLinkRequest) (*modulePB.SetLinkResponse, error) {
+	_, res, err := s.setlink.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res.(*modulePB.SetLinkResponse), nil
+}
+
+func (s *grpcServer) RemoveLink(ctx oldcontext.Context, req *modulePB.RemoveLinkRequest) (*modulePB.RemoveLinkResponse, error) {
+	_, res, err := s.removelink.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res.(*modulePB.RemoveLinkResponse), nil
+}
+
+func (s *grpcServer) GetModules(ctx oldcontext.Context, req *modulePB.GetModulesRequest) (*modulePB.GetModulesResponse, error) {
+	_, res, err := s.getmodules.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res.(*modulePB.GetModulesResponse), nil
+}
+
+// DecodeGRPCCreateContainerModuleRequest is a transport/grpc.DecodeRequestFunc that converts a
+// gRPC CreateContainerModule request to a module.proto-domain createcontainermodule request.
+func DecodeGRPCCreateContainerModuleRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
+	req := grpcReq.(*modulePB.CreateContainerModuleRequest)
+	return CreateContainerModuleRequest{
+		RefID: uint(req.RefID),
+		KmiID: uint(req.KmiID),
+		Name:  req.Name,
+	}, nil
 }
 
 // DecodeGRPCSetPublicKeyRequest is a transport/grpc.DecodeRequestFunc that converts a
@@ -333,6 +396,50 @@ func DecodeGRPCGetEnvRequest(_ context.Context, grpcReq interface{}) (interface{
 	}, nil
 }
 
+// DecodeGRPCSetLinkRequest is a transport/grpc.DecodeRequestFunc that converts a
+// gRPC SetLink request to a module.proto-domain setlink request.
+func DecodeGRPCSetLinkRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
+	req := grpcReq.(*modulePB.SetLinkRequest)
+	return SetLinkRequest{
+		RefID:         uint(req.RefID),
+		ContainerName: req.ContainerName,
+		LinkName:      req.LinkName,
+		LinkInterface: req.LinkInterface,
+	}, nil
+}
+
+// DecodeGRPCRemoveLinkRequest is a transport/grpc.DecodeRequestFunc that converts a
+// gRPC RemoveLink request to a module.proto-domain removelink request.
+func DecodeGRPCRemoveLinkRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
+	req := grpcReq.(*modulePB.RemoveLinkRequest)
+	return RemoveLinkRequest{
+		RefID:         uint(req.RefID),
+		ContainerName: req.ContainerName,
+		LinkName:      req.LinkName,
+		LinkInterface: req.LinkInterface,
+	}, nil
+}
+
+// DecodeGRPCGetModulesRequest is a transport/grpc.DecodeRequestFunc that converts a
+// gRPC GetModules request to a module.proto-domain getmodules request.
+func DecodeGRPCGetModulesRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
+	req := grpcReq.(*modulePB.GetModulesRequest)
+	return GetModulesRequest{
+		RefID: uint(req.RefID),
+	}, nil
+}
+
+// EncodeGRPCCreateContainerModuleResponse is a transport/grpc.EncodeRequestFunc that converts a
+// module.proto-domain createcontainermodule response to a gRPC CreateContainerModule response.
+func EncodeGRPCCreateContainerModuleResponse(_ context.Context, response interface{}) (interface{}, error) {
+	res := response.(CreateContainerModuleResponse)
+	gRPCRes := &modulePB.CreateContainerModuleResponse{}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
+}
+
 // EncodeGRPCSetPublicKeyResponse is a transport/grpc.EncodeRequestFunc that converts a
 // module.proto-domain setpublickey response to a gRPC SetPublicKey response.
 func EncodeGRPCSetPublicKeyResponse(_ context.Context, response interface{}) (interface{}, error) {
@@ -408,8 +515,15 @@ func EncodeGRPCUploadFileResponse(_ context.Context, response interface{}) (inte
 func EncodeGRPCGetModuleConfigResponse(_ context.Context, response interface{}) (interface{}, error) {
 	res := response.(GetModuleConfigResponse)
 	cKMI := convertPBKMI(&res.ContainerKMI)
+
+	linkMap := make(map[string]string)
+	for k, v := range res.Links {
+		linkMap[k] = strings.Join(v[:], ",")
+	}
+
 	gRPCRes := &modulePB.GetModuleConfigResponse{
-		Kmi: cKMI,
+		Kmi:   cKMI,
+		Links: linkMap,
 	}
 	if res.Error != nil {
 		gRPCRes.Error = res.Error.Error()
@@ -447,6 +561,53 @@ func EncodeGRPCGetEnvResponse(_ context.Context, response interface{}) (interfac
 	res := response.(GetEnvResponse)
 	gRPCRes := &modulePB.GetEnvResponse{
 		Value: res.Value,
+	}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
+}
+
+// EncodeGRPCSetLinkResponse is a transport/grpc.EncodeRequestFunc that converts a
+// module.proto-domain setlink response to a gRPC SetLink response.
+func EncodeGRPCSetLinkResponse(_ context.Context, response interface{}) (interface{}, error) {
+	res := response.(SetLinkResponse)
+	gRPCRes := &modulePB.SetLinkResponse{}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
+}
+
+// EncodeGRPCRemoveLinkResponse is a transport/grpc.EncodeRequestFunc that converts a
+// module.proto-domain removelink response to a gRPC RemoveLink response.
+func EncodeGRPCRemoveLinkResponse(_ context.Context, response interface{}) (interface{}, error) {
+	res := response.(RemoveLinkResponse)
+	gRPCRes := &modulePB.RemoveLinkResponse{}
+	if res.Error != nil {
+		gRPCRes.Error = res.Error.Error()
+	}
+	return gRPCRes, nil
+}
+
+func toPBModules(mods []Module) []*modulePB.Module {
+	pbMods := []*modulePB.Module{}
+	for _, v := range mods {
+		pbMods = append(pbMods, &modulePB.Module{
+			ContainerName: v.ContainerName,
+			Kmdi:          kmi.ConvertPBKMDI(v.KMDI),
+		})
+	}
+
+	return pbMods
+}
+
+// EncodeGRPCGetModulesResponse is a transport/grpc.EncodeRequestFunc that converts a
+// module.proto-domain getmodules response to a gRPC GetModules response.
+func EncodeGRPCGetModulesResponse(_ context.Context, response interface{}) (interface{}, error) {
+	res := response.(GetModulesResponse)
+	gRPCRes := &modulePB.GetModulesResponse{
+		Modules: toPBModules(res.Modules),
 	}
 	if res.Error != nil {
 		gRPCRes.Error = res.Error.Error()

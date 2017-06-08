@@ -97,7 +97,7 @@ func convertPBFrontendModuleArray(f FrontendArray) []*pb.FrontendModule {
 	return a
 }
 
-func convertPBKMDI(k KMDI) *pb.KMDI {
+func ConvertPBKMDI(k KMDI) *pb.KMDI {
 	return &pb.KMDI{
 		ID:          uint32(k.ID),
 		Name:        k.Name,
@@ -109,7 +109,7 @@ func convertPBKMDI(k KMDI) *pb.KMDI {
 
 func ConvertPBKMI(k *KMI) *pb.KMI {
 	return &pb.KMI{
-		KMDI:            convertPBKMDI(k.KMDI),
+		KMDI:            ConvertPBKMDI(k.KMDI),
 		ProvisionScript: k.ProvisionScript,
 		Commands:        k.Commands.ToStringMap(),
 		Environment:     k.Environment.ToStringMap(),
@@ -123,7 +123,7 @@ func ConvertPBKMI(k *KMI) *pb.KMI {
 func convertPBKMDIArray(k *[]KMDI) []*pb.KMDI {
 	a := make([]*pb.KMDI, len(*k))
 	for i, d := range *k {
-		a[i] = convertPBKMDI(d)
+		a[i] = ConvertPBKMDI(d)
 	}
 	return a
 }

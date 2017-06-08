@@ -32,35 +32,42 @@
       "AddServerName": "ASN",
       "RemoveServerName": "RSN",
       "Configurations": "CON"
-    },
-    "container": {
-      "id": "CNT",
-      "methods": {
-        "CreateContainer": "CRT",
-        "RemoveContainer": "REM",
-        "Instances": "ALL",
-        "StopContainer": "STO",
-        "Execute": "EXE",
-        "GetEnv": "GEV",
-        "SetEnv": "SEV",
-        "IDFromName": "IFN",
-        "GetContainerKMI": "GCK"
-      }
-    },
-    "module": {
-      "id": "MDL",
-      "methods": {
-        "SetPublicKey": "SPK",
-        "RemoveFile": "RMF",
-        "RemoveDirectory": "RMD",
-        "GetFiles": "GFS",
-        "GetFile": "GTF",
-        "UploadFile": "ULF",
-        "GetModuleConfig": "GMC",
-        "SendCommand": "ISCMFN",
-        "SetEnv": "SEV",
-        "GetEnv": "GEV"
-      }
+    }
+  },
+  "container": {
+    "id": "CNT",
+    "methods": {
+      "CreateContainer": "CRT",
+      "RemoveContainer": "REM",
+      "Instances": "ALL",
+      "StopContainer": "STO",
+      "Execute": "EXE",
+      "GetEnv": "GEV",
+      "SetEnv": "SEV",
+      "IDFromName": "IFN",
+      "GetContainerKMI": "GCK",
+      "SetLink": "SLI",
+      "RemoveLink": "RLI",
+      "GetLinks": "GLI"
+    }
+  },
+  "module": {
+    "id": "MDL",
+    "methods": {
+      "CreateContainerModule": "CCM",
+      "SetPublicKey": "SPK",
+      "RemoveFile": "RMF",
+      "RemoveDirectory": "RMD",
+      "GetFiles": "GFS",
+      "GetFile": "GTF",
+      "UploadFile": "ULF",
+      "GetModuleConfig": "GMC",
+      "SendCommand": "SCM",
+      "SetEnv": "SEV",
+      "GetEnv": "GEV",
+      "SetLink": "SLI",
+      "RemoveLink": "RLI",
+      "GetModules": "GMS"
     }
   },
   "kentheguru": {

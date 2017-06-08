@@ -21,6 +21,10 @@ import (
 
 // Service Template
 type Service interface {
+
+	// CreateContainerModule creates a new container module
+	CreateContainerModule(refID uint, kmidID uint, name string) error
+
 	// SetPublicKey sets a public key for ssh-ing into the container
 	SetPublicKey(refID uint, containerName string, key string) error
 
@@ -40,7 +44,7 @@ type Service interface {
 	UploadFile(refID uint, containerName string, filepath string, content []byte, override bool) error
 
 	// GetModuleConfig returns the configuration for the module
-	GetModuleConfig(refID uint, containerName string) (kmi.KMI, error)
+	GetModuleConfig(refID uint, containerName string) (kmi.KMI, map[string][]string, error)
 
 	// SendCommand sends a command to the customer-container, env overrides environment variables
 	// that are already globally defined in the container
@@ -51,6 +55,15 @@ type Service interface {
 
 	// GetEnv gets the value of a permanent environment varibale in the container
 	GetEnv(refID uint, containerName string, key string) (string, error)
+
+	// SetLink links a container module's interface into a container module
+	SetLink(refID uint, containerName string, linkName string, linkInterface string) error
+
+	// RemoveLink links a container module's interface into a container module
+	RemoveLink(refID uint, containerName string, linkName string, linkInterface string) error
+
+	// GetModules returns a user's modules
+	GetModules(refID uint) ([]Module, error)
 }
 
 type service struct {
@@ -79,6 +92,33 @@ func (s *service) makePath(refID uint, containerName string) (string, error) {
 	}
 
 	return coPath, nil
+}
+func (s *service) CreateContainerModule(refID uint, kmidID uint, name string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.createContainerModule(refID, kmidID, name)
+}
+
+func (s *service) createContainerModule(refID uint, kmidID uint, name string) error {
+	res, err := s.container.CreateContainerEndpoint(context.Background(), container.CreateContainerRequest{
+		RefID: refID,
+		KmiID: kmidID,
+		Name:  name,
+	})
+	if err != nil {
+		return err
+	}
+
+	errRes, ok := res.(container.CreateContainerResponse)
+	if !ok {
+		return errors.New("service returned unexpected response")
+	}
+	if errRes.Error != nil {
+		return errRes.Error
+	}
+
+	return nil
 }
 
 func (s *service) SetPublicKey(refID uint, containerName string, key string) error {
@@ -260,48 +300,61 @@ func (s *service) uploadFile(refID uint, containerName string, fpath string, con
 		} else {
 			return err
 		}
-	}
+	} else {
+		if f.IsDir() {
+			return fmt.Errorf("%s is a directory", fpath)
+		}
 
-	if f.IsDir() {
-		return fmt.Errorf("%s is a directory", fpath)
-	}
-
-	if override {
-		err = ioutil.WriteFile(coPath, content, 0644)
-		if err != nil {
-			return err
+		if override {
+			err = ioutil.WriteFile(coPath, content, 0644)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	return nil
 }
 
-func (s *service) GetModuleConfig(refID uint, containerName string) (kmi.KMI, error) {
+func (s *service) GetModuleConfig(refID uint, containerName string) (kmi.KMI, map[string][]string, error) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 
 	return s.getModuleConfig(refID, containerName)
 }
 
-func (s *service) getModuleConfig(refID uint, containerName string) (kmi.KMI, error) {
+func (s *service) getModuleConfig(refID uint, containerName string) (kmi.KMI, map[string][]string, error) {
 	id, err := s.getContainerIDForName(refID, containerName)
 	if err != nil {
-		return kmi.KMI{}, err
+		return kmi.KMI{}, make(map[string][]string), err
 	}
 
 	res, err := s.container.GetContainerKMIEndpoint(context.Background(), container.GetContainerKMIRequest{
 		ContainerID: id,
 	})
 	if err != nil {
-		return kmi.KMI{}, err
+		return kmi.KMI{}, make(map[string][]string), err
 	}
 
 	containerKMI, ok := res.(container.GetContainerKMIResponse)
 	if !ok {
-		return kmi.KMI{}, errors.New("service returned unexpected response")
+		return kmi.KMI{}, make(map[string][]string), errors.New("service returned unexpected response")
 	}
 
-	return containerKMI.ContainerKMI, nil
+	res, err = s.container.GetLinksEndpoint(context.Background(), container.GetLinksRequest{
+		RefID:       refID,
+		ContainerID: id,
+	})
+	if err != nil {
+		return kmi.KMI{}, make(map[string][]string), err
+	}
+
+	links, ok := res.(container.GetLinksResponse)
+	if !ok {
+		return kmi.KMI{}, make(map[string][]string), errors.New("service returned unexpected response")
+	}
+
+	return containerKMI.ContainerKMI, links.Links, nil
 }
 
 func (s *service) SendCommand(refID uint, containerName string, command string, env map[string]string) (string, error) {
@@ -349,6 +402,10 @@ func (s *service) sendCommand(refID uint, containerName string, command string, 
 	execRes, ok := res.(container.ExecuteResponse)
 	if !ok {
 		return "", errors.New("service returned unexpected response")
+	}
+
+	if execRes.Error != nil {
+		return "", execRes.Error
 	}
 
 	return execRes.Response, nil
@@ -407,6 +464,10 @@ func (s *service) getEnv(refID uint, containerName string, key string) (string, 
 		return "", errors.New("service returned unexpected response")
 	}
 
+	if val.Error != nil {
+		return "", val.Error
+	}
+
 	return val.Value, nil
 }
 
@@ -424,7 +485,140 @@ func (s *service) getContainerIDForName(refID uint, containerName string) (strin
 		return "", errors.New("service returned unexpected response")
 	}
 
+	if cnt.Error != nil {
+		return "", cnt.Error
+	}
+
 	return cnt.ID, nil
+}
+
+func (s *service) getKMI(containerID string) (kmi.KMI, error) {
+	res, err := s.container.GetContainerKMIEndpoint(context.Background(), container.GetContainerKMIRequest{
+		ContainerID: containerID,
+	})
+	if err != nil {
+		return kmi.KMI{}, err
+	}
+
+	containerKMI, ok := res.(container.GetContainerKMIResponse)
+	if !ok {
+		return kmi.KMI{}, errors.New("service returned unexpected response")
+	}
+
+	return containerKMI.ContainerKMI, nil
+}
+
+func (s *service) SetLink(refID uint, containerName string, linkName string, linkInterface string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.setLink(refID, containerName, linkName, linkInterface)
+}
+
+func (s *service) setLink(refID uint, containerName string, linkName string, linkInterface string) error {
+	srcID, err := s.getContainerIDForName(refID, containerName)
+	if err != nil {
+		return err
+	}
+
+	dstID, err := s.getContainerIDForName(refID, linkName)
+	if err != nil {
+		return err
+	}
+
+	res, err := s.container.SetLinkEndpoint(context.Background(), container.SetLinkRequest{
+		RefID:         refID,
+		ContainerID:   srcID,
+		LinkID:        dstID,
+		LinkName:      linkName,
+		LinkInterface: linkInterface,
+	})
+	if err != nil {
+		return err
+	}
+
+	errRes, ok := res.(container.SetLinkResponse)
+	if !ok {
+		return errors.New("service returned unexpected response")
+	}
+
+	if errRes.Error != nil {
+		return errRes.Error
+	}
+
+	return nil
+}
+
+func (s *service) RemoveLink(refID uint, containerName string, linkName string, linkInterface string) error {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.removeLink(refID, containerName, linkName, linkInterface)
+}
+
+func (s *service) removeLink(refID uint, containerName string, linkName string, linkInterface string) error {
+	srcID, err := s.getContainerIDForName(refID, containerName)
+	if err != nil {
+		return err
+	}
+
+	dstID, err := s.getContainerIDForName(refID, linkName)
+	if err != nil {
+		return err
+	}
+
+	res, err := s.container.RemoveLinkEndpoint(context.Background(), container.RemoveLinkRequest{
+		RefID:         refID,
+		ContainerID:   srcID,
+		LinkID:        dstID,
+		LinkName:      linkName,
+		LinkInterface: linkInterface,
+	})
+	if err != nil {
+		return err
+	}
+
+	errRes, ok := res.(container.RemoveLinkResponse)
+	if !ok {
+		return errors.New("service returned unexpected response")
+	}
+
+	if errRes.Error != nil {
+		return errRes.Error
+	}
+
+	return nil
+}
+
+func (s *service) GetModules(refID uint) ([]Module, error) {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+
+	return s.getModules(refID)
+}
+
+func (s *service) getModules(refID uint) ([]Module, error) {
+	res, err := s.container.InstancesEndpoint(context.Background(), container.InstancesRequest{
+		RefID: refID,
+	})
+	if err != nil {
+		return []Module{}, err
+	}
+
+	ins, ok := res.(container.InstancesResponse)
+	if !ok {
+		return []Module{}, errors.New("service returned unexpected response")
+	}
+
+	mods := []Module{}
+	for _, v := range ins.Containers {
+		mods = append(mods, Module{
+			ContainerName: v.ContainerName,
+			KMDI:          v.KMI.KMDI,
+		})
+	}
+
+	return mods, nil
 }
 
 // NewService creates a new module service

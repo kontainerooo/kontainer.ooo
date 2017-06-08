@@ -5,6 +5,7 @@ option go_package = "pb";
 import "kmi.proto";
 
 service ModuleService {
+    rpc CreateContainerModule (CreateContainerModuleRequest) returns (CreateContainerModuleResponse);
     rpc SetPublicKey (SetPublicKeyRequest) returns (SetPublicKeyResponse);
     rpc RemoveFile (RemoveFileRequest) returns (RemoveFileResponse);
 	rpc RemoveDirectory (RemoveDirectoryRequest) returns (RemoveDirectoryResponse);
@@ -15,6 +16,23 @@ service ModuleService {
 	rpc SendCommand (SendCommandRequest) returns (SendCommandResponse);
 	rpc SetEnv (SetEnvRequest) returns (SetEnvResponse);
 	rpc GetEnv (GetEnvRequest) returns (GetEnvResponse);
+    rpc SetLink (SetLinkRequest) returns (SetLinkResponse);
+    rpc RemoveLink (RemoveLinkRequest) returns (RemoveLinkResponse);
+    rpc GetModules (GetModulesRequest) returns (GetModulesResponse);
+}
+
+message module {
+    string containerName = 1;
+    kmi.KMDI kmdi = 2;
+}
+
+message CreateContainerModuleRequest {
+    uint32 refID = 1;
+    uint32 kmiID = 2;
+    string name = 3;
+}
+message CreateContainerModuleResponse {
+    string error = 1;
 }
 
 message SetPublicKeyRequest {
@@ -88,7 +106,8 @@ message GetModuleConfigRequest {
 
 message GetModuleConfigResponse {
     kmi.KMI kmi = 1;
-    string error = 2;
+    map<string, string> links = 2;
+    string error = 3;
 }
 
 message SendCommandRequest {
@@ -122,5 +141,36 @@ message GetEnvRequest {
 
 message GetEnvResponse {
     string value = 1;
+    string error = 2;
+}
+
+message SetLinkRequest {
+    uint32 refID = 1;
+    string containerName = 2;
+    string linkName = 3;
+    string linkInterface = 4;
+}
+
+message SetLinkResponse {
+    string error = 1;
+}
+
+message RemoveLinkRequest {
+    uint32 refID = 1;
+    string containerName = 2;
+    string linkName = 3;
+    string linkInterface = 4;
+}
+
+message RemoveLinkResponse {
+    string error = 1;
+}
+
+message GetModulesRequest {
+    uint32 refID = 1;
+}
+
+message GetModulesResponse {
+    repeated module modules = 1;
     string error = 2;
 }

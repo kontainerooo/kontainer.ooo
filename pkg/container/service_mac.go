@@ -33,4 +33,13 @@ type Service interface {
 
 	// GetContainerKMI returns the KMI for a given container
 	GetContainerKMI(containerID string) (kmi.KMI, error)
+
+	// SetLink links a container's interface into a container
+	SetLink(refID uint, containerID string, linkID string, linkName string, linkInterface string) error
+
+	// RemoveLink links a container's interface into a container
+	RemoveLink(refID uint, containerID string, linkID string, linkName string, linkInterface string) error
+
+	// GetLinks returns all links a container has
+	GetLinks(refID uint, containerID string) (map[string][]string, error)
 }

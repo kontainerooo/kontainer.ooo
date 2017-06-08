@@ -150,6 +150,7 @@ func NewService(
 		KMIEndpoints:       ke,
 		ContainerEndpoints: ce,
 		RoutingEndpoints:   re,
+		ModuleEndpoints:    me,
 	}
 
 	s.TokenAuth = ws.NewTokenAuth(
