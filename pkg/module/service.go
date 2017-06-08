@@ -110,9 +110,12 @@ func (s *service) createContainerModule(refID uint, kmidID uint, name string) er
 		return err
 	}
 
-	_, ok := res.(container.CreateContainerResponse)
+	errRes, ok := res.(container.CreateContainerResponse)
 	if !ok {
 		return errors.New("service returned unexpected response")
+	}
+	if errRes.Error != nil {
+		return errRes.Error
 	}
 
 	return nil
@@ -401,6 +404,10 @@ func (s *service) sendCommand(refID uint, containerName string, command string, 
 		return "", errors.New("service returned unexpected response")
 	}
 
+	if execRes.Error != nil {
+		return "", execRes.Error
+	}
+
 	return execRes.Response, nil
 }
 
@@ -457,6 +464,10 @@ func (s *service) getEnv(refID uint, containerName string, key string) (string, 
 		return "", errors.New("service returned unexpected response")
 	}
 
+	if val.Error != nil {
+		return "", val.Error
+	}
+
 	return val.Value, nil
 }
 
@@ -472,6 +483,10 @@ func (s *service) getContainerIDForName(refID uint, containerName string) (strin
 	cnt, ok := res.(container.IDForNameResponse)
 	if !ok {
 		return "", errors.New("service returned unexpected response")
+	}
+
+	if cnt.Error != nil {
+		return "", cnt.Error
 	}
 
 	return cnt.ID, nil
@@ -522,9 +537,13 @@ func (s *service) setLink(refID uint, containerName string, linkName string, lin
 		return err
 	}
 
-	_, ok := res.(container.SetLinkResponse)
+	errRes, ok := res.(container.SetLinkResponse)
 	if !ok {
 		return errors.New("service returned unexpected response")
+	}
+
+	if errRes.Error != nil {
+		return errRes.Error
 	}
 
 	return nil
@@ -559,9 +578,13 @@ func (s *service) removeLink(refID uint, containerName string, linkName string, 
 		return err
 	}
 
-	_, ok := res.(container.RemoveLinkResponse)
+	errRes, ok := res.(container.RemoveLinkResponse)
 	if !ok {
 		return errors.New("service returned unexpected response")
+	}
+
+	if errRes.Error != nil {
+		return errRes.Error
 	}
 
 	return nil
