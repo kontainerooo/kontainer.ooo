@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/websocket"
@@ -84,6 +85,7 @@ type Server struct {
 	services map[ProtoID]*ServiceDescription
 	before   []*Middleware
 	after    []*Middleware
+	mtx      *sync.Mutex
 }
 
 // RegisterService adds the given ServiceDescription to the Server's map of services
@@ -175,8 +177,11 @@ func (s *Server) handleConnection(conn *websocket.Conn, session interface{}) {
 		}
 
 		go func() {
+			defer s.mtx.Unlock()
+
 			srv, me, data, err := protocolHandler.Decode(request)
 			if err != nil {
+				s.mtx.Lock()
 				err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
 				if err != nil {
 					s.Logger.Log("error", err)
@@ -187,6 +192,7 @@ func (s *Server) handleConnection(conn *websocket.Conn, session interface{}) {
 
 			service, err := s.GetService(*srv)
 			if err != nil {
+				s.mtx.Lock()
 				err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
 				if err != nil {
 					s.Logger.Log("error", err)
@@ -197,6 +203,7 @@ func (s *Server) handleConnection(conn *websocket.Conn, session interface{}) {
 
 			handler, err := service.GetEndpointHandler(*me, s.before, session)
 			if err != nil {
+				s.mtx.Lock()
 				err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
 				if err != nil {
 					s.Logger.Log("error", err)
@@ -207,6 +214,7 @@ func (s *Server) handleConnection(conn *websocket.Conn, session interface{}) {
 
 			res, err := handler(data)
 			if err != nil {
+				s.mtx.Lock()
 				err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
 				if err != nil {
 					s.Logger.Log("error", err)
@@ -218,6 +226,7 @@ func (s *Server) handleConnection(conn *websocket.Conn, session interface{}) {
 			for _, middleware := range s.after {
 				err = middleware.mid(*srv, *me, &MiddlewareData{res}, &session)
 				if err != nil {
+					s.mtx.Lock()
 					err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
 					if err != nil {
 						s.Logger.Log("error", err)
@@ -229,6 +238,7 @@ func (s *Server) handleConnection(conn *websocket.Conn, session interface{}) {
 
 			response, err := protocolHandler.Encode(srv, me, res)
 			if err != nil {
+				s.mtx.Lock()
 				err = conn.WriteMessage(messageType, s.errh(srv, me, err, protocolHandler))
 				if err != nil {
 					s.Logger.Log("error", err)
@@ -237,6 +247,7 @@ func (s *Server) handleConnection(conn *websocket.Conn, session interface{}) {
 				return
 			}
 
+			s.mtx.Lock()
 			err = conn.WriteMessage(messageType, response)
 			if err != nil {
 				s.Logger.Log("error", err)
@@ -304,6 +315,7 @@ func NewServer(
 		services:  services,
 		before:    before,
 		after:     after,
+		mtx:       &sync.Mutex{},
 	}
 
 	if auth != nil {
