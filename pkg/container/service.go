@@ -542,7 +542,7 @@ func (s *service) createEnvironmentMap(refID uint, cKMI CKMI, env map[string]str
 	links := cKMI.Links.ToStringArrayMap()
 
 	for k, v := range links {
-		containerID, err := s.IDForName(refID, k)
+		containerID, err := s.idForName(refID, k)
 		if err != nil {
 			continue
 		}
